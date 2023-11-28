@@ -1,0 +1,3 @@
+__pycache__/
+# 忽略私人配置文件，包含有api_key等信息
+config private.yml

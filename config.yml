@@ -1,0 +1,22 @@
+api_keys:
+  gpt-3.5-turbo-16k:
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      api_type: azure
+      api_version: XXX
+      engine: GPT-35-Turbo-16k
+      # you can use any kwargs supported by openai.ChatCompletion here
+    - api_key: sk-xxxxx
+      organization: org-xxxxxx
+      model: gpt-3.5-turbo-16k
+  gpt-4:    
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      model: gpt-4
+
+  gpt-4-32k:
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      api_type: XXX
+      api_version: XXX
+      engine: gpt4-32
