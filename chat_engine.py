@@ -15,7 +15,7 @@ class ChatEngine:
         self.config = self.get_default_config(config_file=config_file)
 
     @staticmethod
-    def get_default_config(config_file='./config.yml'):
+    def get_default_config(config_file):
         """
         函数的作用是读取配置文件，返回一个字典
         输出示例：{'api_keys': {'gpt-3.5-turbo-16k': [{'api_key': 'sk-XXXX', 'base_url': 'https://example.com', 'api_type': 'azure', 'api_version': 'XXX', 'engine': 'GPT-35-Turbo-16k'}, {'api_key': 'sk-xxxxx', 'organization': 'org-xxxxxx', 'model': 'gpt-3.5-turbo-16k'}], 'gpt-4': [{'api_key': 'sk-XXXX', 'base_url': '', 'model': 'gpt-4'}], 'gpt-4-32k': [{'api_key': 'sk-XXXX', 'base_url': '', 'api_type': 'XXX', 'api_version': 'XXX', 'engine': 'gpt4-32'}]}}
@@ -23,8 +23,9 @@ class ChatEngine:
         try:
             config_file = os.getenv('CONFIG_FILE', config_file)
             cfg = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
-        except:
+        except Exception as e:
             cfg = {}
+            print("my_exception",e)
         return cfg
     
 
@@ -39,7 +40,7 @@ class ChatEngine:
         code_name = code_info["name"]
         code_content = code_info["content"]
         have_return = code_info["have_return"]
-        model = "gpt-3.5"
+        model = "gpt-4"
         code_type_tell = "类" if code_type == "ClassDef" else "函数"
         have_return_tell = "**输出示例**：XXX" if have_return else ""
         sys_prompt = f"""
@@ -88,7 +89,7 @@ class ChatEngine:
                     temperature=0,
                 )
                 response_message = response.choices[0].message
-                print("response.choices[0]:\n",response.choices[0])
+                # print("response.choices[0]:\n",response.choices[0])
 
                 return response_message
             
@@ -108,7 +109,8 @@ class ChatEngine:
 
 
 if __name__ == "__main__":
-    chat_engine = ChatEngine(config_file='./config.yml')
+    config_file = '/Users/logic/Documents/VisualStudioWorkspace/AI_doc/config.yml'
+    chat_engine = ChatEngine(config_file=config_file)
     code_type = "FunctionDef" # ClassDef or FunctionDef
     code_name = "to_code"
     code_content = """

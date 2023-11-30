@@ -4,18 +4,19 @@ from change_detector import ChangeDetector
 from project_manager import ProjectManager
 from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+from relationships import get_func_relationships
+import inspect
+import subprocess
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 class Runner:
-    def __init__(self):
-        self.project_manager = ProjectManager()
-        self.change_detector = ChangeDetector(repo_path=self.project_manager.repo_path)
-        self.chat_engine = ChatEngine(config_file='./config.yml')
+    def __init__(self,config_file,repo_path):
+        self.project_manager = ProjectManager() # TODO: repo_path参数传参方式优化
+        self.change_detector = ChangeDetector(repo_path=repo_path)
+        self.chat_engine = ChatEngine(config_file=config_file)
     
 
     def get_all_pys(self, directory):
@@ -91,6 +92,14 @@ class Runner:
                 self.process_file_changes(self.project_manager.repo_path, file_path, is_new_file)
 
 
+    def git_commit(self, file_path, commit_message):
+        try:
+            subprocess.check_call(['git', 'add', file_path])
+            subprocess.check_call(['git', 'commit', '-m', commit_message])
+        except subprocess.CalledProcessError as e:
+            print(f'An error occurred while trying to commit {file_path}: {str(e)}')
+
+
     def run(self):
             """
             Runs the document update process.
@@ -107,10 +116,12 @@ class Runner:
                 return
 
             repo_path = self.project_manager.repo_path
-            for file_path, is_new_file in changed_files.items():
-                file_path = os.path.join(repo_path, file_path)  
+
+            for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
+
+                # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
                 # 判断当前python文件内容是否为空，如果为空则跳过：
-                if os.path.getsize(file_path) == 0:
+                if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
                     continue
                 # 否则，根据文件路径处理变更的文件
                 self.process_file_changes(repo_path, file_path, is_new_file)
@@ -134,9 +145,9 @@ class Runner:
         source_code = file_handler.content
         changed_lines = self.change_detector.parse_diffs(self.change_detector.get_file_diff(file_path, is_new_file))
         changes_in_pyfile = self.change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(source_code))
-        logger.info(f"在 {file_handler.file_path} 文件中检测到变更的对象：\n{changes_in_pyfile}")
+        logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
         # 判断当前文件是否有对应的md文件
-        md_file_path = os.path.join(repo_path, "Markdown_Docs", os.path.relpath(file_path, repo_path).replace('.py', '.md'))
+        md_file_path = os.path.join(repo_path, "Markdown_Docs", file_path.replace('.py', '.md'))
         if os.path.exists(md_file_path):
             logger.info(f"检测到 {md_file_path} 文件，将更新现有文档。")
             self.update_documentation(file_handler, changes_in_pyfile, source_code, md_file_path)
@@ -167,6 +178,8 @@ class Runner:
         # 处理新增/更改的对象
         for changed_obj_name in changes_in_pyfile['added']:
             self.process_changed_object(file_handler, source_code, md_file_path, changed_obj_name)
+
+        # 提交到git仓库
 
     def update_md_file(self, md_file_path, content, code_name, operation):
         """
@@ -216,6 +229,11 @@ class Runner:
                     logger.info(f"已从 {md_file_path} 文件中删除 {code_name} 对象的文档。")
                 else:
                     logger.info(f"已将 {code_name} 对象的文档写入 {md_file_path} 文件。")
+                
+                # 将修改后的md文件内容提交到git仓库，输出文件相对路径
+                # self.git_commit(md_file_path, f"Update {os.path.basename(md_file_path)}")
+            
+
 
         except IOError as e:
             logger.error(f"Error updating documentation: {e}")
@@ -237,7 +255,6 @@ class Runner:
         """
         # 生成文档
         self.generate_markdown(file_handler, source_code, md_file_path, changed_obj_name)
-        logger.info(f"已将 {changed_obj_name} 对象的文档写入 {md_file_path} 文件。")
 
 
     def get_new_objects(self, file_handler):
@@ -302,19 +319,24 @@ class Runner:
         """
         with ThreadPoolExecutor(max_workers = 5) as executor:
             futures = []
+            names = []
             for structure_type, name, start_line, end_line in file_handler.get_functions_and_classes(source_code):
                 # 当changed_obj_name不为None时,表明这是process_changed_object的逻辑，只处理与之匹配的对象
                 if changed_obj_name is not None and name != changed_obj_name:
                     continue
+                
                 # 只有当changed_obj_name为None（代表create_new_documentation逻辑），以及name与changed_obj_name相等时（代表process_changed_object的逻辑），才会执行下面的代码
                 code_info = file_handler.get_obj_code(structure_type, name, start_line, end_line)
                 future = executor.submit(self.chat_engine.generate_doc, code_info)
                 futures.append(future)
+                names.append(name)
+
                     
             # 等待所有线程完成，并按照原始顺序收集结果
             results = [future.result() for future in futures]
+            print(f"results:{results}")
 
-            for response_message in results:
+            for name, response_message in zip(names, results):
                 documentation = response_message.content + "\n***\n"
                 self.write_doc_to_md(md_file_path, documentation, name)
 
@@ -329,6 +351,12 @@ class Runner:
 
 
 if __name__ == "__main__":
-    runner = Runner()
+
+    config_file = '/Users/logic/Documents/VisualStudioWorkspace/AI_doc/config.yml'
+    repo_path = "/Users/logic/Documents/VisualStudioWorkspace/XAgent-Dev/"
+
+    runner = Runner(config_file, repo_path)
+    
     runner.run()
+
     logger.info("文档任务完成。")
