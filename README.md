@@ -12,14 +12,16 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 # 📚 Features
 
-AI_doc is designed with the following features:
+## AI_doc is designed with the following features:
 
 - **🤖 Automatically detects changes in Git repositories, tracking additions, deletions, and modifications of files.**
 - **📝 Independently analyzes the code structure through AST, generating documents for individual objects.**
 - **📚 Seamlessly replaces Markdown content based on changes, maintaining consistency in documentation.**
 - **📦 Executes multi-threaded concurrent operations, enhancing the efficiency of document generation.**
+- **🔍 Offer a sustainable, automated documentation update method for team collaboration.**
 
 # 📦 Installation
+
 
 # 📖 Quick Start
 
