@@ -21,6 +21,29 @@ class ChangeDetector:
         """
         self.repo = git.Repo(repo_path)
 
+    def get_staged_pys(self):
+        """
+        获取仓库中已经暂存的python文件变更。
+
+        这个函数只追踪 Git 中已经暂存的 Python 文件变更，
+        即那些已经执行了 `git add` 的文件。
+
+        Returns:
+            dict: 变更的python文件字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的
+        """
+        repo = self.repo
+        staged_files = {}
+
+        # 检测已暂存的变更
+        diffs = repo.index.diff('HEAD')
+        for diff in diffs:
+            if diff.change_type in ['A', 'M'] and diff.a_path.endswith('.py'):
+                is_new_file = diff.change_type == 'A'
+                staged_files[diff.a_path] = is_new_file
+
+        return staged_files
+
+
     def get_changed_pys(self):
         """
         根据仓库仓库实例，获取仓库中变更的python文件
@@ -145,11 +168,10 @@ class ChangeDetector:
 if __name__ == "__main__":
     repo_path = "/Users/logic/Documents/VisualStudioWorkspace/XAgent-Dev/"
     change_detector = ChangeDetector(repo_path)
-    changed_files = change_detector.get_changed_pys()
-    print(changed_files)
+    changed_files = change_detector.get_staged_pys()
+    print("changed_files:",changed_files)
     for file_path, is_new_file in changed_files.items():
-        print(change_detector.get_file_diff(file_path))
-        changed_lines = change_detector.parse_diffs(change_detector.get_file_diff(file_path))
+        changed_lines = change_detector.parse_diffs(change_detector.get_file_diff(file_path, is_new_file))
         print("changed_lines:",changed_lines)
         file_handler = FileHandler(repo_path=repo_path, file_path=file_path)
         changes_in_pyfile = change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(file_handler.content))
