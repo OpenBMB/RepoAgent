@@ -95,7 +95,7 @@ class Runner:
     def git_commit(self, file_path, commit_message):
         try:
             subprocess.check_call(['git', 'add', file_path])
-            subprocess.check_call(['git', 'commit', '-m', commit_message])
+            subprocess.check_call(['git', 'commit', '--no-verify', '-m', commit_message])
         except subprocess.CalledProcessError as e:
             print(f'An error occurred while trying to commit {file_path}: {str(e)}')
 
@@ -109,8 +109,8 @@ class Runner:
             Returns:
                 None
             """
-            changed_files = self.change_detector.get_changed_pys()
-            logger.info(f"检测到变更的文件：{changed_files}")
+            changed_files = self.change_detector.get_staged_pys()
+            logger.info(f"检测到暂存区中变更的文件：{changed_files}")
             if len(changed_files) == 0:
                 logger.info("没有检测到任何变更，不需要更新文档。")
                 return
@@ -334,7 +334,6 @@ class Runner:
                     
             # 等待所有线程完成，并按照原始顺序收集结果
             results = [future.result() for future in futures]
-            print(f"results:{results}")
 
             for name, response_message in zip(names, results):
                 documentation = response_message.content + "\n***\n"
@@ -352,8 +351,8 @@ class Runner:
 
 if __name__ == "__main__":
 
-    config_file = '/Users/logic/Documents/VisualStudioWorkspace/AI_doc/config.yml'
-    repo_path = "/Users/logic/Documents/VisualStudioWorkspace/XAgent-Dev/"
+    config_file = 'path/to/your/config.yml' # 建议先配置绝对路径
+    repo_path = 'path/to/your/repo' # 建议先配置绝对路径
 
     runner = Runner(config_file, repo_path)
     
