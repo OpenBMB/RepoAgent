@@ -144,36 +144,42 @@ class ChangeDetector:
 
             return changed_lines
 
-    def identify_changes_in_structure(self,changed_lines, structures):
+    # TODO: 问题的关键在于，变更的行号分别对应于旧的函数名（即被移除的）和新的函数名（即被添加的），而当前实现还没有正确处理这一点。
+    # 需要一种方式来关联变更行号与它们在变更前后的函数或类名。一种方法是在处理changed_lines之前先构建一个映射，该映射可以根据行号将变更后的名称映射回变更前的名称。
+    # 然后，在identify_changes_in_structure函数中，可以使用这个映射来正确地识别出变更的结构。
+    def identify_changes_in_structure(self, changed_lines, structures):
         """
-        识别发生更改的函数或类的结构。
-        输出示例：{'added': {'PipelineAutoMatNode', 'to_json_new'}, 'removed': set()}
+        识别发生更改的函数或类的结构：遍历所有的更改行，对于每一行，它检查这一行是否在某个结构（函数或类）的开始行和结束行之间。
+        如果是，那么这个结构就被认为是发生了更改的，将其名称和父级结构名称添加到结果字典 changes_in_structures 的相应集合中（取决于这一行是被添加的还是被删除的）。
+
+        输出示例：{'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
 
         Args:
             changed_lines (dict): 包含发生更改的行号的字典，{'added': [(行号，变更内容)], 'removed': [(行号，变更内容)]}
-            structures (list): 接收的是get_functions_and_classes包含函数或类结构的列表，每个结构由结构类型、名称、起始行号和结束行号组成。
+            structures (list): 接收的是get_functions_and_classes包含函数或类结构的列表，每个结构由结构类型、名称、起始行号、结束行号和父级结构名称组成。
 
         Returns:
-            dict: 包含发生更改的结构的字典，键为更改类型，值为结构名称的集合。
+            dict: 包含发生更改的结构的字典，键为更改类型，值为结构名称和父级结构名称的集合。
                 可能的更改类型为'added'（新增）和'removed'（移除）。
         """
         changes_in_structures = {'added': set(), 'removed': set()}
         for change_type, lines in changed_lines.items():
             for line_number, _ in lines:
-                for structure_type, name, start_line, end_line in structures:
+                for structure_type, name, start_line, end_line, parent_structure in structures:
                     if start_line <= line_number <= end_line:
-                        changes_in_structures[change_type].add(name)
+                        changes_in_structures[change_type].add((name, parent_structure))
         return changes_in_structures
+    
     
 if __name__ == "__main__":
     repo_path = "/Users/logic/Documents/VisualStudioWorkspace/XAgent-Dev/"
     change_detector = ChangeDetector(repo_path)
     changed_files = change_detector.get_staged_pys()
-    print("changed_files:",changed_files)
+    print(f"\nchanged_files:{changed_files}\n\n")
     for file_path, is_new_file in changed_files.items():
         changed_lines = change_detector.parse_diffs(change_detector.get_file_diff(file_path, is_new_file))
-        print("changed_lines:",changed_lines)
+        # print("changed_lines:",changed_lines)
         file_handler = FileHandler(repo_path=repo_path, file_path=file_path)
         changes_in_pyfile = change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(file_handler.content))
-        print("Changes in Structures:", changes_in_pyfile)
+        print("Changes in Structures:\n", changes_in_pyfile)
 
