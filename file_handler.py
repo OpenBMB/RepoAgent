@@ -100,21 +100,49 @@ class FileHandler:
             if child_end > -1:  # 只更新当子节点有有效行号时
                 end_lineno = max(end_lineno, child_end)
         return end_lineno
+    
+    def add_parent_references(self, node, parent=None):
+        """
+        Adds a parent reference to each node in the AST.
+        为AST中的每个节点添加父级引用。
 
-    def get_functions_and_classes(self,code_content):
-            """
-            Retrieves all functions and classes from the content of the file.
-            输出示例：[('FunctionDef', 'PipelineEngine', 86, 95), ('ClassDef', 'AI_give_params', 97, 104)]
+        Args:
+            node: AST节点
+            parent: 父级节点
+        """
+        for child in ast.iter_child_nodes(node):
+            child.parent = node
+            self.add_parent_references(child, node)
+    
 
-            Returns:
-                A list of tuples containing the type of the node (FunctionDef, ClassDef, AsyncFunctionDef),
-                the name of the node, the starting line number, and the ending line number.
-            """
-            tree = ast.parse(code_content)
-            functions_and_classes = []
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
-                    start_line = node.lineno
-                    end_line = self.get_end_lineno(node)
-                    functions_and_classes.append((type(node).__name__, node.name, start_line, end_line))
-            return functions_and_classes
+    def get_functions_and_classes(self, code_content):
+        """
+        Retrieves all functions, classes, and their hierarchical relationships.
+        输出示例：[('FunctionDef', 'AI_give_params', 86, 95, None), ('ClassDef', 'PipelineEngine', 97, 104, None), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine')]
+        在上述示例中，PipelineEngine是get_all_pys的父级结构。
+
+        Returns:
+            A list of tuples containing the type of the node (FunctionDef, ClassDef, AsyncFunctionDef),
+            the name of the node, the starting line number, the ending line number, and the name of the parent node.
+        """
+        tree = ast.parse(code_content)
+        self.add_parent_references(tree)
+        functions_and_classes = []
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                start_line = node.lineno
+                end_line = self.get_end_lineno(node)
+                parent_name = node.parent.name if 'name' in dir(node.parent) else None
+                functions_and_classes.append(
+                    (type(node).__name__, node.name, start_line, end_line, parent_name)
+                )
+        return functions_and_classes
+
+if __name__ == "__main__":
+
+    # 打开py文件读取源代码
+    # file_handler = FileHandler('/path/to/repo', '/path/to/file.py')
+    file_handler = FileHandler('/Users/logic/Documents/VisualStudioWorkspace/XAgent-Dev', 'XAgent/engines/pipeline_old.py')
+    code_content = file_handler.read_file()
+    functions_and_classes = file_handler.get_functions_and_classes(code_content)
+    print(functions_and_classes)
