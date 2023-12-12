@@ -226,7 +226,7 @@ class FileHandler:
             json_data = json.load(f)
 
         # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
-        markdown_docs_path = os.path.join(self.repo_path, 'Markdown_docs')
+        markdown_docs_path = os.path.join(self.repo_path, CONFIG['Markdown_Docs_folder'])
         if not os.path.exists(markdown_docs_path):
             os.mkdir(markdown_docs_path)
 

@@ -29,7 +29,7 @@ class Runner:
         file_structure = file_handler.generate_overall_structure()
         json_output = file_handler.convert_structure_to_json(file_structure)
 
-        json_file = os.path.join(self.CONFIG['repo_path'], self.CONFIG['project_hierachy'])
+        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
         # Save the JSON to a file
         with open(os.path.join(file_handler.repo_path, json_file), 'w', encoding='utf-8') as f:
             json.dump(json_output, f, indent=4, ensure_ascii=False)
@@ -55,33 +55,6 @@ class Runner:
 
         return python_files
         
-    # def run_initial_structure(self):
-    #     """
-    #     根据现有仓库的代码生成初始文档结构
-
-    #     """
-    #     repo_path = self.project_manager.repo_path
-    #     md_root_path = os.path.join(repo_path, self.CONFIG['Markdown_Docs_folder'])  # 新的根目录
-
-    #     for file_path in self.get_all_pys(repo_path):
-    #         # 判断当前python文件内容是否为空：
-    #         if os.path.getsize(file_path) == 0:
-    #             continue
-    #         # 判断当前文件是否有对应的md文件
-    #         relative_path = os.path.relpath(file_path, repo_path)  # 获取相对路径
-    #         md_file_path = os.path.join(md_root_path, relative_path.replace('.py', '.md'))
-
-    #         # 如果md文件所在的目录不存在，创建它
-    #         md_dir = os.path.dirname(md_file_path)
-    #         if not os.path.exists(md_dir):
-    #             os.makedirs(md_dir)
-
-    #         if os.path.exists(md_file_path):
-    #             logger.info(f"检测到 {md_file_path} 文件，将更新现有文档。")
-    #         else:
-    #             logger.info(f"未检测到 {md_file_path} 文件，将创建新文档。")
-    #             with open(md_file_path, 'w') as md_file:  # 创建新的 .md 文件
-    #                 md_file.write(f"***\n")  # 写入初始内容，例如对象的名称
 
     def fake_for_first_generate(self):
         """
@@ -126,11 +99,19 @@ class Runner:
             Returns:
                 None
             """
+            # 首先检测是否存在全局的 project_hierachy.json 结构信息
+            if not os.path.exists(os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])):
+                self.generate_hierachy()
+                logger.info(f"已生成项目全局结构信息，存储路径为: {CONFIG['project_hierachy']}")
+        
             changed_files = self.change_detector.get_staged_pys()
-            logger.info(f"检测到暂存区中变更的文件：{changed_files}")
+
             if len(changed_files) == 0:
                 logger.info("没有检测到任何变更，不需要更新文档。")
                 return
+            
+            else:
+                logger.info(f"检测到暂存区中变更的文件：{changed_files}")
 
             repo_path = self.project_manager.repo_path
 
@@ -263,48 +244,6 @@ class Runner:
                 break
 
 
-    def update_documentation(self, file_handler, changes_in_pyfile, source_code):
-        """
-        函数的作用是接收变更对象字典，根据字典里的变更对象（added和removed）来更新已经存在的文档内容
-        Args:
-            file_handler (FileHandler): 文件处理器对象。
-            changes_in_pyfile (list): Python文件中的更改列表。
-            source_code (str): 源代码字符串。
-            md_file_path (str): Markdown文件路径。
-
-        Returns:
-            None
-        """
-        new_obj, del_obj = self.get_new_objects(file_handler)
-        # print(f"\n\ndel_obj(真正要被删除的对象):{del_obj}\n\n")
-
-        # 处理被删除的对象
-        for obj in del_obj: # 真正被删除的对象
-            self.delete_doc_from_json(file_handler, obj)
-
-        # 处理新增/更改的对象
-        for changed_obj in changes_in_pyfile['added']:
-            self.process_changed_object(file_handler, source_code, changed_obj)
-
-
-    def process_changed_object(self, file_handler, source_code, changed_obj):
-        """
-        处理added中的变更对象
-
-        Args:
-            file_handler (FileHandler): The file handler object.
-            source_code (str): The source code of the whole .py file.
-            md_file_path (str): The path of the markdown file.
-            changed_obj (str): The name of the changed object.
-            new_obj (bool): Flag indicating if the object is new.
-
-        Returns:
-            None
-        """
-        # 生成文档
-        self.generate_markdown(file_handler, source_code, changed_obj)
-
-
     def get_new_objects(self, file_handler):
         """
         函数通过比较当前版本和上一个版本的.py文件，获取新增和删除的对象
@@ -329,37 +268,6 @@ class Runner:
 
         return new_obj, del_obj
 
-
-    # def create_new_documentation(self, file_handler, source_code, md_file_path):
-    #     """
-    #     这个函数处理的场景是创建新的文档，而不是更新现有文档。
-    #     只有当前变更的.py文件找不到对应的.md文件的时候才会调用这个函数。
-
-    #     Args:
-    #         file_handler (FileHandler): The file handler object used to read the source code.
-    #         source_code (str): The source code to generate documentation from.
-    #         md_file_path (str): The file path to write the generated documentation.
-
-    #     Returns:
-    #         None
-    #     """
-    #     # 对一个新文档来说，先要在json文件中增加它的项，所以要先调用LLM生成doc内容，写入json中
-
-    #     # 如果md文件所在的目录不存在，创建它
-    #     md_dir = os.path.dirname(md_file_path)
-    #     if not os.path.exists(md_dir):
-    #         os.makedirs(md_dir)
-    #     # 根据md_file_path创建一个空的.md文件
-    #     open(md_file_path, 'a+').close()
-    #     logger.info(f"新文档{md_file_path}已创建")
-    #     # 获取当前.py文件源代码-->得到完整结构信息-->为每一个结构信息生成文档-->将每一个文档结构信息写入json文件
-    #     changed_obj = file_handler.get_functions_and_classes(source_code)
-    #     self.generate_markdown(file_handler, source_code)
-
-    #     # 将json文件中这部分的内容转换成markdown内容
-    #     markdown = file_handler.convert_to_markdown_file()
-    #     # 将markdown内容写入.md文件
-    #     file_handler.write_file(md_file_path, markdown)
 
     def generate_markdown(self, file_handler, source_code, changed_obj=None):
         """
@@ -399,71 +307,6 @@ class Runner:
                 self.write_doc_to_json(file_handler, documentation, code_info)
 
 
-    # def write_doc_to_json(self, file_handler, documentation, code_info):
-    #     self.update_json_file(file_handler, documentation, code_info, 'write')
-
-
-    # def delete_doc_from_json(self, file_handler, obj):
-    #     code_info = {"name": obj}
-    #     self.update_json_file(file_handler, '', code_info, 'delete')
-
-
-    # def update_json_file(self, file_handler, doc, code_info, operation):
-    #     """
-    #     Update the Json file based on the operation.
-
-    #     Args:
-    #         md_file_path (str): The path to the Markdown file.
-    #         content (str): The content to be written or the name of the code to be deleted.
-    #         code_info (str): The info of the code being documented or deleted.
-    #         operation (str): The operation to be performed, either 'write' or 'delete'.
-
-    #     Returns:
-    #         None
-    #     """
-    #     # 打开json文件，如果文件不存在，抛出异常
-    #     json_file_path = os.path.join(self.project_manager.repo_path, 'project_hierachy.json')
-    #     if not os.path.exists(json_file_path):
-    #         raise ValueError(f"JSON file not found at {json_file_path}")
-    #     try:
-    #         # 读取json文件，在json数据中寻找根据file_handler.file_path更改后缀的绝对路径
-    #         with open(json_file_path, 'r', encoding='utf-8') as f:
-    #             json_data = json.load(f)
-    #         # 遍历json_data["files"]列表中的每个字典
-    #         for file in json_data["files"]:
-    #             if file["file_path"] == os.path.join(self.project_manager.repo_path, file_handler.file_path): # 找到了对应文件
-    #                 # 根据传入的code_info对file_objects中的对象进行operation操作
-    #                 for obj in file["objects"]:
-    #                     if obj["name"] == code_info["name"]:
-    #                         if operation == 'write':
-    #                             obj["md_content"] = doc
-    #                         else:
-    #                             file["objects"].remove(obj)
-    #                         break
-    #                     # 如果code_name不在file_objects中，说明是新增的对象，需要将其添加到file_objects中
-    #                     else:
-    #                         if operation == 'write':
-    #                             code_info["md_content"] = doc
-    #                             file["objects"].append(code_info)
-    #                             # 把更改后的file_objects写回到json文件中
-    #                     break
-    #         with open(json_file_path, 'w', encoding='utf-8') as f:
-    #             json.dump(json_data, f, ensure_ascii=False, indent=4) 
-            
-
-    #         if operation == 'delete':
-    #             logger.info(f"已从json文件中删除 {code_info['name']} 对象。")
-    #         else:
-    #             logger.info(f"已将 {code_info['name']} 对象的文档写入json文件。")
-            
-
-    #     except Exception as e:
-    #             logger.error(f"Error updating documentation: {e}")
-             
-    #             # 将修改后的md文件内容提交到git仓库，输出文件相对路径
-    #             # self.git_commit(md_file_path, f"Update {os.path.basename(md_file_path)}")
-            
-
 if __name__ == "__main__":
 
     runner = Runner()
@@ -473,9 +316,3 @@ if __name__ == "__main__":
 
     logger.info("文档任务完成。")
 
-    # sys.exit(1)
-
-    # file_handler = FileHandler(repo_path, 'XAgent/DSL_runner/ProAgent/n8n_tester/mock_input_test.py')
-    # new_obj, del_obj = runner.get_new_objects(file_handler)
-
-    # print(f"\n\nnew_obj:{new_obj}\n\ndel_obj:{del_obj}\n\n")
