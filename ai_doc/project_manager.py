@@ -28,9 +28,15 @@ class ProjectManager:
         script = jedi.Script(path=file_path)
         references = script.get_references(line=line_number, column=column_number)
 
-        # 过滤出变量名为 variable_name 的引用，并返回它们的位置
-        variable_references = [ref for ref in references if ref.name == variable_name]
-        return [(ref.module_path, ref.line, ref.column) for ref in variable_references]
+        try:
+            # 过滤出变量名为 variable_name 的引用，并返回它们的位置
+            variable_references = [ref for ref in references if ref.name == variable_name]
+            return [(os.path.relpath(ref.module_path, self.repo_path), ref.line, ref.column) for ref in variable_references]
+        except Exception as e:
+            # 打印错误信息和相关参数
+            print(f"Error occurred: {e}")
+            print(f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}")
+            return []
     
 if __name__ == "__main__":
     project_manager = ProjectManager()
