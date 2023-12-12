@@ -77,7 +77,7 @@ You just need to follow the normal git workflow: git add, git commit, git push.
 The AI_doc hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
 
 After execution, as AI_doc modifies files in the target repository, it will display 'Failed' upon completion of the hook. This is normal.
-![Execution Result](./images/execution_result.png)
+![Execution Result](assets/images/execution_result.png)
 At this point, the hook has correctly performed the documentation generation operation and created a folder named Markdown_Docs in the root directory of your target repository.
 Next, you just need to git add the Markdown_Docs folder to the staging area and use:
 ```

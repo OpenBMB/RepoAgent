@@ -75,7 +75,7 @@ pre-commit install
 AI_doc hook会在git commit时自动触发，检测前一步你git add的文件，并生成对应的文档。
 
 执行后，由于AI_doc更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
-![Execution Result](./images/execution_result.png)
+![Execution Result](assets/images/execution_result.png)
 此时，hook已经正确执行了文档生成的操作，并在你的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
 接下来你只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
 ```
