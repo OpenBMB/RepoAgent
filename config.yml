@@ -20,3 +20,7 @@ api_keys:
       api_type: XXX
       api_version: XXX
       engine: gpt4-32
+
+repo_path: /path/to/your/repo
+project_hierachy: .project_hierachy.json
+Markdown_Docs_folder: /Markdown_Docs
