@@ -31,10 +31,10 @@ class Runner:
 
         json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
         # Save the JSON to a file
-        with open(os.path.join(file_handler.repo_path, json_file), 'w', encoding='utf-8') as f:
+        with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(json_output, f, indent=4, ensure_ascii=False)
 
-        logger.info(f"JSON structure generated and saved to '{json_file}'.")
+        # logger.info(f"JSON structure generated and saved to '{json_file}'.")
 
     def get_all_pys(self, directory):
         """
@@ -56,30 +56,59 @@ class Runner:
         return python_files
         
 
-    def fake_for_first_generate(self):
+    def first_generate(self):
         """
-        获取给定目录下的所有 Python 文件。
-
-        Args:
-            directory (str): 要搜索的目录。
-
-        Returns:
-            dict: 所有 Python 文件的路径映射到 True 的字典。
+        根据全局json结构的信息，生成整个项目所有python文件的文档
         """
-        python_files = {}
+        # 检测是否存在全局的 project_hierachy.json 结构信息
+        if not os.path.exists(self.project_manager.project_hierachy):
+            self.generate_hierachy()
+            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierachy}")
 
-        for root, dirs, files in os.walk(self.project_manager.repo_path):
-            for file in files:
-                if file.endswith('.py'):
-                    file_path = os.path.join(root, file)
-                    python_files[file_path] = True
+        with open(self.project_manager.project_hierachy, 'r') as f:
+            json_data = json.load(f)
 
-        for file_path, is_new_file in python_files.items():
-                # 判断当前python文件内容是否为空，如果为空则跳过：
-                if os.path.getsize(file_path) == 0:
-                    continue
-                # 否则，根据文件路径处理变更的文件
-                self.process_file_changes(self.project_manager.repo_path, file_path, is_new_file)
+        # 创建一个线程池
+        # TODO: Jedi 库多线程调用会出错，待解决
+        with ThreadPoolExecutor(max_workers=1) as executor: 
+            futures = []
+
+            for file in json_data['files']:
+                file_handler = FileHandler(CONFIG['repo_path'], os.path.relpath(file['file_path'], CONFIG['repo_path']))
+
+                for obj in file['objects']:
+                    code_info = {
+                        # 提取obj中的信息
+                        "type": obj["type"],
+                        "name": obj["name"],
+                        "code_content": obj["code_content"],
+                        "have_return": obj["have_return"],
+                        "code_start_line": obj["code_start_line"],
+                        "code_end_line": obj["code_end_line"],
+                        "parent": obj["parent"],
+                        "name_column": obj["name_column"]
+                    }
+
+                    # 提交任务到线程池，并将future和对应的obj存储为元组
+                    future = executor.submit(self.chat_engine.generate_doc, code_info, file_handler)
+                    futures.append((future, obj))
+
+                # 收集结果
+                for future, obj in futures:
+                    response_message = future.result()  # 等待结果
+                    # obj["md_content"] = response_message.content
+                    obj["md_content"] = "response_message.content"
+
+
+                # 转换json内容到markdown
+                markdown = file_handler.convert_to_markdown_file(file_path=file['file_path'])
+                # 写入markdown内容到.md文件
+                file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+                logger.info(f"已生成 {file_handler.file_path} 的Markdown文档。")
+
+        # 将json_data写回文件
+        with open(self.project_manager.project_hierachy, 'w') as f:
+            json.dump(json_data, f, indent=4, ensure_ascii=False)
 
 
     def git_commit(self, file_path, commit_message):
@@ -100,9 +129,10 @@ class Runner:
                 None
             """
             # 首先检测是否存在全局的 project_hierachy.json 结构信息
-            if not os.path.exists(os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])):
+            abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
+            if not os.path.exists(abs_project_hierachy_path):
                 self.generate_hierachy()
-                logger.info(f"已生成项目全局结构信息，存储路径为: {CONFIG['project_hierachy']}")
+                logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}")
         
             changed_files = self.change_detector.get_staged_pys()
 
@@ -269,50 +299,13 @@ class Runner:
         return new_obj, del_obj
 
 
-    def generate_markdown(self, file_handler, source_code, changed_obj=None):
-        """
-        对于 create_new_documentation 方法：
-
-        当调用 generate_markdown 方法时，changed_obj 默认为 None。
-        在 generate_markdown 方法内，当 changed_obj 为 None 时，if changed_obj is not None and name != changed_obj 这个条件判断总是为假，因此不会跳过任何对象。
-        这意味着该方法会为源代码中的所有函数和类生成文档，符合 create_new_documentation 的预期行为。
-        对于 process_changed_object 方法：
-
-        当调用 generate_markdown 方法时，会传递一个特定的 changed_obj（即 update_document函数中的changes_in_pyfile['added']中的单个元素）。
-        在 generate_markdown 方法内，当遍历到的对象名称 name 与 changed_obj 不匹配时，if changed_obj is not None and name != changed_obj 条件判断为真，因此会跳过这些不匹配的对象。
-        只有当对象名称与 changed_obj 匹配时，才会为该对象生成文档，这符合 process_changed_object 需要只处理变更对象的预期行为。
-        """
-
-        with ThreadPoolExecutor(max_workers = 5) as executor:
-            futures = []
-            code_infos = []
-            for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(source_code):
-                # 当changed_obj不为None时,表明这是process_changed_object的逻辑，只处理与之匹配的对象
-                # TODO: 生成新文档时候的逻辑未完成
-                changed_obj_name = changed_obj[0] if changed_obj is not None else None
-                if changed_obj_name is not None and name != changed_obj_name:
-                    continue
-                
-                # 只有当changed_obj为None（代表create_new_documentation逻辑），以及name与changed_obj相等时（代表process_changed_object的逻辑），才会执行下面的代码
-                code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-                future = executor.submit(self.chat_engine.generate_doc, code_info, file_handler)
-                futures.append(future)
-                code_infos.append(code_info)
-                    
-            # 等待所有线程完成，并按照原始顺序收集结果
-            results = [future.result() for future in futures]
-
-            for code_info, response_message in zip(code_infos, results):
-                documentation = response_message.content + "\n***\n"
-                self.write_doc_to_json(file_handler, documentation, code_info)
-
-
 if __name__ == "__main__":
 
     runner = Runner()
     
-    # runner.generate_hierachy()
+
     runner.run()
+    # runner.first_generate()
 
     logger.info("文档任务完成。")
 
