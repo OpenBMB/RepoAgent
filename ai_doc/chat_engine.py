@@ -65,8 +65,8 @@ class ChatEngine:
         all_references = project_manager.Find_All_References(code_name, file_path, code_info["code_start_line"], code_info["name_column"]) 
         code_from_references = get_code_from_json(project_manager.project_hierachy, all_references)
         referenced = True if len(code_from_references) > 0 else False
-        references_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_references.items()])           
-        
+        references_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_references.items()])     
+
         # 判断及占位符
         model = "gpt-4"
 
