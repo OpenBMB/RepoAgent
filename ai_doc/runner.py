@@ -96,8 +96,7 @@ class Runner:
                 # 收集结果
                 for future, obj in futures:
                     response_message = future.result()  # 等待结果
-                    # obj["md_content"] = response_message.content
-                    obj["md_content"] = "response_message.content"
+                    obj["md_content"] = response_message.content
 
 
                 # 转换json内容到markdown
@@ -304,8 +303,8 @@ if __name__ == "__main__":
     runner = Runner()
     
 
-    runner.run()
-    # runner.first_generate()
+    # runner.run()
+    runner.first_generate()
 
     logger.info("文档任务完成。")
 
