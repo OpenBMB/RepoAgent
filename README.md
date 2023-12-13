@@ -10,15 +10,14 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 **🏆 Our goal is to create a super-intelligent doc assistant that saves time and formulate documents for human.**
 
-# 📚 Features
-
-## AI_doc is designed with the following features:
+# 🪭 Features
 
 - **🤖 Automatically detects changes in Git repositories, tracking additions, deletions, and modifications of files.**
 - **📝 Independently analyzes the code structure through AST, generating documents for individual objects.**
+- **🔍 Accurate identification of inter-object invocation relationships, enriching the global perspective of document content.**
 - **📚 Seamlessly replaces Markdown content based on changes, maintaining consistency in documentation.**
-- **📦 Executes multi-threaded concurrent operations, enhancing the efficiency of document generation.**
-- **🔍 Offer a sustainable, automated documentation update method for team collaboration.**
+- **🕙 Executes multi-threaded concurrent operations, enhancing the efficiency of document generation.**
+- **👭 Offer a sustainable, automated documentation update method for team collaboration.**
 
 # 📦 Installation
 
@@ -29,16 +28,33 @@ $ python --version
 python 3.11.4
 ```
 Next, clone the project, create a virtual environment, and install dependencies within this environment.
+
 ```
 cd AI_doc
 conda create -n AI_doc python=3.11.4
 conda activate AI_doc
 pip install -r requirements.txt
 ```
+
 Then, configure the OpenAI API parameters in the config.yml file.
 For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
 
-At the beginning of the main function in runner.py, set the configuration file path (config_file) and the repository path (repo_path) where the documentation will be generated. It is recommended to use absolute paths.
+In the `config.yml` file, configure relevant parameters like OpenAI API, the destination repository path, document language (future support), and so on.
+
+## Run AI_doc
+
+Please use the following command in the main function of runner.py if you are generating documentation for the first time in the target repository:
+
+```
+runner.first_generate()
+```
+
+At this point, AI_doc will automatically generate a json file that maintains the global structure information for your target repository, and create a folder named Markdown_Docs in the root directory of your target repository to store the documentation.
+
+The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
+
+After you have generated the global documentation for the target repository for the first time, you can configure the target repository hook with **pre-commit** and maintain an internal documentation for the project seamlessly with your team!
+
 
 ## Configuring the Target Repository
 
@@ -53,7 +69,7 @@ Install pre-commit in the target repository to detect changes in the git reposit
 ```
 pip install pre-commit
 ```
-Create a file named .pre-commit-config.yaml in the root directory of the target repository. An example is as follows:
+Create a file named `.pre-commit-config.yaml` in the root directory of the target repository. An example is as follows:
 
 ```
 repos:
@@ -90,14 +106,15 @@ to submit your commit.
 
 # ✅ Future Work
 
-- [ ] Optimize the project structure and refine the responsibilities of classes.
-- [ ] Experiment with comparing the effects of prompts in Chinese and English.
-- [ ] Support the selection of documentation language.
-- [ ] Enable the recognition of relationships between objects.
+- [x] Optimize the project structure and refine the responsibilities of the classes
+- [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
+- [ ] Implement Black commit
+- [ ] Support the selection of document language
+- [x] Enable the identification of inter-object reference relationships
+- [x] **Bi-direct reference** Bi-directional reference construction topology
+- [ ] Open source
 
 # 📜 License
 
-
-
-
+# 📊 Citation
 
