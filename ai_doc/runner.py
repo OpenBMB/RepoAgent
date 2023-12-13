@@ -265,22 +265,41 @@ class Runner:
 
 
     def update_object(self, file, file_handler, obj_name):
-        for obj in file["objects"]:
-            if obj["name"] == obj_name:
-                code_info = {
-                    "type": obj["type"],
-                    "name": obj["name"],
-                    "code_content": obj["code_content"],
-                    "have_return": obj["have_return"],
-                    "code_start_line": obj["code_start_line"],
-                    "code_end_line": obj["code_end_line"],
-                    "parent": obj["parent"],
-                    "name_column": obj["name_column"]
-                }
-                response_message = self.chat_engine.generate_doc(code_info, file_handler)
-                obj["md_content"] = response_message.content
 
-                break
+        # 只要一个文件中的某一个对象发生了变更，这个文件中的其他对象的code_info内容（除了md_content）都需要改变
+        # 依靠再次识别这个文件的代码，更新其他对象的code_start_line等等可能被影响到的字段信息
+        file_structure_result = file_handler.generate_file_structure(file["file_path"])
+        # file_structure_result返回的是：
+        # {
+        #     "file_path": file_path,
+        #     "objects": json_objects
+        # }
+
+        new_objects = file_structure_result["objects"]
+        for new_obj in new_objects:
+            for obj in file["objects"]:
+                if obj["name"] == new_obj["name"]:
+                    obj["type"] = new_obj["type"]
+                    obj["code_start_line"] = new_obj["code_start_line"]
+                    obj["code_end_line"] = new_obj["code_end_line"]
+                    obj["parent"] = new_obj["parent"]
+                    obj["name_column"] = new_obj["name_column"]
+                
+                if obj["name"] == obj_name:
+                    code_info = {
+                        "type": obj["type"],
+                        "name": obj["name"],
+                        "code_content": obj["code_content"],
+                        "have_return": obj["have_return"],
+                        "code_start_line": obj["code_start_line"],
+                        "code_end_line": obj["code_end_line"],
+                        "parent": obj["parent"],
+                        "name_column": obj["name_column"]
+                    }
+                    response_message = self.chat_engine.generate_doc(code_info, file_handler)
+                    obj["md_content"] = response_message.content
+
+                    break
 
 
     def get_new_objects(self, file_handler):
