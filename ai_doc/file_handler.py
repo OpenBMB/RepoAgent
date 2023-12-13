@@ -61,6 +61,7 @@ class FileHandler:
             content (str): 文件内容
         """
         file_path = os.path.join(self.repo_path, file_path)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as file:
             file.write(content)
 

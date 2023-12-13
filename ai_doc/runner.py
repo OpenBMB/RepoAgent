@@ -71,12 +71,19 @@ class Runner:
         # 创建一个线程池
         # TODO: Jedi 库多线程调用会出错，待解决
         with ThreadPoolExecutor(max_workers=1) as executor: 
-            futures = []
+            logger.info(f"正在生成项目所有 {len(json_data['files'])}个 Python文件的文档...")
 
+            # 遍历json_data中的每个文件
             for file in json_data['files']:
+                futures = []
                 file_handler = FileHandler(CONFIG['repo_path'], os.path.relpath(file['file_path'], CONFIG['repo_path']))
 
-                for obj in file['objects']:
+                # 判断当前文件是否为空，如果为空则跳过：
+                if os.path.getsize(file['file_path']) == 0:
+                    continue
+
+                # 遍历文件中的每个对象
+                for index, obj in enumerate(file['objects']):
                     code_info = {
                         # 提取obj中的信息
                         "type": obj["type"],
@@ -89,26 +96,29 @@ class Runner:
                         "name_column": obj["name_column"]
                     }
 
-                    # 提交任务到线程池，并将future和对应的obj存储为元组
+                    # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
                     future = executor.submit(self.chat_engine.generate_doc, code_info, file_handler)
-                    futures.append((future, obj))
+                    futures.append((future, obj, index))
 
-                # 收集结果
-                for future, obj in futures:
+                # 收集响应结果
+                for future, obj, index in futures:
                     response_message = future.result()  # 等待结果
-                    obj["md_content"] = response_message.content
+                    logger.info(f" -- 正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
+                    file['objects'][index]["md_content"] = response_message.content
+                
+                futures = []
 
+                # 将json_data写回文件
+                with open(self.project_manager.project_hierachy, 'w') as f:
+                    json.dump(json_data, f, indent=4, ensure_ascii=False)
 
-                # 转换json内容到markdown
+                # 对于每个文件，转换json内容到markdown
                 markdown = file_handler.convert_to_markdown_file(file_path=file['file_path'])
                 # 写入markdown内容到.md文件
                 file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
                 logger.info(f"已生成 {file_handler.file_path} 的Markdown文档。")
 
-        # 将json_data写回文件
-        with open(self.project_manager.project_hierachy, 'w') as f:
-            json.dump(json_data, f, indent=4, ensure_ascii=False)
-
+            
 
     def git_commit(self, file_path, commit_message):
         try:
