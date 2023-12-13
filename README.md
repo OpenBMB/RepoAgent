@@ -41,6 +41,8 @@ For details on obtaining these, please refer to [OpenAI API](https://beta.openai
 
 In the `config.yml` file, configure relevant parameters like OpenAI API, the destination repository path, document language (future support), and so on.
 
+# 📖 Quick Start
+
 ## Run AI_doc
 
 Please use the following command in the main function of runner.py if you are generating documentation for the first time in the target repository:
@@ -101,8 +103,6 @@ git commit -m "your commit message" --no-verify
 git push
 ```
 to submit your commit.
-
-# 📖 Quick Start
 
 # ✅ Future Work
 

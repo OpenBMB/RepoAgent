@@ -21,7 +21,7 @@ AI_doc是一个由大型语言模型（LLMs）驱动的开源项目，旨在提�
 
 # 📍 安装
 ## 配置AI_doc
-首先，确保你的机器安装了python3.9以上的版本
+首先，确保您的机器安装了python3.9以上的版本
 ```
 $ python --version
 python 3.11.4
@@ -38,6 +38,8 @@ pip install -r requirements.txt
 具体获取方法请参考[OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys)。
 
 在`config.yml`文件中，配置OpenAI API的相关参数信息、目标仓库的路径、文档语言（未来支持）等。
+
+# 📖 快速开始
 
 ## 运行AI_doc
 在runner.py中，如果您是第一次对目标仓库生成文档，请在main函数中使用以下命令：
@@ -80,18 +82,18 @@ pre-commit install
 ```
 这样，每次git commit时，都会触发AI_doc的钩子，自动检测目标仓库中的变更，并生成对应的文档。
 接着，可以对目标仓库进行一些修改，例如在目标仓库中添加一个新的文件，或者修改一个已有的文件。
-你只需要正常执行git的工作流程: git add, git commit, git push
-AI_doc hook会在git commit时自动触发，检测前一步你git add的文件，并生成对应的文档。
+您只需要正常执行git的工作流程: git add, git commit, git push
+AI_doc hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
 
 执行后，由于AI_doc更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
 ![Execution Result](assets/images/execution_result.png)
-此时，hook已经正确执行了文档生成的操作，并在你的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
-接下来你只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
+此时，hook已经正确执行了文档生成的操作，并在您的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
+接下来您只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
 ```
 git commit -m "your commit message" --no-verify
 git push
 ```
-提交你的commit即可。
+提交您的commit即可。
 
 # ✅ 未来工作
 
