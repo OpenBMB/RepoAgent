@@ -130,7 +130,7 @@ class ChatEngine:
                     temperature=0,
                 )
 
-                response_message = response["choices"][0].message
+                response_message = response.choices[0].message
                 # print("response.choices[0]:\n",response.choices[0])
 
                 return response_message
@@ -141,11 +141,11 @@ class ChatEngine:
                 time.sleep(7)
                 if attempt + 1 == max_attempts:
                     raise
-            # except Exception as e:
-            #     print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
-            #     # 等待10秒后重试
-            #     time.sleep(10)
-            #     if attempt + 1 == max_attempts:
-            #         raise
+            except Exception as e:
+                print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
+                # 等待10秒后重试
+                time.sleep(10)
+                if attempt + 1 == max_attempts:
+                    raise
 
 
