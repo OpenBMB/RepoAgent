@@ -35,7 +35,11 @@ class ChangeDetector:
         staged_files = {}
 
         # 检测已暂存的变更
-        diffs = repo.index.diff('HEAD')
+        # 请注意！GitPython库的逻辑和git不同。这里的R=True参数的作用是反转版本对比逻辑。
+        # 在GitPython库中，repo.index.diff('HEAD')是将暂存区（index）作为新状态（new state）与原本HEAD的提交（old state）进行比较，这意味着，如果现在的暂存区中有一个新文件，它会显示为在HEAD中不存在，即被“删除”。
+        # R=True就是把这个逻辑反转过来，把上一次的提交（HEAD）正确地作为旧状态与现在的暂存区（新状态）（Index）进行比较。在这种情况下，暂存区中的新文件会正确地显示为新增，因为它在HEAD中不存在。
+        diffs = repo.index.diff('HEAD',R=True) 
+
         for diff in diffs:
             if diff.change_type in ['A', 'M'] and diff.a_path.endswith('.py'):
                 is_new_file = diff.change_type == 'A'
@@ -44,40 +48,38 @@ class ChangeDetector:
         return staged_files
 
 
-    def get_changed_pys(self):
-        """
-        根据仓库仓库实例，获取仓库中变更的python文件
+    # def get_changed_pys(self):
+    #     """
+    #     根据仓库仓库实例，获取仓库中变更的python文件
         
-        这个函数会追踪到 Git 中以下状态的 Python 文件：
-        1. 未暂存的变更：这包括新添加的文件（A）和已修改的文件（M）。这些文件的变更已经发生，但还没有被添加到 Git 的暂存区。
+    #     这个函数会追踪到 Git 中以下状态的 Python 文件：
+    #     1. 未暂存的变更：这包括新添加的文件（A）和已修改的文件（M）。这些文件的变更已经发生，但还没有被添加到 Git 的暂存区。
 
-        2. 未跟踪的文件：这些是新创建的文件，还没有被 Git 跟踪。这些文件不在 Git 的暂存区，也不在 Git 的版本控制系统中。
+    #     2. 未跟踪的文件：这些是新创建的文件，还没有被 Git 跟踪。这些文件不在 Git 的暂存区，也不在 Git 的版本控制系统中。
 
+    #     Returns:
+    #         dict: 变更的python文件字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的
 
+    #     输出示例：
+    #     {'XAgent/engines/pipeline.py': False, 'XAgent/models/plan.py': True}
+    #     """
+    #     repo = self.repo
+    #     changed_files = {}
+
+    #     # 检测未暂存的变更
+    #     diffs = repo.index.diff(None) + repo.index.diff('HEAD')
+    #     for diff in diffs:
+    #         # a_path是变更的文件路径
+    #         if diff.change_type in ['A', 'M'] and diff.a_path.endswith('.py'):  # A表示新增，M表示修改
+    #             is_new_file = diff.change_type == 'A'
+    #             changed_files[diff.a_path] = is_new_file
         
-        Returns:
-            dict: 变更的python文件字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的
+    #     # 检测未跟踪的文件（新文件）
+    #     untracked_files = [file for file in repo.untracked_files if file.endswith('.py') and file not in changed_files]
+    #     for file in untracked_files:
+    #         changed_files[file] = True
 
-        输出示例：
-        {'XAgent/engines/pipeline.py': False, 'XAgent/models/plan.py': True}
-        """
-        repo = self.repo
-        changed_files = {}
-
-        # 检测未暂存的变更
-        diffs = repo.index.diff(None) + repo.index.diff('HEAD')
-        for diff in diffs:
-            # a_path是变更的文件路径
-            if diff.change_type in ['A', 'M'] and diff.a_path.endswith('.py'):  # A表示新增，M表示修改
-                is_new_file = diff.change_type == 'A'
-                changed_files[diff.a_path] = is_new_file
-        
-        # 检测未跟踪的文件（新文件）
-        untracked_files = [file for file in repo.untracked_files if file.endswith('.py') and file not in changed_files]
-        for file in untracked_files:
-            changed_files[file] = True
-
-        return changed_files
+    #     return changed_files
 
     def get_file_diff(self, file_path, is_new_file):
         """
@@ -172,7 +174,8 @@ class ChangeDetector:
     
     
 if __name__ == "__main__":
-    repo_path = "path/to/your/repo"
+    
+    repo_path = "/path/to/your/repo/"
     change_detector = ChangeDetector(repo_path)
     changed_files = change_detector.get_staged_pys()
     print(f"\nchanged_files:{changed_files}\n\n")
@@ -181,5 +184,5 @@ if __name__ == "__main__":
         # print("changed_lines:",changed_lines)
         file_handler = FileHandler(repo_path=repo_path, file_path=file_path)
         changes_in_pyfile = change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(file_handler.read_file()))
-        print("Changes in Structures:\n", changes_in_pyfile)
+        print(f"Changes in {file_path} Structures:{changes_in_pyfile}\n")
 
