@@ -178,7 +178,7 @@ class Runner:
         json_data["files"].append(new_item)
         # 将新的项写入json文件
         with open(self.project_manager.project_hierachy, 'w') as f:
-            json.dump(json_data, f, indent=4, ensure_ascii=False)
+            json.dump(z, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(file_path=os.path.join(self.project_manager.repo_path, file_handler.file_path))
@@ -214,6 +214,7 @@ class Runner:
         # 标记是否找到了对应的文件
         found = False
         for i, file in enumerate(json_data["files"]):
+            print("现在遍历到的文件是：", file["file_path"])
             if file["file_path"] == os.path.join(self.project_manager.repo_path, file_handler.file_path): # 找到了对应文件
                 # 更新json文件中的内容
                 json_data["files"][i] = self.update_existing_item(file, file_handler, changes_in_pyfile)
@@ -236,6 +237,9 @@ class Runner:
         if not found:
             self.add_new_item(file_handler,json_data)
 
+        # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
+        self.change_detector.add_unstaged_mds()
+        
 
     def update_existing_item(self, file, file_handler, changes_in_pyfile):
         
@@ -250,56 +254,86 @@ class Runner:
                     break
 
         # 处理新增/更改的对象
+        referencer_list = []
+        file_structure_result = file_handler.generate_file_structure(file["file_path"]) # 生成文件的结构信息
+        new_objects = file_structure_result["objects"] # 获得当前文件中的所有对象
+
+        # file_structure_result返回的是：
+        # {
+        #     "file_path": file_path,
+        #     "objects": json_objects
+        # }
+        print(f"Processing added objects: {changes_in_pyfile['added']}")
+        for obj_name, _ in changes_in_pyfile['added']:
+            print(f"Processing object: {obj_name}")
+            for new_object in new_objects: # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
+                if obj_name == new_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
+                    # 获取每个需要生成文档的对象的引用者
+                    referencer_obj = {
+                        "obj_name": obj_name,
+                        "obj_referencer_list": self.project_manager.find_all_referencer(
+                            variable_name=new_object["name"],
+                            file_path=file["file_path"],
+                            line_number=new_object["code_start_line"],
+                            column_number=new_object["name_column"]
+                        )
+                    }
+                    referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
+        print(f"\nreferencer_list: {referencer_list}\n")
+
         with ThreadPoolExecutor(max_workers=5) as executor:
+            # 通过线程池并发执行
             futures = []
-            for changed_obj in changes_in_pyfile['added']:
-                future = executor.submit(self.update_object, file, file_handler, changed_obj[0])
-                logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
-                futures.append(future)
+            for changed_obj in changes_in_pyfile['added']: # 对于每一个待处理的对象
+                for ref_obj in referencer_list:
+                    if changed_obj[0] == ref_obj["obj_name"]: # 在referencer_list中找到它的引用者字典！
+                        future = executor.submit(self.update_object, file, file_handler, changed_obj[0], new_objects, ref_obj["obj_referencer_list"])
+                        logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
+                        futures.append(future)
 
             for future in futures:
                 future.result()
 
         # 更新传入的file参数
         return file
+    
 
-
-    def update_object(self, file, file_handler, obj_name):
+    def update_object(self, file, file_handler, obj_name, new_objects, obj_referencer_list):
 
         # 只要一个文件中的某一个对象发生了变更，这个文件中的其他对象的code_info内容（除了md_content）都需要改变
         # 依靠再次识别这个文件的代码，更新其他对象的code_start_line等等可能被影响到的字段信息
-        file_structure_result = file_handler.generate_file_structure(file["file_path"])
-        # file_structure_result返回的是：
-        # {
-        #     "file_path": file_path,
-        #     "objects": json_objects
-        # }
+        try:
+            for new_obj in new_objects:
+    
+                for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
+                    if obj["name"] == new_obj["name"]: 
+                        print(obj["name"])
+                        obj["type"] = new_obj["type"]
+                        obj["code_start_line"] = new_obj["code_start_line"]
+                        obj["code_end_line"] = new_obj["code_end_line"]
+                        obj["parent"] = new_obj["parent"]
+                        obj["name_column"] = new_obj["name_column"]
+                    
+                    if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
+                        # print(obj)
+                        code_info = {
+                            "type": obj["type"],
+                            "name": obj["name"],
+                            "code_content": obj["code_content"],
+                            "have_return": obj["have_return"],
+                            "code_start_line": obj["code_start_line"],
+                            "code_end_line": obj["code_end_line"],
+                            "parent": obj["parent"],
+                            "name_column": obj["name_column"]
+                        }
+                        print("obj_name:", obj_name)
+                        # response_message = self.chat_engine.generate_doc(code_info, file_handler, obj_referencer_list)
+                        obj["md_content"] = "response_message.content"
 
-        new_objects = file_structure_result["objects"]
-        for new_obj in new_objects:
-            for obj in file["objects"]:
-                if obj["name"] == new_obj["name"]:
-                    obj["type"] = new_obj["type"]
-                    obj["code_start_line"] = new_obj["code_start_line"]
-                    obj["code_end_line"] = new_obj["code_end_line"]
-                    obj["parent"] = new_obj["parent"]
-                    obj["name_column"] = new_obj["name_column"]
-                
-                if obj["name"] == obj_name:
-                    code_info = {
-                        "type": obj["type"],
-                        "name": obj["name"],
-                        "code_content": obj["code_content"],
-                        "have_return": obj["have_return"],
-                        "code_start_line": obj["code_start_line"],
-                        "code_end_line": obj["code_end_line"],
-                        "parent": obj["parent"],
-                        "name_column": obj["name_column"]
-                    }
-                    response_message = self.chat_engine.generate_doc(code_info, file_handler)
-                    obj["md_content"] = response_message.content
-
-                    break
+                        break
+            print(f"Finished update for {obj_name}.")
+        except Exception as e:
+            print(f"Exception occurred while updating {obj_name}: {e}")
 
 
     def get_new_objects(self, file_handler):
@@ -331,9 +365,8 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-
-    # runner.run()
-    runner.first_generate()
+    runner.run()
+    # runner.first_generate()
 
     logger.info("文档任务完成。")
 

@@ -48,39 +48,6 @@ class ChangeDetector:
         return staged_files
 
 
-    # def get_changed_pys(self):
-    #     """
-    #     根据仓库仓库实例，获取仓库中变更的python文件
-        
-    #     这个函数会追踪到 Git 中以下状态的 Python 文件：
-    #     1. 未暂存的变更：这包括新添加的文件（A）和已修改的文件（M）。这些文件的变更已经发生，但还没有被添加到 Git 的暂存区。
-
-    #     2. 未跟踪的文件：这些是新创建的文件，还没有被 Git 跟踪。这些文件不在 Git 的暂存区，也不在 Git 的版本控制系统中。
-
-    #     Returns:
-    #         dict: 变更的python文件字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的
-
-    #     输出示例：
-    #     {'XAgent/engines/pipeline.py': False, 'XAgent/models/plan.py': True}
-    #     """
-    #     repo = self.repo
-    #     changed_files = {}
-
-    #     # 检测未暂存的变更
-    #     diffs = repo.index.diff(None) + repo.index.diff('HEAD')
-    #     for diff in diffs:
-    #         # a_path是变更的文件路径
-    #         if diff.change_type in ['A', 'M'] and diff.a_path.endswith('.py'):  # A表示新增，M表示修改
-    #             is_new_file = diff.change_type == 'A'
-    #             changed_files[diff.a_path] = is_new_file
-        
-    #     # 检测未跟踪的文件（新文件）
-    #     untracked_files = [file for file in repo.untracked_files if file.endswith('.py') and file not in changed_files]
-    #     for file in untracked_files:
-    #         changed_files[file] = True
-
-    #     return changed_files
-
     def get_file_diff(self, file_path, is_new_file):
         """
         函数的作用是获取某个文件的变更内容。对于新文件，使用 git diff --staged 获取差异。
@@ -172,9 +139,34 @@ class ChangeDetector:
                         changes_in_structures[change_type].add((name, parent_structure))
         return changes_in_structures
     
+    def get_unstaged_mds(self):
+        """
+        获取仓库中未暂存的文件变更。
+        """
+        unstaged_files = []
+        diffs = self.repo.index.diff(None)
+        untracked_files = self.repo.untracked_files
+        for diff in diffs + untracked_files:
+            if isinstance(diff, git.Diff):
+                file_path = diff.b_path
+            else:
+                file_path = diff
+            unstaged_files.append(file_path)
+        return unstaged_files
+    
+    def add_unstaged_mds(self):
+        """
+        将所有未暂存的文件添加到暂存区。
+        """
+        unstaged_markdown_files = self.get_unstaged_mds()
+        for file_path in unstaged_markdown_files:
+            add_command = f'git -C {self.repo.working_dir} add "{file_path}"'
+            subprocess.run(add_command, shell=True, check=True)
+        return unstaged_markdown_files
+    
     
 if __name__ == "__main__":
-    
+
     repo_path = "/path/to/your/repo/"
     change_detector = ChangeDetector(repo_path)
     changed_files = change_detector.get_staged_pys()
