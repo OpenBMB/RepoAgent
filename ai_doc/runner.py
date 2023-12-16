@@ -1,14 +1,13 @@
-import os,sys,re,json
-import file_handler as file_handler
-from file_handler import FileHandler
-from change_detector import ChangeDetector
-from project_manager import ProjectManager
-from chat_engine import ChatEngine
+import os, json
+from .file_handler import FileHandler
+from .change_detector import ChangeDetector
+from .project_manager import ProjectManager
+from .chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 import logging
-from config import CONFIG
+from .config import CONFIG
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -129,39 +128,41 @@ class Runner:
 
 
     def run(self):
-            """
-            Runs the document update process.
+        """
+        Runs the document update process.
 
-            This method detects the changed Python files, processes each file, and updates the documents accordingly.
+        This method detects the changed Python files, processes each file, and updates the documents accordingly.
 
-            Returns:
-                None
-            """
-            # 首先检测是否存在全局的 project_hierachy.json 结构信息
-            abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
-            if not os.path.exists(abs_project_hierachy_path):
-                self.generate_hierachy()
-                logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}")
+        Returns:
+            None
+        """
+        # 首先检测是否存在全局的 project_hierachy.json 结构信息
+        abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
+        if not os.path.exists(abs_project_hierachy_path):
+            self.generate_hierachy()
+            logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}")
+    
+        changed_files = self.change_detector.get_staged_pys()
+
+        if len(changed_files) == 0:
+            logger.info("没有检测到任何变更，不需要更新文档。")
+            return
         
-            changed_files = self.change_detector.get_staged_pys()
+        else:
+            logger.info(f"检测到暂存区中变更的文件：{changed_files}")
 
-            if len(changed_files) == 0:
-                logger.info("没有检测到任何变更，不需要更新文档。")
-                return
-            
-            else:
-                logger.info(f"检测到暂存区中变更的文件：{changed_files}")
+        repo_path = self.project_manager.repo_path
 
-            repo_path = self.project_manager.repo_path
+        for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
 
-            for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
-
-                # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
-                # 判断当前python文件内容是否为空，如果为空则跳过：
-                if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
-                    continue
-                # 否则，根据文件路径处理变更的文件
-                self.process_file_changes(repo_path, file_path, is_new_file)
+            # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
+            # 判断当前python文件内容是否为空，如果为空则跳过：
+            if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
+                continue
+            # 否则，根据文件路径处理变更的文件
+            self.process_file_changes(repo_path, file_path, is_new_file)
+        
+        logger.info(f'添加了 {self.change_detector.add_unstaged_mds()} 到暂存区') 
 
 
     def add_new_item(self, file_handler, json_data):
@@ -332,8 +333,8 @@ if __name__ == "__main__":
     runner = Runner()
     
 
-    # runner.run()
-    runner.first_generate()
+    runner.run()
+    # runner.first_generate()
 
     logger.info("文档任务完成。")
 
