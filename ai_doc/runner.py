@@ -1,13 +1,13 @@
 import os, json
-from .file_handler import FileHandler
-from .change_detector import ChangeDetector
-from .project_manager import ProjectManager
-from .chat_engine import ChatEngine
+from ai_doc.file_handler import FileHandler
+from ai_doc.change_detector import ChangeDetector
+from ai_doc.project_manager import ProjectManager
+from ai_doc.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 import logging
-from .config import CONFIG
+from ai_doc.config import CONFIG
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -332,9 +332,9 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-
+    if CONFIG["first_generate"]:
+        runner.first_generate()
     runner.run()
-    # runner.first_generate()
 
     logger.info("文档任务完成。")
 
