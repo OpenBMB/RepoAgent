@@ -68,55 +68,62 @@ class Runner:
         with open(self.project_manager.project_hierachy, 'r') as f:
             json_data = json.load(f)
 
-        # 创建一个线程池
-        # TODO: Jedi 库多线程调用会出错，待解决
-        with ThreadPoolExecutor(max_workers=1) as executor: 
-            logger.info(f"正在生成项目所有 {len(json_data['files'])}个 Python文件的文档...")
+        # 遍历json_data中的每个文件
+        for file in json_data['files']:
 
-            # 遍历json_data中的每个文件
-            for file in json_data['files']:
+            # 判断当前文件是否为空，如果为空则跳过：
+            if os.path.getsize(file['file_path']) == 0:
+                continue
+
+            # 对于每个单独文件里的每一个对象：获取其引用者列表
+            referencer_list = []
+            
+            for obj in file['objects']:
+                referencer_obj = {
+                    "obj_name": obj["name"],
+                    "obj_referencer_list": self.project_manager.find_all_referencer(
+                        variable_name=obj["name"],
+                        file_path=file["file_path"],
+                        line_number=obj["code_start_line"],
+                        column_number=obj["name_column"]
+                    )
+                }
+                referencer_list.append(referencer_obj)
+                # print(f"正在识别 {file['file_path']}中的{obj['name']} 的引用者列表...")
+
+            
+            # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
+            with ThreadPoolExecutor(max_workers=5) as executor: 
+
                 futures = []
                 file_handler = FileHandler(CONFIG['repo_path'], os.path.relpath(file['file_path'], CONFIG['repo_path']))
 
-                # 判断当前文件是否为空，如果为空则跳过：
-                if os.path.getsize(file['file_path']) == 0:
-                    continue
-
                 # 遍历文件中的每个对象
                 for index, obj in enumerate(file['objects']):
-                    code_info = {
-                        # 提取obj中的信息
-                        "type": obj["type"],
-                        "name": obj["name"],
-                        "code_content": obj["code_content"],
-                        "have_return": obj["have_return"],
-                        "code_start_line": obj["code_start_line"],
-                        "code_end_line": obj["code_end_line"],
-                        "parent": obj["parent"],
-                        "name_column": obj["name_column"]
-                    }
 
-                    # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
-                    future = executor.submit(self.chat_engine.generate_doc, code_info, file_handler)
-                    futures.append((future, obj, index))
+                    for ref_obj in referencer_list:
+                        if ref_obj["obj_name"] == obj["name"]:
+                            # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
+                            future = executor.submit(self.chat_engine.generate_doc, obj, file_handler, ref_obj["obj_referencer_list"])
+                            futures.append((future, obj, index))
 
                 # 收集响应结果
                 for future, obj, index in futures:
-                    response_message = future.result()  # 等待结果
                     logger.info(f" -- 正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
+                    response_message = future.result()  # 等待结果
                     file['objects'][index]["md_content"] = response_message.content
                 
                 futures = []
 
-                # 将json_data写回文件
-                with open(self.project_manager.project_hierachy, 'w') as f:
-                    json.dump(json_data, f, indent=4, ensure_ascii=False)
+            # 在对文件的循环内，将json_data写回文件
+            with open(self.project_manager.project_hierachy, 'w') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
 
-                # 对于每个文件，转换json内容到markdown
-                markdown = file_handler.convert_to_markdown_file(file_path=file['file_path'])
-                # 写入markdown内容到.md文件
-                file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-                logger.info(f"已生成 {file_handler.file_path} 的Markdown文档。")
+            # 对于每个文件，转换json内容到markdown
+            markdown = file_handler.convert_to_markdown_file(file_path=file['file_path'])
+            # 写入markdown内容到.md文件
+            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
 
             
 
@@ -171,14 +178,15 @@ class Runner:
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
             code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-            md_content = self.chat_engine.generate_doc(code_info, file_handler)
+            # md_content = self.chat_engine.generate_doc(code_info, file_handler)
+            md_content = "response_message.content"
             code_info["md_content"] = md_content
             new_item["objects"].append(code_info)
 
         json_data["files"].append(new_item)
         # 将新的项写入json文件
         with open(self.project_manager.project_hierachy, 'w') as f:
-            json.dump(z, f, indent=4, ensure_ascii=False)
+            json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(file_path=os.path.join(self.project_manager.repo_path, file_handler.file_path))
@@ -214,7 +222,10 @@ class Runner:
         # 标记是否找到了对应的文件
         found = False
         for i, file in enumerate(json_data["files"]):
-            print("现在遍历到的文件是：", file["file_path"])
+            # print("现在遍历到的文件是：", file["file_path"])
+            # print("现在遍历到的文件的对象是：", [obj["name"] for obj in file["objects"]])
+            # print("现在遍历到的文件的对象的数量是：", len(file["objects"]))
+            # print("\n\n")
             if file["file_path"] == os.path.join(self.project_manager.repo_path, file_handler.file_path): # 找到了对应文件
                 # 更新json文件中的内容
                 json_data["files"][i] = self.update_existing_item(file, file_handler, changes_in_pyfile)
@@ -254,18 +265,36 @@ class Runner:
                     break
 
         # 处理新增/更改的对象
+        # print(f"Processing added objects: {changes_in_pyfile['added']}")
+
         referencer_list = []
         file_structure_result = file_handler.generate_file_structure(file["file_path"]) # 生成文件的结构信息
-        new_objects = file_structure_result["objects"] # 获得当前文件中的所有对象
 
         # file_structure_result返回的是：
         # {
         #     "file_path": file_path,
         #     "objects": json_objects
         # }
-        print(f"Processing added objects: {changes_in_pyfile['added']}")
+
+        new_objects = file_structure_result["objects"] # 获得当前文件中的所有对象， 这里其实就是当前文件更新之后的结构了
+        new_info_dict = {obj["name"]: obj for obj in new_objects}
+
+        # 先更新全局文件结构信息，比如代码起始行\终止行等
+        # Explain:
+        # 只要一个文件中的某一个对象发生了变更，这个文件中的其他对象的code_info内容（除了md_content）都需要改变
+        # 依靠再次识别这个文件的代码，更新其他对象的code_start_line等等可能被影响到的字段信息
+        for obj in file["objects"]:
+            if obj["name"] in new_info_dict:
+                new_info = new_info_dict[obj["name"]]
+                obj["type"] = new_info["type"]
+                obj["code_start_line"] = new_info["code_start_line"]
+                obj["code_end_line"] = new_info["code_end_line"]
+                obj["parent"] = new_info["parent"]
+                obj["name_column"] = new_info["name_column"]
+
+        # 对于每一个对象：获取其引用者列表
         for obj_name, _ in changes_in_pyfile['added']:
-            print(f"Processing object: {obj_name}")
+            # print(f"Processing object: {obj_name}")
             for new_object in new_objects: # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
                 if obj_name == new_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
                     # 获取每个需要生成文档的对象的引用者
@@ -279,7 +308,8 @@ class Runner:
                         )
                     }
                     referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
-        print(f"\nreferencer_list: {referencer_list}\n")
+        # print(f"\nreferencer_list: {referencer_list}\n")
+        
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             # 通过线程池并发执行
@@ -291,6 +321,7 @@ class Runner:
                         logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
                         futures.append(future)
 
+            # print("futures 中的任务数量是：",len(futures))
             for future in futures:
                 future.result()
 
@@ -300,38 +331,35 @@ class Runner:
 
     def update_object(self, file, file_handler, obj_name, new_objects, obj_referencer_list):
 
-        # 只要一个文件中的某一个对象发生了变更，这个文件中的其他对象的code_info内容（除了md_content）都需要改变
-        # 依靠再次识别这个文件的代码，更新其他对象的code_start_line等等可能被影响到的字段信息
-        try:
-            for new_obj in new_objects:
-    
-                for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
-                    if obj["name"] == new_obj["name"]: 
-                        print(obj["name"])
-                        obj["type"] = new_obj["type"]
-                        obj["code_start_line"] = new_obj["code_start_line"]
-                        obj["code_end_line"] = new_obj["code_end_line"]
-                        obj["parent"] = new_obj["parent"]
-                        obj["name_column"] = new_obj["name_column"]
-                    
-                    if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
-                        # print(obj)
-                        code_info = {
-                            "type": obj["type"],
-                            "name": obj["name"],
-                            "code_content": obj["code_content"],
-                            "have_return": obj["have_return"],
-                            "code_start_line": obj["code_start_line"],
-                            "code_end_line": obj["code_end_line"],
-                            "parent": obj["parent"],
-                            "name_column": obj["name_column"]
-                        }
-                        print("obj_name:", obj_name)
-                        # response_message = self.chat_engine.generate_doc(code_info, file_handler, obj_referencer_list)
-                        obj["md_content"] = "response_message.content"
+        new_obj_names = [new_obj["name"] for new_obj in new_objects]
+        # print(f"\nnew_obj_names: {new_obj_names}")
 
-                        break
-            print(f"Finished update for {obj_name}.")
+        obj_names = [obj["name"] for obj in file["objects"]]
+        # print(f"obj_names: {obj_names}")
+
+        try:
+
+            for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
+
+                if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
+                    # print(f"\n找到了需要生成文档的对象！是：{obj_name}\n")
+                    code_info = {
+                        "type": obj["type"],
+                        "name": obj["name"],
+                        "code_content": obj["code_content"],
+                        "have_return": obj["have_return"],
+                        "code_start_line": obj["code_start_line"],
+                        "code_end_line": obj["code_end_line"],
+                        "parent": obj["parent"],
+                        "name_column": obj["name_column"]
+                    }
+
+                    response_message = self.chat_engine.generate_doc(code_info, file_handler, obj_referencer_list)
+                    print(f"正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
+                    obj["md_content"] = response_message.content
+                    break
+
+            # print(f"Finished update for {obj_name}.")
         except Exception as e:
             print(f"Exception occurred while updating {obj_name}: {e}")
 
@@ -365,8 +393,9 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-    runner.run()
-    # runner.first_generate()
+    # runner.run()
+    runner.first_generate()
+    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 
