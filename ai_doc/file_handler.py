@@ -25,6 +25,13 @@ class FileHandler:
             content = file.read()
         return content
 
+    @staticmethod
+    def remove_leading_back_slashes(file_path: str) -> str:
+        while file_path.startswith('/'):
+            # 移除开头的 '/'
+            file_path = file_path[1:]
+        return file_path
+
     def get_obj_code_info(self, code_type, code_name, start_line, end_line, parent, file_path = None):
 
         code_info = {}
@@ -63,9 +70,7 @@ class FileHandler:
         """
 
         # 确保file_path是相对路径
-        if file_path.startswith('/'):
-            # 移除开头的 '/'
-            file_path = file_path[1:]
+        file_path = self.remove_leading_back_slashes(file_path=file_path)
             
         file_path = os.path.join(self.repo_path, file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)

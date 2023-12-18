@@ -123,6 +123,11 @@ class Runner:
             file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
 
+        # 生成一个标志文件, 表示已经运行过 `first_generate()` 了.
+        with open(os.path.join(self.project_manager.repo_path,
+                                           FileHandler.remove_leading_back_slashes(CONFIG['Markdown_Docs_folder']),
+                                           '.first-gen.aidoc'), 'w'):
+            pass
             
 
     def git_commit(self, file_path, commit_message):
@@ -142,7 +147,14 @@ class Runner:
         Returns:
             None
         """
-        # 首先检测是否存在全局的 project_hierachy.json 结构信息
+        # 先检查是否成功运行过 `first_generate()`.
+        if not os.path.exists(os.path.join(self.project_manager.repo_path,
+                                           FileHandler.remove_leading_back_slashes(CONFIG['Markdown_Docs_folder']),
+                                           '.first-gen.aidoc')):
+            self.first_generate()
+            return
+
+        # 再先检测是否存在全局的 project_hierachy.json 结构信息
         abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
         if not os.path.exists(abs_project_hierachy_path):
             self.generate_hierachy()

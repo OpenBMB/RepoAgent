@@ -28,4 +28,3 @@ project_hierachy: .project_hierachy.json
 Markdown_Docs_folder: /Markdown_Docs
 
 language: en
-first_generate: True
