@@ -1,11 +1,10 @@
-import os,sys,re,json
+import os, json
 import file_handler as file_handler
 from file_handler import FileHandler
 from change_detector import ChangeDetector
 from project_manager import ProjectManager
 from chat_engine import ChatEngine
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import yaml
+from concurrent.futures import ThreadPoolExecutor
 import subprocess
 import logging
 from config import CONFIG
@@ -89,7 +88,6 @@ class Runner:
                     )
                 }
                 referencer_list.append(referencer_obj)
-                # print(f"正在识别 {file['file_path']}中的{obj['name']} 的引用者列表...")
 
             
             # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
@@ -178,8 +176,7 @@ class Runner:
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
             code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-            # md_content = self.chat_engine.generate_doc(code_info, file_handler)
-            md_content = "response_message.content"
+            md_content = self.chat_engine.generate_doc(code_info, file_handler)
             code_info["md_content"] = md_content
             new_item["objects"].append(code_info)
 
@@ -222,10 +219,7 @@ class Runner:
         # 标记是否找到了对应的文件
         found = False
         for i, file in enumerate(json_data["files"]):
-            # print("现在遍历到的文件是：", file["file_path"])
-            # print("现在遍历到的文件的对象是：", [obj["name"] for obj in file["objects"]])
-            # print("现在遍历到的文件的对象的数量是：", len(file["objects"]))
-            # print("\n\n")
+
             if file["file_path"] == os.path.join(self.project_manager.repo_path, file_handler.file_path): # 找到了对应文件
                 # 更新json文件中的内容
                 json_data["files"][i] = self.update_existing_item(file, file_handler, changes_in_pyfile)
@@ -264,9 +258,6 @@ class Runner:
                     logger.info(f"已删除 {obj_name} 对象。")
                     break
 
-        # 处理新增/更改的对象
-        # print(f"Processing added objects: {changes_in_pyfile['added']}")
-
         referencer_list = []
         file_structure_result = file_handler.generate_file_structure(file["file_path"]) # 生成文件的结构信息
 
@@ -294,7 +285,7 @@ class Runner:
 
         # 对于每一个对象：获取其引用者列表
         for obj_name, _ in changes_in_pyfile['added']:
-            # print(f"Processing object: {obj_name}")
+
             for new_object in new_objects: # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
                 if obj_name == new_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
                     # 获取每个需要生成文档的对象的引用者
@@ -308,7 +299,6 @@ class Runner:
                         )
                     }
                     referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
-        # print(f"\nreferencer_list: {referencer_list}\n")
         
 
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -317,11 +307,10 @@ class Runner:
             for changed_obj in changes_in_pyfile['added']: # 对于每一个待处理的对象
                 for ref_obj in referencer_list:
                     if changed_obj[0] == ref_obj["obj_name"]: # 在referencer_list中找到它的引用者字典！
-                        future = executor.submit(self.update_object, file, file_handler, changed_obj[0], new_objects, ref_obj["obj_referencer_list"])
+                        future = executor.submit(self.update_object, file, file_handler, changed_obj[0], ref_obj["obj_referencer_list"])
                         logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
                         futures.append(future)
 
-            # print("futures 中的任务数量是：",len(futures))
             for future in futures:
                 future.result()
 
@@ -329,37 +318,18 @@ class Runner:
         return file
     
 
-    def update_object(self, file, file_handler, obj_name, new_objects, obj_referencer_list):
-
-        new_obj_names = [new_obj["name"] for new_obj in new_objects]
-        # print(f"\nnew_obj_names: {new_obj_names}")
-
-        obj_names = [obj["name"] for obj in file["objects"]]
-        # print(f"obj_names: {obj_names}")
+    def update_object(self, file, file_handler, obj_name, obj_referencer_list):
 
         try:
 
             for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
 
                 if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
-                    # print(f"\n找到了需要生成文档的对象！是：{obj_name}\n")
-                    code_info = {
-                        "type": obj["type"],
-                        "name": obj["name"],
-                        "code_content": obj["code_content"],
-                        "have_return": obj["have_return"],
-                        "code_start_line": obj["code_start_line"],
-                        "code_end_line": obj["code_end_line"],
-                        "parent": obj["parent"],
-                        "name_column": obj["name_column"]
-                    }
 
-                    response_message = self.chat_engine.generate_doc(code_info, file_handler, obj_referencer_list)
-                    print(f"正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
+                    response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
                     obj["md_content"] = response_message.content
                     break
 
-            # print(f"Finished update for {obj_name}.")
         except Exception as e:
             print(f"Exception occurred while updating {obj_name}: {e}")
 
@@ -393,9 +363,7 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-    # runner.run()
-    runner.first_generate()
-    # runner.generate_hierachy()
+    runner.run()
 
     logger.info("文档任务完成。")
 

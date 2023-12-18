@@ -103,7 +103,6 @@ class ChatEngine:
             )
         
         usr_prompt = USR_PROMPT
-        # print("\nsys_prompt:\n",sys_prompt)
 
         max_attempts = 5  # 设置最大尝试次数
 
