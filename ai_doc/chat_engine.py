@@ -130,7 +130,7 @@ class ChatEngine:
                 )
 
                 response_message = response.choices[0].message
-                print("response.choices[0]:\n",response.choices[0])
+                print(f"\nAnswer:\n{response_message}\n")
 
                 return response_message
             

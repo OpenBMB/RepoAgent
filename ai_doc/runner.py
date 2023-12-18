@@ -168,8 +168,6 @@ class Runner:
             # 否则，根据文件路径处理变更的文件
             self.process_file_changes(repo_path, file_path, is_new_file)
         
-        logger.info(f'添加了 {self.change_detector.add_unstaged_mds()} 到暂存区') 
-
 
     def add_new_item(self, file_handler, json_data):
         new_item = {}
@@ -245,7 +243,11 @@ class Runner:
             self.add_new_item(file_handler,json_data)
 
         # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
-        self.change_detector.add_unstaged_mds()
+        git_add_result = self.change_detector.add_unstaged_mds()
+        
+        if len(git_add_result) > 0:
+            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区') 
+
         
 
     def update_existing_item(self, file, file_handler, changes_in_pyfile):
