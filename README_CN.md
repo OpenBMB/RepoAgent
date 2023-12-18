@@ -42,14 +42,14 @@ pip install -r requirements.txt
 # 📖 快速开始
 
 ## 运行AI_doc
-在runner.py中，如果您是第一次对目标仓库生成文档，请在main函数中使用以下命令：
+进入AI_doc根目录，在命令行输入以下命令：
 ```
-runner.first_generate()
+python -m ai_doc.runner
 ```
-此时AI_doc会自动为您的目标仓库生成一个维护全局结构信息的json文件，并在您的目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
+如果您是第一次对目标仓库生成文档，此时AI_doc会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
 
-当您首次对目标仓库生成全局文档后，就可以通过**pre-commit**配置目标仓库**hook**和团队一起无缝自动维护一个项目内部文档了！
+当您首次完成对目标仓库生成全局文档后，或您clone下来的项目已经包含了全局文档信息后，就可以通过**pre-commit**配置目标仓库**hook**和团队一起无缝自动维护一个项目内部文档了！
 
 ## 配置目标仓库
 
@@ -70,7 +70,7 @@ repos:
     hooks:
     - id: ai-doc
       name: AI-doc
-      entry: python path/to/your/AI_doc/runner.py
+      entry: python -m ai_doc.runner
       language: system
       # 可以指定钩子触发的文件类型
       types: [python]

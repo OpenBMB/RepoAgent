@@ -84,21 +84,16 @@ first_generate: True # True if you are generating documentation for the first ti
 
 ## Run AI_doc
 
-
-<!-- Please use the following command in the main function of runner.py if you are generating documentation for the first time in the target repository:
-
+Enter the root directory of AI_doc and type the following command in the terminal:
 ```
-runner.first_generate()
-``` -->
-Run the following command to generate documentation:
-```bash
-export PYTHONPATH=./
-python ai_doc/runner.py
+python -m ai_doc.runner
 ```
 
-At this point, AI_doc will automatically generate a json file that maintains the global structure information for your target repository, and create a folder named `Markdown_Docs` in the root directory of your target repository to store the documentation.
+If it's your first time generating documentation for the target repository, AI_doc will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
 
-After you have generated the global documentation for the target repository for the first time, you can configure the target repository hook with **pre-commit** and maintain an internal documentation for the project seamlessly with your team!
+The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
+
+Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
 
 
 ## Configuring the Target Repository

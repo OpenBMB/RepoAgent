@@ -166,6 +166,7 @@ class FileHandler:
                 dict: A dictionary containing the file path and the generated file structure.
             """
             with open(file_path, 'r', encoding='utf-8') as f:
+                # TODO：file_path更改为相对路径后的读写逻辑
                 content = f.read()
                 structures = self.get_functions_and_classes(content)
                 json_objects = []
@@ -184,6 +185,7 @@ class FileHandler:
         for root, dirs, files in os.walk(self.repo_path):
             for file in files:
                 if file.endswith('.py'):
+                    # TODO: 更改为相对路径
                     absolute_file_path = os.path.join(root, file)
                     file_structure.append(self.generate_file_structure(absolute_file_path))
         return file_structure
