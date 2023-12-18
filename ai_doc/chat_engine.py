@@ -62,7 +62,6 @@ class ChatEngine:
         project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierachy=file_handler.project_hierachy)
         project_structure = project_manager.get_project_structure()
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
-        # TODO:由于Jedi并行调用会出错，all_referencer应该在外面统一生成，并根据对象作为参数传入
         code_from_referencer = get_code_from_json(project_manager.project_hierachy, referencer) # 
         referenced = True if len(code_from_referencer) > 0 else False
         referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_referencer.items()])     
@@ -128,7 +127,7 @@ class ChatEngine:
                 )
 
                 response_message = response.choices[0].message
-                print(f"\nAnswer:\n{response_message}\n")
+                print(f"\nAnswer:\n{response_message.content}\n")
 
                 return response_message
             

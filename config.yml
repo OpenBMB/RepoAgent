@@ -24,8 +24,7 @@ api_keys:
 request_timeout: 90
 
 repo_path: /path/to/your/repo
-project_hierachy: .project_hierachy.json
+project_hierachy: .project_hierarchy.json
 Markdown_Docs_folder: /Markdown_Docs
 
 language: en
-first_generate: True

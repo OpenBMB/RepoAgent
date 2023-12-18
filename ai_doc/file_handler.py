@@ -20,8 +20,8 @@ class FileHandler:
         Returns:
             str: 当前变更文件的文件内容
         """
-        file_path = os.path.join(self.repo_path, self.file_path)
-        with open(file_path, 'r') as file:
+        abs_file_path = os.path.join(self.repo_path, self.file_path)
+        with open(abs_file_path, 'r') as file:
             content = file.read()
         return content
 
@@ -160,13 +160,12 @@ class FileHandler:
             Generates the file structure for the given file path.
 
             Args:
-                file_path (str): The path of the file.
+                file_path (str): The relative path of the file.
 
             Returns:
                 dict: A dictionary containing the file path and the generated file structure.
             """
-            with open(file_path, 'r', encoding='utf-8') as f:
-                # TODO：file_path更改为相对路径后的读写逻辑
+            with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
                 content = f.read()
                 structures = self.get_functions_and_classes(content)
                 json_objects = []
@@ -185,9 +184,8 @@ class FileHandler:
         for root, dirs, files in os.walk(self.repo_path):
             for file in files:
                 if file.endswith('.py'):
-                    # TODO: 更改为相对路径
-                    absolute_file_path = os.path.join(root, file)
-                    file_structure.append(self.generate_file_structure(absolute_file_path))
+                    relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
+                    file_structure.append(self.generate_file_structure(relative_file_path))
         return file_structure
     
     def convert_structure_to_json(self, file_structure):
@@ -201,13 +199,13 @@ class FileHandler:
             json_data = json.load(f)
 
         if file_path == None:   
-            file_path = os.path.join(self.repo_path, self.file_path)
+            file_path = self.file_path
 
         # Find the file object in json_data that matches file_path
         file_object = next((file for file in json_data["files"] if file["file_path"] == file_path), None)
         
         if file_object is None:
-            raise ValueError(f"No file object found for {self.file_path} in project_hierachy.json")
+            raise ValueError(f"No file object found for {self.file_path} in project_hierarchy.json")
 
         markdown = ""
         parent_dict = {}
@@ -242,7 +240,7 @@ class FileHandler:
 
         # 遍历json_data["files"]列表中的每个字典
         for file in json_data["files"]:
-            md_path = file["file_path"].replace(self.repo_path, markdown_docs_path).replace('.py', '.md')
+            md_path = os.path.join(markdown_docs_path, file["file_path"]).replace('.py', '.md')
             markdown = self.convert_to_markdown_file(file["file_path"])
             
             # 检查目录是否存在，如果不存在，就创建它

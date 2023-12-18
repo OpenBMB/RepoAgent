@@ -25,7 +25,7 @@ class ProjectManager:
         return '\n'.join(structure)
     
     def find_all_referencer(self, variable_name, file_path, line_number, column_number):
-        script = jedi.Script(path=file_path)
+        script = jedi.Script(path=os.path.join(self.repo_path, file_path))
         references = script.get_references(line=line_number, column=column_number)
 
         try:

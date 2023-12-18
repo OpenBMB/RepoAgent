@@ -52,7 +52,7 @@ class ChangeDetector:
         """
         函数的作用是获取某个文件的变更内容。对于新文件，使用 git diff --staged 获取差异。
         Args:
-            file_path (str): 文件路径
+            file_path (str): 文件相对路径
             is_new_file (bool): 指示文件是否是新文件
         Returns:
             list: 变更内容列表

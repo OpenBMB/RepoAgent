@@ -71,7 +71,7 @@ class Runner:
         for file in json_data['files']:
 
             # 判断当前文件是否为空，如果为空则跳过：
-            if os.path.getsize(file['file_path']) == 0:
+            if os.path.getsize(os.path.join(CONFIG['repo_path'],file['file_path'])) == 0:
                 continue
 
             # 对于每个单独文件里的每一个对象：获取其引用者列表
@@ -94,7 +94,7 @@ class Runner:
             with ThreadPoolExecutor(max_workers=5) as executor: 
 
                 futures = []
-                file_handler = FileHandler(CONFIG['repo_path'], os.path.relpath(file['file_path'], CONFIG['repo_path']))
+                file_handler = FileHandler(CONFIG['repo_path'], file['file_path'])
 
                 # 遍历文件中的每个对象
                 for index, obj in enumerate(file['objects']):
@@ -171,7 +171,7 @@ class Runner:
 
     def add_new_item(self, file_handler, json_data):
         new_item = {}
-        new_item["file_path"] = os.path.join(self.project_manager.repo_path, file_handler.file_path)
+        new_item["file_path"] = file_handler.file_path
         new_item["objects"] = []
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
@@ -186,7 +186,7 @@ class Runner:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
-        markdown = file_handler.convert_to_markdown_file(file_path=os.path.join(self.project_manager.repo_path, file_handler.file_path))
+        markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
         # 将markdown内容写入.md文件
         file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
         logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
@@ -220,7 +220,7 @@ class Runner:
         found = False
         for i, file in enumerate(json_data["files"]):
 
-            if file["file_path"] == os.path.join(self.project_manager.repo_path, file_handler.file_path): # 找到了对应文件
+            if file["file_path"] == file_handler.file_path: # 找到了对应文件
                 # 更新json文件中的内容
                 json_data["files"][i] = self.update_existing_item(file, file_handler, changes_in_pyfile)
                 # 将更新后的file写回到json文件中
@@ -232,7 +232,7 @@ class Runner:
                 found = True
 
                 # 将变更部分的json文件内容转换成markdown内容
-                markdown = file_handler.convert_to_markdown_file(file_path=os.path.join(self.project_manager.repo_path, file_handler.file_path))
+                markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
                 # 将markdown内容写入.md文件
                 file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
                 logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
@@ -324,18 +324,15 @@ class Runner:
 
     def update_object(self, file, file_handler, obj_name, obj_referencer_list):
 
-        try:
 
-            for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
+        for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
 
-                if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
+            if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
 
-                    response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
-                    obj["md_content"] = response_message.content
-                    break
+                response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
+                obj["md_content"] = response_message.content
+                break
 
-        except Exception as e:
-            print(f"Exception occurred while updating {obj_name}: {e}")
 
 
     def get_new_objects(self, file_handler):
