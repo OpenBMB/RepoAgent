@@ -46,40 +46,7 @@ class ChangeDetector:
                 staged_files[diff.a_path] = is_new_file
 
         return staged_files
-    
-    def get_unstaged_mds(self) -> list[str]:
-        """
-        获取仓库中未暂存的 .md 文件变更。
-        Returns:
-            list: 未暂存的 .md 文件路径列表
-        """
-        unstaged_files = []
-        diffs = self.repo.index.diff(None)
-        untracked_files = self.repo.untracked_files
 
-        for diff in diffs + untracked_files:
-            if isinstance(diff, git.Diff):
-                file_path = diff.b_path
-            else:
-                file_path = diff
-
-            if file_path.endswith(('.md', '.json')):
-                unstaged_files.append(file_path)
-
-        return unstaged_files
-
-    def add_unstaged_mds(self) -> list[str]:
-        """
-        将所有未暂存的 Markdown 文件添加到暂存区。
-        Returns:
-            list: 被添加到暂存区的 Markdown 文件路径列表
-        """
-        unstaged_markdown_files = self.get_unstaged_mds()
-        for file_path in unstaged_markdown_files:
-            add_command = f'git -C {self.repo.working_dir} add "{file_path}"'
-            subprocess.run(add_command, shell=True, check=True)
-
-        return unstaged_markdown_files
 
     def get_file_diff(self, file_path, is_new_file):
         """
@@ -176,9 +143,35 @@ class ChangeDetector:
                     if start_line <= line_number <= end_line:
                         changes_in_structures[change_type].add((name, parent_structure))
         return changes_in_structures
-
-
+    
+    def get_unstaged_mds(self):
+        """
+        获取仓库中未暂存的文件变更。
+        """
+        unstaged_files = []
+        diffs = self.repo.index.diff(None)
+        untracked_files = self.repo.untracked_files
+        for diff in diffs + untracked_files:
+            if isinstance(diff, git.Diff):
+                file_path = diff.b_path
+            else:
+                file_path = diff
+            unstaged_files.append(file_path)
+        return unstaged_files
+    
+    def add_unstaged_mds(self):
+        """
+        将所有未暂存的文件添加到暂存区。
+        """
+        unstaged_markdown_files = self.get_unstaged_mds()
+        for file_path in unstaged_markdown_files:
+            add_command = f'git -C {self.repo.working_dir} add "{file_path}"'
+            subprocess.run(add_command, shell=True, check=True)
+        return unstaged_markdown_files
+    
+    
 if __name__ == "__main__":
+
     repo_path = "/path/to/your/repo/"
     change_detector = ChangeDetector(repo_path)
     changed_files = change_detector.get_staged_pys()

@@ -30,14 +30,14 @@ class ChatEngine:
         num_tokens = len(encoding.encode(string))
         return num_tokens
 
-    def generate_doc(self, code_info, file_handler):
+    def generate_doc(self, code_info, file_handler, referencer = []):
 
-        def get_code_from_json(json_file, references):
+        def get_code_from_json(json_file, referencer):
             with open(json_file, 'r') as f:
                 data = json.load(f)
 
-            code_from_references = {}
-            for ref in references:
+            code_from_referencer = {}
+            for ref in referencer:
                 file_path, line_number, _ = ref
                 for file in data["files"]:
                     if file['file_path'] == file_path:
@@ -47,10 +47,10 @@ class ChatEngine:
                                 if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
                                     min_obj = obj
                         if min_obj is not None:
-                            if file_path not in code_from_references:
-                                code_from_references[file_path] = []
-                            code_from_references[file_path].append(min_obj['code_content'])
-            return code_from_references
+                            if file_path not in code_from_referencer:
+                                code_from_referencer[file_path] = []
+                            code_from_referencer[file_path].append(min_obj['code_content'])
+            return code_from_referencer
         
         # 从code_info中获取代码信息
         code_type = code_info["type"]
@@ -62,10 +62,10 @@ class ChatEngine:
         project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierachy=file_handler.project_hierachy)
         project_structure = project_manager.get_project_structure()
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
-        all_references = project_manager.Find_All_References(code_name, file_path, code_info["code_start_line"], code_info["name_column"]) 
-        code_from_references = get_code_from_json(project_manager.project_hierachy, all_references)
-        referenced = True if len(code_from_references) > 0 else False
-        references_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_references.items()])     
+        # TODO:由于Jedi并行调用会出错，all_referencer应该在外面统一生成，并根据对象作为参数传入
+        code_from_referencer = get_code_from_json(project_manager.project_hierachy, referencer) # 
+        referenced = True if len(code_from_referencer) > 0 else False
+        referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_referencer.items()])     
 
         # 判断及占位符
         model = "gpt-4"
@@ -99,11 +99,10 @@ class ChatEngine:
             code_content=code_content, 
             have_return_tell=have_return_tell, 
             referenced=referenced, 
-            references_content=references_content
+            referencer_content=referencer_content
             )
         
         usr_prompt = USR_PROMPT
-        # print("\nsys_prompt:\n",sys_prompt)
 
         max_attempts = 5  # 设置最大尝试次数
 
@@ -131,7 +130,7 @@ class ChatEngine:
                 )
 
                 response_message = response.choices[0].message
-                # print("response.choices[0]:\n",response.choices[0])
+                print(f"\nAnswer:\n{response_message}\n")
 
                 return response_message
             

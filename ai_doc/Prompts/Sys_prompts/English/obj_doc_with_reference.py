@@ -10,7 +10,7 @@ The content of the code is as follows:
 {code_content}
 
 {reference_letter}
-{references_content}
+{referencer_content}
 
 Please generate a detailed explanation document for this object based on the code of the target object itself {combine_ref_situation}.
 

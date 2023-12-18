@@ -24,14 +24,14 @@ class ProjectManager:
         walk_dir(self.repo_path)
         return '\n'.join(structure)
     
-    def Find_All_References(self, variable_name, file_path, line_number, column_number):
+    def find_all_referencer(self, variable_name, file_path, line_number, column_number):
         script = jedi.Script(path=file_path)
         references = script.get_references(line=line_number, column=column_number)
 
         try:
             # 过滤出变量名为 variable_name 的引用，并返回它们的位置
             variable_references = [ref for ref in references if ref.name == variable_name]
-            return [(os.path.relpath(ref.module_path, self.repo_path), ref.line, ref.column) for ref in variable_references]
+            return [(os.path.relpath(ref.module_path, self.repo_path), ref.line, ref.column) for ref in variable_references if not (ref.line == line_number and ref.column == column_number)]
         except Exception as e:
             # 打印错误信息和相关参数
             print(f"Error occurred: {e}")
