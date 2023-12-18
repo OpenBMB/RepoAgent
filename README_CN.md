@@ -20,7 +20,6 @@ AI_doc是一个由大型语言模型（LLMs）驱动的开源项目，旨在提�
 - **👭 为团队协作提供可持续、自动化的文档更新方法。**
 
 # 📍 安装
-## 配置AI_doc
 首先，确保您的机器安装了python3.9以上的版本
 ```
 $ python --version
@@ -40,6 +39,33 @@ pip install -r requirements.txt
 在`config.yml`文件中，配置OpenAI API的相关参数信息、目标仓库的路径、文档语言（未来支持）等。
 
 # 📖 快速开始
+
+## 配置AI_doc
+首先将您的 OpenAI API Key 填入 `config.yml`.
+获取 API Key 方式参见 [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
+
+在 `config.yml` 中, 配置 OpenAI API / 目标目录 / 文档语种 等参数:
+```yaml
+api_keys:
+  gpt-3.5-turbo-16k:
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      api_type: azure
+      api_version: XXX
+      engine: GPT-35-Turbo-16k
+      # 这些参数供 openai.ChatCompletion 使用
+    - api_key: sk-xxxxx
+      organization: org-xxxxxx
+      model: gpt-3.5-turbo-16k
+  ...
+request_timeout: 90
+
+repo_path: /path/to/your/repo
+project_hierachy: .project_hierachy.json # 用于描述全局结构信息的 json 文件.
+Markdown_Docs_folder: /Markdown_Docs # 目标项目根目录下用于存放文档的目录.
+
+language: en # 两个字母表示的目标语言名称 (ISO 639-1 标准, 例如: `language: en` 表示 English). 详见语言支持章节.
+```
 
 ## 运行AI_doc
 进入AI_doc根目录，在命令行输入以下命令：
@@ -104,6 +130,37 @@ git push
 - [x] 启用对象间调用关系的识别
 - [x] **Bi-direct reference** 双向引用 构建 拓扑结构
 - [ ] 开源
+
+# 语言支持
+`language` 选项支持下列语言代码 (ISO 639-1 codes), 例:`language: en` 表示英语
+
+|代码 |	语言        |
+|-----|-------------|
+| en  |	英语        |
+| es  |	西班牙语    |
+| fr  |	法语        |
+| de  |	德语        |
+| zh  |	中文        |
+| ja  |	日语        |
+| ru  |	俄语        |
+| it  |	意大利语    |
+| ko  |	韩语        |
+| nl  |	荷兰语      |
+| pt  |	葡萄牙语    |
+| ar  |	阿拉伯语    |
+| tr  |	土耳其语    |
+| sv  |	瑞典语      |
+| da  |	丹麦语      |
+| fi  |	芬兰语      |
+| no  |	挪威语      |
+| pl  |	波兰语      |
+| cs  |	捷克语      |
+| hu  |	匈牙利语    |
+| el  |	希腊语      |
+| he  |	希伯来语    |
+| th  |	泰语        |
+| hi  |	印地语      |
+| bn  |	孟加拉语    |
 
 # 📜 许可证
 
