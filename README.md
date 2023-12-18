@@ -3,6 +3,22 @@
 AI_doc is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
 It is designed to be a handy tool for developers who need to organize their code and cooperate with teammates.
 
+# Quick links
+
+- [Introduction](#-introduction)
+- [Quick links](#quick-links)
+- [Background](#-background)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+  - [Configuring AI_doc](#configuring-ai_doc)
+  - [Run AI_doc](#run-ai_doc)
+  - [Configuring the Target Repository](#configuring-the-target-repository)
+- [Future Work](#-future-work)
+- [Supported Language](#supported-language)
+- [License](#-license)
+- [Citation](#-citation)
+
 # 👾 Background
 In the realm of computer programming, the significance of comprehensive project documentation, including detailed explanations for each Python file, cannot be overstated. Such documentation serves as the cornerstone for understanding, maintaining, and enhancing the codebase. It provides essential context and rationale for the code, making it easier for current and future developers to comprehend the purpose, functionality, and structure of the software. It not only facilitates current and future developers in grasping the project's purpose and structure but also ensures that the project remains accessible and modifiable over time, significantly easing the learning curve for new team members.
 
@@ -21,7 +37,6 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 # 📦 Installation
 
-## Configuring AI_doc
 First, ensure that your machine is installed with Python version 3.9 or higher.
 ```
 $ python --version
@@ -36,12 +51,36 @@ conda activate AI_doc
 pip install -r requirements.txt
 ```
 
-Then, configure the OpenAI API parameters in the config.yml file.
-For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
-
-In the `config.yml` file, configure relevant parameters like OpenAI API, the destination repository path, document language (future support), and so on.
 
 # 📖 Quick Start
+
+## Configuring AI_doc
+First, configure the OpenAI API parameters in the config.yml file.
+For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
+
+In the `config.yml` file, configure other parameters like OpenAI API, the destination repository path, document language, and so on:
+```yaml
+api_keys:
+  gpt-3.5-turbo-16k:
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      api_type: azure
+      api_version: XXX
+      engine: GPT-35-Turbo-16k
+      # you can use any kwargs supported by openai.ChatCompletion here
+    - api_key: sk-xxxxx
+      organization: org-xxxxxx
+      model: gpt-3.5-turbo-16k
+  ...
+request_timeout: 90
+
+repo_path: /path/to/your/repo
+project_hierachy: .project_hierachy.json # The paths of the global structure information json file
+Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
+
+language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
+first_generate: True # True if you are generating documentation for the first time in the target repository, else False
+```
 
 ## Run AI_doc
 
@@ -112,6 +151,37 @@ to submit your commit.
 - [x] Enable the identification of inter-object reference relationships
 - [x] **Bi-direct reference** Bi-directional reference construction topology
 - [ ] Open source
+
+# Supported Language
+Set the target language with the two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Here are languages we currently support:
+
+| Code | Language   |
+|------|------------|
+| en   | English    |
+| es   | Spanish    |
+| fr   | French     |
+| de   | German     |
+| zh   | Chinese    |
+| ja   | Japanese   |
+| ru   | Russian    |
+| it   | Italian    |
+| ko   | Korean     |
+| nl   | Dutch      |
+| pt   | Portuguese |
+| ar   | Arabic     |
+| tr   | Turkish    |
+| sv   | Swedish    |
+| da   | Danish     |
+| fi   | Finnish    |
+| no   | Norwegian  |
+| pl   | Polish     |
+| cs   | Czech      |
+| hu   | Hungarian  |
+| el   | Greek      |
+| he   | Hebrew     |
+| th   | Thai       |
+| hi   | Hindi      |
+| bn   | Bengali    |
 
 # 📜 License
 

@@ -5,9 +5,9 @@ from openai import APIConnectionError
 import yaml
 import tiktoken
 import time
+from .config import language_mapping
 from .project_manager import ProjectManager
-from .Prompts.Sys_prompts.English.obj_doc_with_reference import SYS_PROMPT
-from .Prompts.Usr_prompts.English.usr_prompt import USR_PROMPT
+from .prompt import SYS_PROMPT, USR_PROMPT
 import inspect
 
 
@@ -70,25 +70,18 @@ class ChatEngine:
         # 判断及占位符
         model = "gpt-4"
 
-        # 判断导入文件的时候SYS.PROMPT来自English还是Chinese
-        import_lines = get_import_statements()
-
-        for line in import_lines:
-            match = re.search(r'Prompts\.Usr_prompts\.(\w+)\.usr_prompt', line)
-            if match:
-                language = match.group(1)
-        if language == "English":
-
-            code_type_tell = "Class" if code_type == "ClassDef" else "Function"
-            have_return_tell = "**Output Example**: Mock up a possible appearance of the code's return value." if have_return else ""
-            reference_letter = "This object is called in the following files, the file paths and corresponding calling parts of the code are as follows:" if referenced else ""
-            combine_ref_situation = "and combine it with its calling situation in the project," if referenced else ""
-        else:
-            code_type_tell = "类" if code_type == "ClassDef" else "函数"
-            have_return_tell = "**输出示例**：请你Mock出代码返回值的可能样例..." if have_return else ""
-            reference_letter = "该对象在以下文件中被调用，文件路径和对应的调用代码如下：" if referenced else ""
-            combine_ref_situation = "结合它在项目中的调用情况，" if referenced else ""
-
+        # language
+        language = self.config["language"]
+        if language not in language_mapping:
+            raise KeyError(f"Language code {language} is not supported! Supported languages are: {json.dumps(language_mapping)}")
+        
+        language = language_mapping[language]
+        
+        code_type_tell = "Class" if code_type == "ClassDef" else "Function"
+        have_return_tell = "**Output Example**: Mock up a possible appearance of the code's return value." if have_return else ""
+        reference_letter = "This object is called in the following files, the file paths and corresponding calling parts of the code are as follows:" if referenced else ""
+        combine_ref_situation = "and combine it with its calling situation in the project," if referenced else ""
+        
         sys_prompt = SYS_PROMPT.format(
             reference_letter=reference_letter, 
             combine_ref_situation=combine_ref_situation, 
@@ -99,10 +92,14 @@ class ChatEngine:
             code_content=code_content, 
             have_return_tell=have_return_tell, 
             referenced=referenced, 
-            referencer_content=referencer_content
+            referencer_content=referencer_content,
+            language=language
             )
         
-        usr_prompt = USR_PROMPT
+        usr_prompt = USR_PROMPT.format(language=language)
+        
+        # print("\nsys_prompt:\n",sys_prompt)
+        # print("\nusr_prompt:\n",str(usr_prompt))
 
         max_attempts = 5  # 设置最大尝试次数
 
@@ -119,6 +116,7 @@ class ChatEngine:
                 client = OpenAI(
                     api_key=self.config["api_keys"][model][0]["api_key"],
                     base_url=self.config["api_keys"][model][0]["base_url"],
+                    timeout=self.config["request_timeout"]
                 )
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]

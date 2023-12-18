@@ -21,6 +21,11 @@ api_keys:
       api_version: XXX
       engine: gpt4-32
 
+request_timeout: 90
+
 repo_path: /path/to/your/repo
 project_hierachy: .project_hierachy.json
 Markdown_Docs_folder: /Markdown_Docs
+
+language: en
+first_generate: True

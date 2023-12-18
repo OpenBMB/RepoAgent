@@ -1,1 +1,0 @@
-USR_PROMPT = f"""Please provide the documentation for the target object in CHINESE."""
