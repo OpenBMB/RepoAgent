@@ -1,8 +1,9 @@
 # FileHandler 类，实现对文件的读写操作，这里的文件包括markdown文件和python文件
+# ai_doc/file_handler.py
 import git
 import os,json
 import ast
-from config import CONFIG
+from .config import CONFIG
 
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
@@ -60,6 +61,12 @@ class FileHandler:
             file_path (str): 文件路径
             content (str): 文件内容
         """
+
+        # 确保file_path是相对路径
+        if file_path.startswith('/'):
+            # 移除开头的 '/'
+            file_path = file_path[1:]
+            
         file_path = os.path.join(self.repo_path, file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as file:

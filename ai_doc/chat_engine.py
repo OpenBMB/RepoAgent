@@ -5,9 +5,9 @@ from openai import APIConnectionError
 import yaml
 import tiktoken
 import time
-from project_manager import ProjectManager
-from Prompts.Sys_prompts.English.obj_doc_with_reference import SYS_PROMPT
-from Prompts.Usr_prompts.English.usr_prompt import USR_PROMPT
+from .project_manager import ProjectManager
+from .Prompts.Sys_prompts.English.obj_doc_with_reference import SYS_PROMPT
+from .Prompts.Usr_prompts.English.usr_prompt import USR_PROMPT
 import inspect
 
 
