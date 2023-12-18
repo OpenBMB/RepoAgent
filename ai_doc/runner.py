@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 class Runner:
     def __init__(self):
-        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierachy=CONFIG['project_hierachy']) 
+        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierachy=CONFIG['project_hierachy'])
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
-    
+
     def generate_hierachy(self):
         """
         函数的作用是为整个项目生成一个最初的全局结构信息
@@ -53,7 +53,7 @@ class Runner:
                     python_files.append(os.path.join(root, file))
 
         return python_files
-        
+
 
     def first_generate(self):
         """
@@ -76,7 +76,7 @@ class Runner:
 
             # 对于每个单独文件里的每一个对象：获取其引用者列表
             referencer_list = []
-            
+
             for obj in file['objects']:
                 referencer_obj = {
                     "obj_name": obj["name"],
@@ -89,9 +89,9 @@ class Runner:
                 }
                 referencer_list.append(referencer_obj)
 
-            
+
             # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
-            with ThreadPoolExecutor(max_workers=5) as executor: 
+            with ThreadPoolExecutor(max_workers=5) as executor:
 
                 futures = []
                 file_handler = FileHandler(CONFIG['repo_path'], os.path.relpath(file['file_path'], CONFIG['repo_path']))
@@ -110,7 +110,7 @@ class Runner:
                     logger.info(f" -- 正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
                     response_message = future.result()  # 等待结果
                     file['objects'][index]["md_content"] = response_message.content
-                
+
                 futures = []
 
             # 在对文件的循环内，将json_data写回文件
@@ -123,7 +123,10 @@ class Runner:
             file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
 
-            
+        # 生成一个标志文件, 表示已经运行过了.
+        with open(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], '.first-gen.aidoc'), 'w'):
+            pass
+
 
     def git_commit(self, file_path, commit_message):
         try:
@@ -142,18 +145,23 @@ class Runner:
         Returns:
             None
         """
-        # 首先检测是否存在全局的 project_hierachy.json 结构信息
+        # 先检查是否成功运行过 first_generate().
+        if not os.path.exists(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], '.first-gen.aidoc')):
+            self.first_generate()
+            return
+
+        # 检测是否存在全局的 project_hierachy.json 结构信息
         abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
         if not os.path.exists(abs_project_hierachy_path):
             self.generate_hierachy()
             logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}")
-    
+
         changed_files = self.change_detector.get_staged_pys()
 
         if len(changed_files) == 0:
             logger.info("没有检测到任何变更，不需要更新文档。")
             return
-        
+
         else:
             logger.info(f"检测到暂存区中变更的文件：{changed_files}")
 
@@ -167,7 +175,7 @@ class Runner:
                 continue
             # 否则，根据文件路径处理变更的文件
             self.process_file_changes(repo_path, file_path, is_new_file)
-        
+
 
     def add_new_item(self, file_handler, json_data):
         new_item = {}
@@ -191,7 +199,7 @@ class Runner:
         file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
         logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
 
-    
+
     def process_file_changes(self, repo_path, file_path, is_new_file):
         """
         函数将在检测到的变更文件的循环中被调用，作用是根据文件绝对路径处理变更的文件，包括新增的文件和已存在的文件。
@@ -211,11 +219,11 @@ class Runner:
         changed_lines = self.change_detector.parse_diffs(self.change_detector.get_file_diff(file_path, is_new_file))
         changes_in_pyfile = self.change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(source_code))
         logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
-        
+
         # 判断project_hierachy.json文件中能否找到对应.py文件路径的项
         with open(self.project_manager.project_hierachy, 'r') as f:
             json_data = json.load(f)
-        
+
         # 标记是否找到了对应的文件
         found = False
         for i, file in enumerate(json_data["files"]):
@@ -226,7 +234,7 @@ class Runner:
                 # 将更新后的file写回到json文件中
                 with open(self.project_manager.project_hierachy, 'w') as f:
                     json.dump(json_data, f, indent=4, ensure_ascii=False)
-                
+
                 logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")
 
                 found = True
@@ -244,14 +252,14 @@ class Runner:
 
         # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
         git_add_result = self.change_detector.add_unstaged_mds()
-        
-        if len(git_add_result) > 0:
-            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区') 
 
-        
+        if len(git_add_result) > 0:
+            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区')
+
+
 
     def update_existing_item(self, file, file_handler, changes_in_pyfile):
-        
+
         new_obj, del_obj = self.get_new_objects(file_handler)
 
         # 处理被删除的对象
@@ -303,7 +311,7 @@ class Runner:
                         )
                     }
                     referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
-        
+
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             # 通过线程池并发执行
@@ -320,7 +328,7 @@ class Runner:
 
         # 更新传入的file参数
         return file
-    
+
 
     def update_object(self, file, file_handler, obj_name, obj_referencer_list):
 
@@ -366,7 +374,7 @@ class Runner:
 if __name__ == "__main__":
 
     runner = Runner()
-    
+
     runner.run()
 
     logger.info("文档任务完成。")
