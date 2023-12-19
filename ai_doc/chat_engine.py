@@ -65,7 +65,6 @@ class ChatEngine:
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
         code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
         referenced = True if len(code_from_referencer) > 0 else False
-        print("len(code_from_referencer):\n",len(code_from_referencer))
         referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
 
         # 判断及占位符

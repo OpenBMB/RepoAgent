@@ -7,11 +7,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 import logging
+from loguru import logger
+import ai_doc.log_config
 from ai_doc.config import CONFIG
 
+logger.info("This is an info message.")
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
 
 class Runner:
     def __init__(self):
@@ -251,35 +254,37 @@ class Runner:
 
         referencer_list = []
 
-        # 生成文件的结构信息，获得当前文件中的所有对象， 这里其实就是当前文件更新之后的结构了
-        new_objects = file_handler.generate_file_structure(file_handler.file_path) 
+        # 生成文件的结构信息，获得当前文件中的所有对象， 这里其实就是文件更新之后的结构了
+        current_objects = file_handler.generate_file_structure(file_handler.file_path) 
 
-        new_info_dict = {obj["name"]: obj for obj in new_objects.values()}
+        current_info_dict = {obj["name"]: obj for obj in current_objects.values()}
 
-        # 先更新全局文件结构信息，比如代码起始行\终止行等
-        for obj_name, obj in file_dict.items():
-            if obj_name not in new_info_dict:
-                continue
-            if obj_name in new_info_dict:
-                new_info = new_info_dict[obj_name]
-                obj["type"] = new_info["type"]
-                obj["code_start_line"] = new_info["code_start_line"]
-                obj["code_end_line"] = new_info["code_end_line"]
-                obj["parent"] = new_info["parent"]
-                obj["name_column"] = new_info["name_column"]
+        # 更新全局文件结构信息，比如代码起始行\终止行等
+        for current_obj_name, current_obj_info in current_info_dict.items():
+            if current_obj_name in file_dict:
+                # 如果当前对象在旧对象列表中存在，更新旧对象的信息
+                file_dict[current_obj_name]["type"] = current_obj_info["type"]
+                file_dict[current_obj_name]["code_start_line"] = current_obj_info["code_start_line"]
+                file_dict[current_obj_name]["code_end_line"] = current_obj_info["code_end_line"]
+                file_dict[current_obj_name]["parent"] = current_obj_info["parent"]
+                file_dict[current_obj_name]["name_column"] = current_obj_info["name_column"]
+            else:
+                # 如果当前对象在旧对象列表中不存在，将新对象添加到旧对象列表中
+                file_dict[current_obj_name] = current_obj_info
+
 
         # 对于每一个对象：获取其引用者列表
         for obj_name, _ in changes_in_pyfile['added']:
-            for new_object in new_objects.values(): # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
-                if obj_name == new_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
+            for current_object in current_objects.values(): # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
+                if obj_name == current_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
                     # 获取每个需要生成文档的对象的引用者
                     referencer_obj = {
                         "obj_name": obj_name,
                         "obj_referencer_list": self.project_manager.find_all_referencer(
-                            variable_name=new_object["name"],
+                            variable_name=current_object["name"],
                             file_path=file_handler.file_path,
-                            line_number=new_object["code_start_line"],
-                            column_number=new_object["name_column"]
+                            line_number=current_object["code_start_line"],
+                            column_number=current_object["name_column"]
                         )
                     }
                     referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
@@ -339,6 +344,7 @@ if __name__ == "__main__":
     runner = Runner()
     
     runner.run()
+    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 
