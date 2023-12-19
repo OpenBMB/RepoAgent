@@ -9,6 +9,8 @@ import subprocess
 
 
 class ChangeDetector:
+    __empty = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
     def __init__(self, repo_path):
         """
         Initializes a ChangeDetector object.
@@ -21,7 +23,7 @@ class ChangeDetector:
         """
         self.repo = git.Repo(repo_path)
 
-    def get_staged_pys(self):
+    def get_staged_pys(self, first_gen=False):
         """
         获取仓库中已经暂存的python文件变更。
 
@@ -38,7 +40,7 @@ class ChangeDetector:
         # 请注意！GitPython库的逻辑和git不同。这里的R=True参数的作用是反转版本对比逻辑。
         # 在GitPython库中，repo.index.diff('HEAD')是将暂存区（index）作为新状态（new state）与原本HEAD的提交（old state）进行比较，这意味着，如果现在的暂存区中有一个新文件，它会显示为在HEAD中不存在，即被“删除”。
         # R=True就是把这个逻辑反转过来，把上一次的提交（HEAD）正确地作为旧状态与现在的暂存区（新状态）（Index）进行比较。在这种情况下，暂存区中的新文件会正确地显示为新增，因为它在HEAD中不存在。
-        diffs = repo.index.diff("HEAD", R=True)
+        diffs = repo.index.diff(self.__empty if first_gen else "HEAD", R=True)
 
         for diff in diffs:
             if diff.change_type in ["A", "M"] and diff.a_path.endswith(".py"):
@@ -65,7 +67,7 @@ class ChangeDetector:
             subprocess.run(add_command, shell=True, check=True)
 
             # 获取暂存区的diff
-            diffs = repo.git.diff("--staged", file_path).splitlines()
+            diffs = repo.git.diff("--staged", self.__empty, file_path).splitlines()
         else:
             # 对于非新文件，获取HEAD的diff
             diffs = repo.git.diff("HEAD", file_path).splitlines()
