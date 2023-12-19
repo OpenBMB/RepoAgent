@@ -46,13 +46,13 @@ Runner 类定义了多个方法，以支持文档生成和维护的整个流程�
 首先，此函数是一个初始化函数，用于创建和初始化类的新实例。它在对象实例化时立即被调用，当实例创建后，我们可以在创建时自动为其赋予特定的属性。
 
 在这段代码中，__init__函数初始化了三个对象：
-1. project_manager：项目管理器，负责管理项目源协议和项目层次结构。它根据“CONFIG['repo_path']”和“CONFIG['project_hierachy']”来设置存储库路径和项目层次结构。
+1. project_manager：项目管理器，负责管理项目源协议和项目层次结构。它根据“CONFIG['repo_path']”和“CONFIG['project_hierarchy']”来设置存储库路径和项目层次结构。
 2. change_detector：更改检测器，负责检测源代码的更改。它使用“CONFIG['repo_path']”来设置存储库的路径。
 3. chat_engine：聊天引擎，负责处理和管理与AI的对话。它使用全局的“CONFIG”变量来初始化。
 
 这些对象都在创建时就被初始化，并可以在后续的类方法中使用。
 
-**注意**：使用这段代码时，确认已在全局配置（CONFIG）中正确设置了'repo_path'，'project_hierachy'以及其他聊天引擎所需要的配置。因此，在使用这个类创建对象之前，确保全局配置已正确设置。
+**注意**：使用这段代码时，确认已在全局配置（CONFIG）中正确设置了'repo_path'，'project_hierarchy'以及其他聊天引擎所需要的配置。因此，在使用这个类创建对象之前，确保全局配置已正确设置。
 
 ## FunctionDef generate_hierachy
 **generate_hierachy 函数**: 该函数的作用是为整个项目生成一个最初的全局结构信息。
@@ -63,11 +63,11 @@ Runner 类定义了多个方法，以支持文档生成和维护的整个流程�
 
 生成的文件结构数据随后被转换为 JSON 格式，这通过调用 `FileHandler` 对象的 `convert_structure_to_json` 方法实现。把内部的数据结构转换为 JSON 格式可以便于以后的读写和交互，也方便了结构的可视化。
 
-函数继而定义了一个 JSON 文件的保存路径，这是结合项目配置 `CONFIG['repo_path']` 和 `CONFIG['project_hierachy']` 来完成的。这两个配置项分别指定了仓库的路径和项目结构的 JSON 文件名，相结合即形成了完整的 JSON 文件存储路径。
+函数继而定义了一个 JSON 文件的保存路径，这是结合项目配置 `CONFIG['repo_path']` 和 `CONFIG['project_hierarchy']` 来完成的。这两个配置项分别指定了仓库的路径和项目结构的 JSON 文件名，相结合即形成了完整的 JSON 文件存储路径。
 
 最后，函数使用 `open` 函数和 `json.dump` 方法，将之前生成的 JSON 格构信息写入到文件中。这里使用了 `with` 语句，确保文件在操作完成后能够正确关闭。`json.dump` 方法还带有两个参数，`indent=4` 表示生成的 JSON 数据具备4个空格的缩进，以提高可读性；`ensure_ascii=False` 则声明 JSON 数据编码时将包含非ASCII字符，这对于支持中文等非英语字符十分重要。
 
-**注意**：使用该函数时需要保证 `CONFIG` 对象已被正确初始化，并且其中 `repo_path` 和 `project_hierachy` 这两个键所对应的值是准确的，以确保 JSON 文件可以被保存到正确的位置。此外，要注意 `FileHandler` 类和它的方法 `generate_overall_structure` 以及 `convert_structure_to_json` 需要被正确实现，以支持 `generate_hierachy` 函数的正常运作。
+**注意**：使用该函数时需要保证 `CONFIG` 对象已被正确初始化，并且其中 `repo_path` 和 `project_hierarchy` 这两个键所对应的值是准确的，以确保 JSON 文件可以被保存到正确的位置。此外，要注意 `FileHandler` 类和它的方法 `generate_overall_structure` 以及 `convert_structure_to_json` 需要被正确实现，以支持 `generate_hierachy` 函数的正常运作。
 ## FunctionDef get_all_pys
 **get_all_pys 函数**：该函数的目的是获取指定目录下的所有 Python 文件。
 
@@ -94,9 +94,9 @@ Runner 类定义了多个方法，以支持文档生成和维护的整个流程�
 
 详细的代码分析和描述如下：
 
-这个函数首先检测全局的project_hierachy.json结构信息是否存在。如果不存在，此函数会调用方法generate_hierachy()来生成新的项目层次结构信息，并在日志中记录信息，包括项目全局结构信息的存储路径。
+这个函数首先检测全局的project_hierarchy.json结构信息是否存在。如果不存在，此函数会调用方法generate_hierachy()来生成新的项目层次结构信息，并在日志中记录信息，包括项目全局结构信息的存储路径。
 
-然后函数打开project_hierachy.json文件，且将文件内容载入json_data中。接下来，创建线程池。值得注意的是，当前这行代码上有个待完成的事项，也就是关于使用Jedi库进行多线程调用的问题。
+然后函数打开project_hierarchy.json文件，且将文件内容载入json_data中。接下来，创建线程池。值得注意的是，当前这行代码上有个待完成的事项，也就是关于使用Jedi库进行多线程调用的问题。
 
 在线程池创建成功后，函数开始生成项目中所有Python文件的文档，相关进度信息被记录在日志中。
 
@@ -143,9 +143,9 @@ Runner 类定义了多个方法，以支持文档生成和维护的整个流程�
 详细的代码分析及描述：
 run 函数是一个对象方法，其主要执行以下操作：
 
-1. 检测全局的 "project_hierachy.json" 结构信息是否存在。它通过 os.path.join() 来生成绝对路径并且通过 os.path.exists() 来判断这个路径的文件是否存在（这两种方法都是 Python 的标准库 os 中的方法）。
+1. 检测全局的 "project_hierarchy.json" 结构信息是否存在。它通过 os.path.join() 来生成绝对路径并且通过 os.path.exists() 来判断这个路径的文件是否存在（这两种方法都是 Python 的标准库 os 中的方法）。
 
-2. 如果 "project_hierachy.json" 文件不存在，它会调用 generate_hierachy() 方法生成并通知用户。
+2. 如果 "project_hierarchy.json" 文件不存在，它会调用 generate_hierachy() 方法生成并通知用户。
 
 3. 使用 change_detector 对象的 get_staged_pys() 方法检测哪些 Python 文件发生了更改。
 
@@ -163,7 +163,7 @@ run 函数是一个对象方法，其主要执行以下操作：
 - 这个函数没有返回值，它主要用于执行特定的操作，主要是检测变动和根据变动来更新文档。
 
 **输出示例**: 由于该函数没有返回任何值，因此，不会有任何函数返回值的输出示例。但在函数的运行过程中，可能会在日志中输出如下信息：
-- "已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}"
+- "已生成项目全局结构信息，存储路径为: {abs_project_hierarchy_path}"
 - "没有检测到任何变更，不需要更新文档。"
 - "检测到暂存区中变更的文件：{changed_files}"
 ## FunctionDef add_new_item
@@ -199,7 +199,7 @@ run 函数是一个对象方法，其主要执行以下操作：
 
 接着，读取整个Python文件的源代码，并通过ChangeDetector获取文件的diff，并解析出改变的行。再利用ChangeDetector在这些改变的行中识别出存在结构变化的内容。这个函数主要是获取Python文件的源代码，并在其中确定该文件的一组已经变化的内容的集。
 
-然后，打开project_hierachy.json文件并尝试从中找到对应的Python文件。如果找到了文件，它将更新json文件并把内容写回到json文件中，并把相关变更部分的json文件内容转换成markdown内容，再将markdown内容写入到.md文件。
+然后，打开project_hierarchy.json文件并尝试从中找到对应的Python文件。如果找到了文件，它将更新json文件并把内容写回到json文件中，并把相关变更部分的json文件内容转换成markdown内容，再将markdown内容写入到.md文件。
 
 如果没有找到对应的文件，就调用add_new_item方法增加一项。
 

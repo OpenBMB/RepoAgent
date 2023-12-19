@@ -11,7 +11,7 @@ class FileHandler:
     def __init__(self, repo_path, file_path):
         self.file_path = file_path # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierachy = os.path.join(repo_path, CONFIG['project_hierachy'])
+        self.project_hierarchy = os.path.join(repo_path, CONFIG['project_hierarchy'])
 
     def read_file(self):
         """
@@ -168,48 +168,45 @@ class FileHandler:
             with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
                 content = f.read()
                 structures = self.get_functions_and_classes(content)
-                json_objects = []
+                file_objects = {}
                 for struct in structures:
                     structure_type, name, start_line, end_line, parent = struct
                     code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, file_path)
+                    file_objects[name] = code_info
 
-                    json_objects.append(code_info)
-            return {
-                "file_path": file_path,
-                "objects": json_objects
-            }
+            return file_objects
 
     def generate_overall_structure(self):
-        file_structure = []
+        repo_structure = {}
         for root, dirs, files in os.walk(self.repo_path):
             for file in files:
                 if file.endswith('.py'):
                     relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
-                    file_structure.append(self.generate_file_structure(relative_file_path))
-        return file_structure
+                    repo_structure[relative_file_path] = self.generate_file_structure(relative_file_path)
+        return repo_structure
     
-    def convert_structure_to_json(self, file_structure):
-        json_data = {"files": []}
-        for file_data in file_structure:
-            json_data["files"].append(file_data)
-        return json_data
+    # def convert_structure_to_json(self, repo_structure):
+    #     json_data = {"files": []}
+    #     for file_data in file_structure:
+    #         json_data["files"].append(file_data)
+    #     return json_data
 
-    def convert_to_markdown_file(self, file_path = None):
-        with open(self.project_hierachy, 'r', encoding='utf-8') as f:
+    def convert_to_markdown_file(self, file_path=None):
+        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
-        if file_path == None:   
+        if file_path is None:
             file_path = self.file_path
 
         # Find the file object in json_data that matches file_path
-        file_object = next((file for file in json_data["files"] if file["file_path"] == file_path), None)
-        
-        if file_object is None:
+        file_dict = json_data.get(file_path)
+
+        if file_dict is None:
             raise ValueError(f"No file object found for {self.file_path} in project_hierarchy.json")
 
         markdown = ""
         parent_dict = {}
-        objects = sorted(file_object["objects"], key=lambda obj: obj["code_start_line"])
+        objects = sorted(file_dict.values(), key=lambda obj: obj["code_start_line"])
         for obj in objects:
             if obj["parent"] is not None:
                 parent_dict[obj["name"]] = obj["parent"]
@@ -226,11 +223,11 @@ class FileHandler:
             markdown += f"{'#' * level} {obj['type']} {obj['name']}\n"
             markdown += f"{obj['md_content']}\n"
         markdown += "***\n"
-        
+
         return markdown
 
     def convert_all_to_markdown_files_from_json(self):
-        with open(self.project_hierachy, 'r', encoding='utf-8') as f:
+        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
         # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
@@ -239,9 +236,9 @@ class FileHandler:
             os.mkdir(markdown_docs_path)
 
         # 遍历json_data["files"]列表中的每个字典
-        for file in json_data["files"]:
-            md_path = os.path.join(markdown_docs_path, file["file_path"]).replace('.py', '.md')
-            markdown = self.convert_to_markdown_file(file["file_path"])
+        for rel_file_path, file_dict in json_data.items():
+            md_path = os.path.join(markdown_docs_path, rel_file_path.replace('.py', '.md'))
+            markdown = self.convert_to_markdown_file(rel_file_path)
             
             # 检查目录是否存在，如果不存在，就创建它
             os.makedirs(os.path.dirname(md_path), exist_ok=True)

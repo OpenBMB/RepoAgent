@@ -3,7 +3,7 @@
 
 在详细分析代码之前，我们首先需要理解一些重要函数：
 
-- `__init__`： 这是初始化函数，调用时会传入`repo_path`和`project_hierachy`两个参数。`repo_path`代表项目的路径，`project_hierachy`表示项目的层次结构。函数中会创建一个jedi项目并将其储存在类的变量`self.project`中，同时还会将项目的层次结构存储在`self.project_hierachy`中。
+- `__init__`： 这是初始化函数，调用时会传入`repo_path`和`project_hierarchy`两个参数。`repo_path`代表项目的路径，`project_hierarchy`表示项目的层次结构。函数中会创建一个jedi项目并将其储存在类的变量`self.project`中，同时还会将项目的层次结构存储在`self.project_hierarchy`中。
 
 - `get_project_structure`： 返回项目的结构。首先定义一个空列表`structure`用来保存项目的结构，然后对项目的路径调用`walk_dir`函数。この関数は、与えられた两个参数和储存在生成的项目对象中的`structure`列表来保存项目的树形结构。
 
@@ -27,12 +27,12 @@ print(pm.Find_All_References("variable", "file/path", 1, 1)) # 输出：[(relpat
 
 - `self.repo_path`属性用于存储传递给`__init__`函数的`repo_path`参数的值，这个值代表了代码仓库的路径。
 - `self.project`属性利用`jedi.Project`初始化，并传递了`self.repo_path`作为参数。`jedi`是一个Python库，常用于代码的自动补全和静态分析。`self.project`会存储一个`jedi.Project`实例，该实例代表了给定路径上的项目，并可用于此后的代码分析和操作。
-- `self.project_hierachy`属性是通过`os.path.join`的方法来构建的，它将`repo_path`和`project_hierachy`这两个参数合并，形成一个系统路径。这个属性用于表示项目的层次结构，通常可能包括源代码文件、资产、测试和其他项目目录。
+- `self.project_hierarchy`属性是通过`os.path.join`的方法来构建的，它将`repo_path`和`project_hierarchy`这两个参数合并，形成一个系统路径。这个属性用于表示项目的层次结构，通常可能包括源代码文件、资产、测试和其他项目目录。
 
 **注意**：
 - 使用这段代码时，需要保证`jedi`库已经被安装在当前环境中，否则将无法创建`jedi.Project`实例。
 - `repo_path`参数应该是一个有效的文件路径字符串，指向了希望进行管理的项目的根目录。
-- `project_hierachy`参数也应该是一个文件路径字符串，它会指定项目的一个特定子目录或文件组织结构。这个参数与`repo_path`一起使用，以确定项目的完整层级结构。
+- `project_hierarchy`参数也应该是一个文件路径字符串，它会指定项目的一个特定子目录或文件组织结构。这个参数与`repo_path`一起使用，以确定项目的完整层级结构。
 - 这段代码的执行依赖于Python的标准库`os`模块，因此在使用前无需安装额外的依赖项，但需要确保正确地导入了`os`模块。
 - 由于这是一个初始化方法，它将在创建类的新实例时自动调用，通常不需要手动调用此函数。
 

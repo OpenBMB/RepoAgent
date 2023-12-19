@@ -75,7 +75,7 @@ api_keys:
 request_timeout: 90
 
 repo_path: /path/to/your/repo
-project_hierachy: .project_hierachy.json # The paths of the global structure information json file
+project_hierarchy: .project_hierarchy.json # The paths of the global structure information json file
 Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.

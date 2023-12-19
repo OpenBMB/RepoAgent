@@ -163,4 +163,4 @@ cython_debug/
 #.idea/
 
 # AI doc
-.project_hierachy.json
+.project_hierarchy.json

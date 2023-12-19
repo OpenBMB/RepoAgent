@@ -25,9 +25,9 @@
 
 11. `convert_structure_to_json`: 这个函数用于将文件结构的列表转换为JSON数据。它遍历文件结构列表，并添加到JSON数据中的files字段中，最后返回JSON数据。
 
-12. `convert_to_markdown_file`: 这个函数用于将给定文件的AST结构转换为Markdown文本。它首先从工程层次文件（project_hierachy.json）中读取工程结构数据，然后找到对应文件的结构，最后根据这个结构生成Markdown文本。
+12. `convert_to_markdown_file`: 这个函数用于将给定文件的AST结构转换为Markdown文本。它首先从工程层次文件（project_hierarchy.json）中读取工程结构数据，然后找到对应文件的结构，最后根据这个结构生成Markdown文本。
 
-13. `convert_all_to_markdown_files_from_json`: 这个函数是把所有的.py文件的AST结构转换成Markdown文件。它先从project_hierachy.json读取到AST结构，然后调用convert_to_markdown_files_from_structure生成Markdown文件并保存。
+13. `convert_all_to_markdown_files_from_json`: 这个函数是把所有的.py文件的AST结构转换成Markdown文件。它先从project_hierarchy.json读取到AST结构，然后调用convert_to_markdown_files_from_structure生成Markdown文件并保存。
 
 **注意**: 代码运行的过程中需要确保输入的路径、文件等都是存在的，避免目录错误或文件缺失的问题。
 
@@ -39,12 +39,12 @@
 
 这个__init__函数接受两个参数：'repo_path'（仓库路径）和'file_path'（文件路径）。
 
-'repo_path'参数代表了仓库的根目录，而'file_path'参数则表示相对于仓库根目录的路径。函数内部首先将这两个参数值赋给相应的实例变量，然后使用'os.path.join'方法将'repo_path'和配置文件中的'project_hierachy'值连接在一起，形成项目的完整路径，并将其赋值给实例变量'project_hierachy'。
+'repo_path'参数代表了仓库的根目录，而'file_path'参数则表示相对于仓库根目录的路径。函数内部首先将这两个参数值赋给相应的实例变量，然后使用'os.path.join'方法将'repo_path'和配置文件中的'project_hierarchy'值连接在一起，形成项目的完整路径，并将其赋值给实例变量'project_hierarchy'。
 
 **详细的代码分析和描述**：
 '__init__'方法首先接收两个参数'repo_path'和'file_path'。这两个参数分别代表仓库路径和文件路径。
 在函数内部，这两个参数被分别赋值给相关的实例变量：'self.file_path' 和 'self.repo_path'。
-然后它调用'os.path.join'方法，将'repo_path'（仓库路径）和'my_project_hierachy'（为项目配置的层级结构）的值连接起来，得到整个项目的路径。然后此路径被赋值给实例变量'self.project_hierachy'。
+然后它调用'os.path.join'方法，将'repo_path'（仓库路径）和'my_project_hierarchy'（为项目配置的层级结构）的值连接起来，得到整个项目的路径。然后此路径被赋值给实例变量'self.project_hierarchy'。
 
 **注意**：关于这段代码使用的要点
 - 'repo_path'和'file_path'参数需要用符合系统路径格式的字符串来表示，尤其需要注意的是，如果在Windows系统环境下，路径的斜杆方向是'\'，在Linux或者Mac系统环境下，路径的斜杆方向应该是'/'。
@@ -301,7 +301,7 @@ print(previous_version) # 输出: None
 ## FunctionDef convert_all_to_markdown_files_from_json
 **convert_all_to_markdown_files_from_json函数**：此函数的功能是从JSON文件读取数据，并将这些数据转换为Markdown文件，然后存储在Markdown_docs文件夹中。
 
-首先，函数使用'utf-8'编码打开名为self.project_hierachy的文件进行读取，使用json.load()方法将数据加载到json_data变量中。
+首先，函数使用'utf-8'编码打开名为self.project_hierarchy的文件进行读取，使用json.load()方法将数据加载到json_data变量中。
 
 然后，函数检查根目录下是否存在名为Markdown_docs的文件夹。为此，它构建Markdown_docs的完整路径，通过os.path.join方法合并self.repo_path（应该是该项目的根目录）与配置文件中的'Markdown_Docs_folder'字段。然后，它使用os.path.exists方法来检查这个路径是否存在。如果这个路径不存在，那么会用os.mkdir方法创建一个名为Markdown_docs的新的文件夹。
 
@@ -313,5 +313,5 @@ print(previous_version) # 输出: None
 
 最后，函数打开md_path表示的文件（如果文件不存在，将会创建一个新的文件）并将markdown写入其中。
 
-**注意**：在使用这段代码时，要确保self.project_hierachy文件和self.repo_path目录是存在的，以便读取数据和创建Markdown_docs目录。除此之外，也需要保证CONFIG中存在'Markdown_Docs_folder'字段，并且其值为一个有效的文件夹名称，以便在self.repo_path下创建对应的目录。
+**注意**：在使用这段代码时，要确保self.project_hierarchy文件和self.repo_path目录是存在的，以便读取数据和创建Markdown_docs目录。除此之外，也需要保证CONFIG中存在'Markdown_Docs_folder'字段，并且其值为一个有效的文件夹名称，以便在self.repo_path下创建对应的目录。
 ***
