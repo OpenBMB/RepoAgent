@@ -7,15 +7,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 import logging
+from loguru import logger
 from ai_doc.config import CONFIG
 
+logger.info("This is an info message.")
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
 
 class Runner:
     def __init__(self):
-        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierachy=CONFIG['project_hierachy']) 
+        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
     
@@ -25,13 +27,13 @@ class Runner:
         """
         # 初始化一个File_handler
         file_handler = FileHandler(self.project_manager.repo_path, None)
-        file_structure = file_handler.generate_overall_structure()
-        json_output = file_handler.convert_structure_to_json(file_structure)
+        repo_structure = file_handler.generate_overall_structure()
+        # json_output = file_handler.convert_structure_to_json(repo_structure)
 
-        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
+        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
         # Save the JSON to a file
         with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(json_output, f, indent=4, ensure_ascii=False)
+            json.dump(repo_structure, f, indent=4, ensure_ascii=False)
 
         # logger.info(f"JSON structure generated and saved to '{json_file}'.")
 
@@ -59,32 +61,32 @@ class Runner:
         """
         根据全局json结构的信息，生成整个项目所有python文件的文档
         """
-        # 检测是否存在全局的 project_hierachy.json 结构信息
-        if not os.path.exists(self.project_manager.project_hierachy):
+        # 检测是否存在全局的 project_hierarchy.json 结构信息
+        if not os.path.exists(self.project_manager.project_hierarchy):
             self.generate_hierachy()
-            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierachy}")
+            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
-        with open(self.project_manager.project_hierachy, 'r') as f:
+        with open(self.project_manager.project_hierarchy, 'r') as f:
             json_data = json.load(f)
 
-        # 遍历json_data中的每个文件
-        for file in json_data['files']:
+        # 遍历json_data中的每个对象
+        for rel_file_path, file_dict in json_data.items():
 
             # 判断当前文件是否为空，如果为空则跳过：
-            if os.path.getsize(os.path.join(CONFIG['repo_path'],file['file_path'])) == 0:
+            if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
                 continue
 
             # 对于每个单独文件里的每一个对象：获取其引用者列表
-            referencer_list = []
+            referencer_list = [] # 单独拿一个referencer_list出来存储引用者是为了避免JEDI并发处理报错
             
-            for obj in file['objects']:
+            for obj_name, obj_info in file_dict.items():
                 referencer_obj = {
-                    "obj_name": obj["name"],
+                    "obj_name": obj_name,
                     "obj_referencer_list": self.project_manager.find_all_referencer(
-                        variable_name=obj["name"],
-                        file_path=file["file_path"],
-                        line_number=obj["code_start_line"],
-                        column_number=obj["name_column"]
+                        variable_name=obj_name,
+                        file_path=rel_file_path,
+                        line_number=obj_info["code_start_line"],
+                        column_number=obj_info["name_column"]
                     )
                 }
                 referencer_list.append(referencer_obj)
@@ -94,31 +96,29 @@ class Runner:
             with ThreadPoolExecutor(max_workers=5) as executor: 
 
                 futures = []
-                file_handler = FileHandler(CONFIG['repo_path'], file['file_path'])
+                file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
 
                 # 遍历文件中的每个对象
-                for index, obj in enumerate(file['objects']):
-
-                    for ref_obj in referencer_list:
-                        if ref_obj["obj_name"] == obj["name"]:
-                            # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
-                            future = executor.submit(self.chat_engine.generate_doc, obj, file_handler, ref_obj["obj_referencer_list"])
-                            futures.append((future, obj, index))
+                for index, ref_obj in enumerate(referencer_list):
+                    if ref_obj["obj_name"] in file_dict:
+                        # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
+                        future = executor.submit(self.chat_engine.generate_doc, file_dict[ref_obj['obj_name']], file_handler, ref_obj["obj_referencer_list"])
+                        futures.append((future, ref_obj, index))
 
                 # 收集响应结果
-                for future, obj, index in futures:
-                    logger.info(f" -- 正在生成 {file_handler.file_path}中的{obj['name']} 对象文档...")
+                for future, ref_obj, index in futures:
+                    logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
                     response_message = future.result()  # 等待结果
-                    file['objects'][index]["md_content"] = response_message.content
+                    file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
                 
                 futures = []
 
             # 在对文件的循环内，将json_data写回文件
-            with open(self.project_manager.project_hierachy, 'w') as f:
+            with open(self.project_manager.project_hierarchy, 'w') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
 
             # 对于每个文件，转换json内容到markdown
-            markdown = file_handler.convert_to_markdown_file(file_path=file['file_path'])
+            markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
             # 写入markdown内容到.md文件
             file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
@@ -142,11 +142,11 @@ class Runner:
         Returns:
             None
         """
-        # 首先检测是否存在全局的 project_hierachy.json 结构信息
-        abs_project_hierachy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierachy'])
-        if not os.path.exists(abs_project_hierachy_path):
+        # 首先检测是否存在全局的 project_hierarchy.json 结构信息
+        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        if not os.path.exists(abs_project_hierarchy_path):
             self.generate_hierachy()
-            logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierachy_path}")
+            logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierarchy_path}")
     
         changed_files = self.change_detector.get_staged_pys()
 
@@ -170,19 +170,18 @@ class Runner:
         
 
     def add_new_item(self, file_handler, json_data):
-        new_item = {}
-        new_item["file_path"] = file_handler.file_path
-        new_item["objects"] = []
+        file_dict = {}
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
             code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
             md_content = self.chat_engine.generate_doc(code_info, file_handler)
             code_info["md_content"] = md_content
-            new_item["objects"].append(code_info)
+            # 文件对象file_dict中添加一个新的对象
+            file_dict[name] = code_info
 
-        json_data["files"].append(new_item)
+        json_data[file_handler.file_path] = file_dict
         # 将新的项写入json文件
-        with open(self.project_manager.project_hierachy, 'w') as f:
+        with open(self.project_manager.project_hierarchy, 'w') as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
@@ -191,7 +190,7 @@ class Runner:
         file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
         logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
 
-    
+
     def process_file_changes(self, repo_path, file_path, is_new_file):
         """
         函数将在检测到的变更文件的循环中被调用，作用是根据文件绝对路径处理变更的文件，包括新增的文件和已存在的文件。
@@ -212,34 +211,28 @@ class Runner:
         changes_in_pyfile = self.change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(source_code))
         logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
         
-        # 判断project_hierachy.json文件中能否找到对应.py文件路径的项
-        with open(self.project_manager.project_hierachy, 'r') as f:
+        # 判断project_hierarchy.json文件中能否找到对应.py文件路径的项
+        with open(self.project_manager.project_hierarchy, 'r') as f:
             json_data = json.load(f)
         
-        # 标记是否找到了对应的文件
-        found = False
-        for i, file in enumerate(json_data["files"]):
+        # 如果找到了对应文件
+        if file_handler.file_path in json_data:
+            # 更新json文件中的内容
+            json_data[file_handler.file_path] = self.update_existing_item(json_data[file_handler.file_path], file_handler, changes_in_pyfile)
+            # 将更新后的file写回到json文件中
+            with open(self.project_manager.project_hierarchy, 'w') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
+            
+            logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")
 
-            if file["file_path"] == file_handler.file_path: # 找到了对应文件
-                # 更新json文件中的内容
-                json_data["files"][i] = self.update_existing_item(file, file_handler, changes_in_pyfile)
-                # 将更新后的file写回到json文件中
-                with open(self.project_manager.project_hierachy, 'w') as f:
-                    json.dump(json_data, f, indent=4, ensure_ascii=False)
-                
-                logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")
-
-                found = True
-
-                # 将变更部分的json文件内容转换成markdown内容
-                markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
-                # 将markdown内容写入.md文件
-                file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-                logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
-                break
+            # 将变更部分的json文件内容转换成markdown内容
+            markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
+            # 将markdown内容写入.md文件
+            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
 
         # 如果没有找到对应的文件，就添加一个新的项
-        if not found:
+        else:
             self.add_new_item(file_handler,json_data)
 
         # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
@@ -248,62 +241,52 @@ class Runner:
         if len(git_add_result) > 0:
             logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区') 
 
-        
 
-    def update_existing_item(self, file, file_handler, changes_in_pyfile):
-        
+    def update_existing_item(self, file_dict, file_handler, changes_in_pyfile):
         new_obj, del_obj = self.get_new_objects(file_handler)
 
         # 处理被删除的对象
         for obj_name in del_obj: # 真正被删除的对象
-            for file_obj in file["objects"]:
-                if file_obj["name"] == obj_name:
-                    file["objects"].remove(file_obj)
-                    logger.info(f"已删除 {obj_name} 对象。")
-                    break
+            if obj_name in file_dict:
+                del file_dict[obj_name]
+                logger.info(f"已删除 {obj_name} 对象。")
 
         referencer_list = []
-        file_structure_result = file_handler.generate_file_structure(file["file_path"]) # 生成文件的结构信息
 
-        # file_structure_result返回的是：
-        # {
-        #     "file_path": file_path,
-        #     "objects": json_objects
-        # }
+        # 生成文件的结构信息，获得当前文件中的所有对象， 这里其实就是文件更新之后的结构了
+        current_objects = file_handler.generate_file_structure(file_handler.file_path) 
 
-        new_objects = file_structure_result["objects"] # 获得当前文件中的所有对象， 这里其实就是当前文件更新之后的结构了
-        new_info_dict = {obj["name"]: obj for obj in new_objects}
+        current_info_dict = {obj["name"]: obj for obj in current_objects.values()}
 
-        # 先更新全局文件结构信息，比如代码起始行\终止行等
-        # Explain:
-        # 只要一个文件中的某一个对象发生了变更，这个文件中的其他对象的code_info内容（除了md_content）都需要改变
-        # 依靠再次识别这个文件的代码，更新其他对象的code_start_line等等可能被影响到的字段信息
-        for obj in file["objects"]:
-            if obj["name"] in new_info_dict:
-                new_info = new_info_dict[obj["name"]]
-                obj["type"] = new_info["type"]
-                obj["code_start_line"] = new_info["code_start_line"]
-                obj["code_end_line"] = new_info["code_end_line"]
-                obj["parent"] = new_info["parent"]
-                obj["name_column"] = new_info["name_column"]
+        # 更新全局文件结构信息，比如代码起始行\终止行等
+        for current_obj_name, current_obj_info in current_info_dict.items():
+            if current_obj_name in file_dict:
+                # 如果当前对象在旧对象列表中存在，更新旧对象的信息
+                file_dict[current_obj_name]["type"] = current_obj_info["type"]
+                file_dict[current_obj_name]["code_start_line"] = current_obj_info["code_start_line"]
+                file_dict[current_obj_name]["code_end_line"] = current_obj_info["code_end_line"]
+                file_dict[current_obj_name]["parent"] = current_obj_info["parent"]
+                file_dict[current_obj_name]["name_column"] = current_obj_info["name_column"]
+            else:
+                # 如果当前对象在旧对象列表中不存在，将新对象添加到旧对象列表中
+                file_dict[current_obj_name] = current_obj_info
+
 
         # 对于每一个对象：获取其引用者列表
         for obj_name, _ in changes_in_pyfile['added']:
-
-            for new_object in new_objects: # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
-                if obj_name == new_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
+            for current_object in current_objects.values(): # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
+                if obj_name == current_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
                     # 获取每个需要生成文档的对象的引用者
                     referencer_obj = {
                         "obj_name": obj_name,
                         "obj_referencer_list": self.project_manager.find_all_referencer(
-                            variable_name=new_object["name"],
-                            file_path=file["file_path"],
-                            line_number=new_object["code_start_line"],
-                            column_number=new_object["name_column"]
+                            variable_name=current_object["name"],
+                            file_path=file_handler.file_path,
+                            line_number=current_object["code_start_line"],
+                            column_number=current_object["name_column"]
                         )
                     }
                     referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
-        
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             # 通过线程池并发执行
@@ -311,7 +294,7 @@ class Runner:
             for changed_obj in changes_in_pyfile['added']: # 对于每一个待处理的对象
                 for ref_obj in referencer_list:
                     if changed_obj[0] == ref_obj["obj_name"]: # 在referencer_list中找到它的引用者字典！
-                        future = executor.submit(self.update_object, file, file_handler, changed_obj[0], ref_obj["obj_referencer_list"])
+                        future = executor.submit(self.update_object, file_dict, file_handler, changed_obj[0], ref_obj["obj_referencer_list"])
                         logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
                         futures.append(future)
 
@@ -319,19 +302,14 @@ class Runner:
                 future.result()
 
         # 更新传入的file参数
-        return file
+        return file_dict
     
 
-    def update_object(self, file, file_handler, obj_name, obj_referencer_list):
-
-
-        for obj in file["objects"]: # file["objects"]保存的是原先的旧的对象信息
-
-            if obj["name"] == obj_name: # obj_name标识了在added中需要生成文档的对象（也就是发生了变更的对象）
-
-                response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
-                obj["md_content"] = response_message.content
-                break
+    def update_object(self, file_dict, file_handler, obj_name, obj_referencer_list):
+        if obj_name in file_dict: # file_dict保存的是原先的旧的对象信息
+            obj = file_dict[obj_name]
+            response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
+            obj["md_content"] = response_message.content
 
 
 
@@ -365,6 +343,7 @@ if __name__ == "__main__":
     runner = Runner()
     
     runner.run()
+    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 

@@ -1,8 +1,7 @@
 import os,json
 import re,sys
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
-import yaml
 import tiktoken
 import time
 from .config import language_mapping
@@ -32,6 +31,8 @@ class ChatEngine:
 
     def generate_doc(self, code_info, file_handler, referencer = []):
 
+        print("len(referencer):\n",len(referencer))
+
         def get_code_from_json(json_file, referencer):
             with open(json_file, 'r') as f:
                 data = json.load(f)
@@ -39,19 +40,19 @@ class ChatEngine:
             code_from_referencer = {}
             for ref in referencer:
                 file_path, line_number, _ = ref
-                for file in data["files"]:
-                    if file['file_path'] == file_path:
-                        min_obj = None
-                        for obj in file['objects']:
-                            if obj['code_start_line'] <= line_number <= obj['code_end_line']:
-                                if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
-                                    min_obj = obj
-                        if min_obj is not None:
-                            if file_path not in code_from_referencer:
-                                code_from_referencer[file_path] = []
-                            code_from_referencer[file_path].append(min_obj['code_content'])
+                if file_path in data:
+                    objects = data[file_path]
+                    min_obj = None
+                    for obj_name, obj in objects.items():
+                        if obj['code_start_line'] <= line_number <= obj['code_end_line']:
+                            if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
+                                min_obj = obj
+                    if min_obj is not None:
+                        if file_path not in code_from_referencer:
+                            code_from_referencer[file_path] = []
+                        code_from_referencer[file_path].append(min_obj['code_content'])
             return code_from_referencer
-        
+                
         # 从code_info中获取代码信息
         code_type = code_info["type"]
         code_name = code_info["name"]
@@ -59,12 +60,12 @@ class ChatEngine:
         have_return = code_info["have_return"]
 
         # 初始化一个项目管理器
-        project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierachy=file_handler.project_hierachy)
+        project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
         project_structure = project_manager.get_project_structure()
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
-        code_from_referencer = get_code_from_json(project_manager.project_hierachy, referencer) # 
+        code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
         referenced = True if len(code_from_referencer) > 0 else False
-        referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\nCorresponding code as follows:\n'.join(codes) + "="*30 for file_path, codes in code_from_referencer.items()])     
+        referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
 
         # 判断及占位符
         model = "gpt-4"
@@ -120,6 +121,8 @@ class ChatEngine:
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]
 
+                # print(f"message:\n{messages}\n")
+
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
@@ -137,6 +140,32 @@ class ChatEngine:
                 time.sleep(7)
                 if attempt + 1 == max_attempts:
                     raise
+
+            except BadRequestError as e:
+                if 'context_length_exceeded' in str(e):
+                    print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}")
+                    # 设置referenced为False，并移除referencer_content
+                    referenced = False
+                    referencer_content = ""
+                    reference_letter = ""
+                    combine_ref_situation = ""
+                    sys_prompt = SYS_PROMPT.format(
+                        reference_letter=reference_letter, 
+                        combine_ref_situation=combine_ref_situation, 
+                        file_path=file_path, 
+                        project_structure=project_structure, 
+                        code_type_tell=code_type_tell, 
+                        code_name=code_name, 
+                        code_content=code_content, 
+                        have_return_tell=have_return_tell, 
+                        referenced=referenced, 
+                        referencer_content=referencer_content,
+                        language=language
+                    )
+                    continue  # 重新尝试请求
+                else:
+                    print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
+
             except Exception as e:
                 print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
                 # 等待10秒后重试
