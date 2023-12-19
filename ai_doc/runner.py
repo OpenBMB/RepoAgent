@@ -8,7 +8,6 @@ import yaml
 import subprocess
 import logging
 from loguru import logger
-import ai_doc.log_config
 from ai_doc.config import CONFIG
 
 logger.info("This is an info message.")
