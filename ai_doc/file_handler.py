@@ -187,22 +187,18 @@ class FileHandler:
             abs_ignore = set()
         repo_structure = {}
         for root, dirs, files in os.walk(self.repo_path):
-            skip = False
             for ignore_path in abs_ignore:
                 if root.startswith(ignore_path):
-                    skip = True
-            if skip:
-                continue
-            for file in files:
-                skip = False
-                for ignore_path in abs_ignore:
-                    if os.path.join(root, file).startswith(ignore_path):
-                        skip = True
-                if skip:
-                    continue
-                if file.endswith('.py'):
-                    relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
-                    repo_structure[relative_file_path] = self.generate_file_structure(relative_file_path)
+                    break
+            else:
+                for file in files:
+                    for ignore_path in abs_ignore:
+                        if os.path.join(root, file).startswith(ignore_path):
+                            break
+                    else:
+                        if file.endswith('.py'):
+                            relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
+                            repo_structure[relative_file_path] = self.generate_file_structure(relative_file_path)
         return repo_structure
     
     # def convert_structure_to_json(self, repo_structure):
