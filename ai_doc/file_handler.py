@@ -177,9 +177,29 @@ class FileHandler:
             return file_objects
 
     def generate_overall_structure(self):
+        # 避免把 ignore 的 .py 文件也编进来.
+        ignore_path = f"{self.repo_path}/.gitignore"
+        if os.path.exists(ignore_path):
+            with open(ignore_path) as fp:
+                ignore = [line.strip() for line in fp.readlines()]
+                abs_ignore = set(os.path.abspath(os.path.join(self.repo_path, p)) for p in ignore if p)
+        else:
+            abs_ignore = set()
         repo_structure = {}
         for root, dirs, files in os.walk(self.repo_path):
+            skip = False
+            for ignore_path in abs_ignore:
+                if root.startswith(ignore_path):
+                    skip = True
+            if skip:
+                continue
             for file in files:
+                skip = False
+                for ignore_path in abs_ignore:
+                    if os.path.join(root, file).startswith(ignore_path):
+                        skip = True
+                if skip:
+                    continue
                 if file.endswith('.py'):
                     relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
                     repo_structure[relative_file_path] = self.generate_file_structure(relative_file_path)

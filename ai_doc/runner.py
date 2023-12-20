@@ -1,6 +1,6 @@
 import os, json
 from ai_doc.file_handler import FileHandler
-from ai_doc.change_detector import ChangeDetector
+from ai_doc.change_detector import ChangeDetector, EMPTY
 from ai_doc.project_manager import ProjectManager
 from ai_doc.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -21,7 +21,7 @@ class Runner:
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
     
-    def generate_hierachy(self):
+    def generate_hierarchy(self):
         """
         函数的作用是为整个项目生成一个最初的全局结构信息
         """
@@ -36,6 +36,14 @@ class Runner:
             json.dump(repo_structure, f, indent=4, ensure_ascii=False)
 
         # logger.info(f"JSON structure generated and saved to '{json_file}'.")
+
+    def remove_hierarchy(self):
+        """
+        函数的作用是删除全局结构信息
+        """
+        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        if os.path.exists(json_file):
+            os.remove(json_file)
 
     def get_all_pys(self, directory):
         """
@@ -55,75 +63,7 @@ class Runner:
                     python_files.append(os.path.join(root, file))
 
         return python_files
-        
 
-    def first_generate(self):
-        """
-        根据全局json结构的信息，生成整个项目所有python文件的文档
-        """
-        # 检测是否存在全局的 project_hierarchy.json 结构信息
-        if not os.path.exists(self.project_manager.project_hierarchy):
-            self.generate_hierachy()
-            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
-
-        with open(self.project_manager.project_hierarchy, 'r') as f:
-            json_data = json.load(f)
-
-        # 遍历json_data中的每个对象
-        for rel_file_path, file_dict in json_data.items():
-
-            # 判断当前文件是否为空，如果为空则跳过：
-            if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
-                continue
-
-            # 对于每个单独文件里的每一个对象：获取其引用者列表
-            referencer_list = [] # 单独拿一个referencer_list出来存储引用者是为了避免JEDI并发处理报错
-            
-            for obj_name, obj_info in file_dict.items():
-                referencer_obj = {
-                    "obj_name": obj_name,
-                    "obj_referencer_list": self.project_manager.find_all_referencer(
-                        variable_name=obj_name,
-                        file_path=rel_file_path,
-                        line_number=obj_info["code_start_line"],
-                        column_number=obj_info["name_column"]
-                    )
-                }
-                referencer_list.append(referencer_obj)
-
-            
-            # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
-            with ThreadPoolExecutor(max_workers=5) as executor: 
-
-                futures = []
-                file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
-
-                # 遍历文件中的每个对象
-                for index, ref_obj in enumerate(referencer_list):
-                    if ref_obj["obj_name"] in file_dict:
-                        # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
-                        future = executor.submit(self.chat_engine.generate_doc, file_dict[ref_obj['obj_name']], file_handler, ref_obj["obj_referencer_list"])
-                        futures.append((future, ref_obj, index))
-
-                # 收集响应结果
-                for future, ref_obj, index in futures:
-                    logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
-                    response_message = future.result()  # 等待结果
-                    file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
-                
-                futures = []
-
-            # 在对文件的循环内，将json_data写回文件
-            with open(self.project_manager.project_hierarchy, 'w') as f:
-                json.dump(json_data, f, indent=4, ensure_ascii=False)
-
-            # 对于每个文件，转换json内容到markdown
-            markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
-            # 写入markdown内容到.md文件
-            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-            logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
-
-            
 
     def git_commit(self, file_path, commit_message):
         try:
@@ -144,30 +84,37 @@ class Runner:
         """
         # 首先检测是否存在全局的 project_hierarchy.json 结构信息
         abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        first_gen = False
         if not os.path.exists(abs_project_hierarchy_path):
-            self.generate_hierachy()
+            self.generate_hierarchy()
             logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierarchy_path}")
-    
-        changed_files = self.change_detector.get_staged_pys()
+            first_gen = True
 
-        if len(changed_files) == 0:
-            logger.info("没有检测到任何变更，不需要更新文档。")
-            return
-        
-        else:
-            logger.info(f"检测到暂存区中变更的文件：{changed_files}")
+        try:
+            changed_files = self.change_detector.get_staged_pys(since=EMPTY if first_gen else "HEAD")
 
-        repo_path = self.project_manager.repo_path
+            if len(changed_files) == 0:
+                logger.info("没有检测到任何变更，不需要更新文档。")
+                return
 
-        for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
+            else:
+                logger.info(f"检测到暂存区中变更的文件：{changed_files}")
 
-            # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
-            # 判断当前python文件内容是否为空，如果为空则跳过：
-            if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
-                continue
-            # 否则，根据文件路径处理变更的文件
-            self.process_file_changes(repo_path, file_path, is_new_file)
-        
+            repo_path = self.project_manager.repo_path
+
+            for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
+
+                # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
+                # 判断当前python文件内容是否为空，如果为空则跳过：
+                if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
+                    continue
+                # 否则，根据文件路径处理变更的文件
+                self.process_file_changes(repo_path, file_path, is_new_file)
+        except Exception as e:
+            if first_gen:
+                self.remove_hierarchy()
+            logger.error("程序被意外中断.")
+            raise e
 
     def add_new_item(self, file_handler, json_data):
         file_dict = {}
@@ -343,7 +290,6 @@ if __name__ == "__main__":
     runner = Runner()
     
     runner.run()
-    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 
