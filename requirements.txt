@@ -57,3 +57,4 @@ urllib3==2.1.0
 wcwidth==0.2.12
 wheel==0.41.3
 zipp==3.17.0
+loguru==0.7.2
