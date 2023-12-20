@@ -4,7 +4,7 @@ import git
 import os,json
 import ast
 from .config import CONFIG
-
+from .utils.gitignore_checker import GitignoreChecker
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
@@ -176,13 +176,18 @@ class FileHandler:
 
             return file_objects
 
-    def generate_overall_structure(self):
+    def generate_overall_structure(self) -> dict:
+        """
+        Generate the overall structure of the repository.
+
+        Returns:
+            dict: A dictionary representing the structure of the repository.
+        """
         repo_structure = {}
-        for root, dirs, files in os.walk(self.repo_path):
-            for file in files:
-                if file.endswith('.py'):
-                    relative_file_path = os.path.relpath(os.path.join(root, file), self.repo_path)
-                    repo_structure[relative_file_path] = self.generate_file_structure(relative_file_path)
+        gitignore_checker = GitignoreChecker(directory=self.repo_path,
+                                            gitignore_path=os.path.join(self.repo_path, '.gitignore'))
+        for not_ignored_files in gitignore_checker.check_files_and_folders():
+            repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
         return repo_structure
     
     # def convert_structure_to_json(self, repo_structure):
