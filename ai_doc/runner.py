@@ -6,14 +6,9 @@ from ai_doc.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
-import logging
 from loguru import logger
 from ai_doc.config import CONFIG
 
-logger.info("This is an info message.")
-
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
 
 class Runner:
     def __init__(self):
@@ -61,6 +56,7 @@ class Runner:
         """
         根据全局json结构的信息，生成整个项目所有python文件的文档
         """
+        logger.info("Starting to generate documentation.")
         # 检测是否存在全局的 project_hierarchy.json 结构信息
         if not os.path.exists(self.project_manager.project_hierarchy):
             self.generate_hierachy()
@@ -142,6 +138,7 @@ class Runner:
         Returns:
             None
         """
+        logger.info("Starting to detect changes.")
         # 首先检测是否存在全局的 project_hierarchy.json 结构信息
         abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
         if not os.path.exists(abs_project_hierarchy_path):
