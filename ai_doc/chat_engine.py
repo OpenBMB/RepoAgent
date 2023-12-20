@@ -67,9 +67,6 @@ class ChatEngine:
         referenced = True if len(code_from_referencer) > 0 else False
         referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
 
-        # 判断及占位符
-        model = "gpt-4"
-
         # language
         language = self.config["language"]
         if language not in language_mapping:
@@ -102,21 +99,20 @@ class ChatEngine:
         # print("\nusr_prompt:\n",str(usr_prompt))
 
         max_attempts = 5  # 设置最大尝试次数
-
+        model = self.config["default_completion_kwargs"]["model"]
+        
+        # 检查tokens长度
+        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 3500:
+            print("The code is too long, using gpt-3.5-turbo-16k to process it.")
+            model = "gpt-3.5-turbo-16k"
+        
         for attempt in range(max_attempts):
             try:
-                # 检查tokens长度
-                if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) < 3500:
-                    model = "gpt-4"
-                else:
-                    print("The code is too long, using gpt-3.5-turbo-16k to process it.")
-                    model = "gpt-3.5-turbo-16k"
-                    
                 # 获取基本配置
                 client = OpenAI(
                     api_key=self.config["api_keys"][model][0]["api_key"],
                     base_url=self.config["api_keys"][model][0]["base_url"],
-                    timeout=self.config["request_timeout"]
+                    timeout=self.config["default_completion_kwargs"]["request_timeout"]
                 )
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]
@@ -126,7 +122,7 @@ class ChatEngine:
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    temperature=0,
+                    temperature=self.config["default_completion_kwargs"]["temperature"],
                 )
 
                 response_message = response.choices[0].message

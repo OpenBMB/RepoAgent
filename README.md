@@ -72,14 +72,17 @@ api_keys:
       organization: org-xxxxxx
       model: gpt-3.5-turbo-16k
   ...
-request_timeout: 90
+
+default_completion_kwargs:
+  model: gpt-3.5-turbo-16k
+  temperature: 0.2
+  request_timeout: 60
 
 repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy.json # The paths of the global structure information json file
 Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
-first_generate: True # True if you are generating documentation for the first time in the target repository, else False
 ```
 
 ## Run AI_doc
