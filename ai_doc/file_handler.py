@@ -15,10 +15,10 @@ class FileHandler:
 
     def read_file(self):
         """
-        读取文件内容
+        Read the file content
 
         Returns:
-            str: 当前变更文件的文件内容
+            str: The content of the current changed file
         """
         abs_file_path = os.path.join(self.repo_path, self.file_path)
         with open(abs_file_path, 'r') as file:
@@ -26,6 +26,20 @@ class FileHandler:
         return content
 
     def get_obj_code_info(self, code_type, code_name, start_line, end_line, parent, file_path = None):
+        """
+        Get the code information for a given object.
+
+        Args:
+            code_type (str): The type of the code.
+            code_name (str): The name of the code.
+            start_line (int): The starting line number of the code.
+            end_line (int): The ending line number of the code.
+            parent (str): The parent of the code.
+            file_path (str, optional): The file path. Defaults to None.
+
+        Returns:
+            dict: A dictionary containing the code information.
+        """
 
         code_info = {}
         code_info['type'] = code_type
@@ -54,14 +68,12 @@ class FileHandler:
 
     def write_file(self, file_path, content):
         """
-        写入文件内容
+        Write content to a file.
 
         Args:
-            repo_path (str): 仓库路径
-            file_path (str): 文件路径
-            content (str): 文件内容
+            file_path (str): The relative path of the file.
+            content (str): The content to be written to the file.
         """
-
         # 确保file_path是相对路径
         if file_path.startswith('/'):
             # 移除开头的 '/'
@@ -75,19 +87,19 @@ class FileHandler:
 
     def get_modified_file_versions(self):
         """
-        获取文件的修改前后的版本
+        Get the current and previous versions of the modified file.
 
         Returns:
-            tuple: 包含两个字符串，分别是修改后的完整代码和修改前的完整代码.注意，如果是新添加的文件，则返回的修改前的版本为None
+            tuple: A tuple containing the current version and the previous version of the file.
         """
         repo = git.Repo(self.repo_path)
 
-        # 读取当前工作目录中的文件（修改后的版本）
+        # Read the file in the current working directory (current version)
         current_version_path = os.path.join(self.repo_path, self.file_path)
         with open(current_version_path, 'r') as file:
             current_version = file.read()
 
-        # 获取最后一次提交中的文件版本（修改前的版本）
+        # Get the file version from the last commit (previous version)
         commits = list(repo.iter_commits(paths=self.file_path, max_count=1))
         previous_version = None
         if commits:
@@ -95,18 +107,19 @@ class FileHandler:
             try:
                 previous_version = (commit.tree / self.file_path).data_stream.read().decode('utf-8')
             except KeyError:
-                previous_version = None  # 文件可能是新添加的，之前的提交中不存在
+                previous_version = None  # The file may be newly added and not present in previous commits
 
         return current_version, previous_version
         
     def get_end_lineno(self,node):
-        """ 获取AST节点的结束行号
+        """
+        Get the end line number of a given node.
 
         Args:
-            node: AST节点
+            node: The node for which to find the end line number.
 
         Returns:
-            int: AST节点的结束行号，如果节点没有行号则返回-1
+            int: The end line number of the node. Returns -1 if the node does not have a line number.
         """
         if not hasattr(node, 'lineno'):
             return -1  # 返回-1表示此节点没有行号
@@ -117,26 +130,30 @@ class FileHandler:
             if child_end > -1:  # 只更新当子节点有有效行号时
                 end_lineno = max(end_lineno, child_end)
         return end_lineno
-    
-    def add_parent_references(self, node, parent=None):
+
+    def add_parent_references(self, node):
         """
         Adds a parent reference to each node in the AST.
-        为AST中的每个节点添加父级引用。
 
         Args:
-            node: AST节点
-            parent: 父级节点
+            node: The current node in the AST.
+
+        Returns:
+            None
         """
         for child in ast.iter_child_nodes(node):
             child.parent = node
             self.add_parent_references(child, node)
-    
+
 
     def get_functions_and_classes(self, code_content):
         """
         Retrieves all functions, classes, and their hierarchical relationships.
-        输出示例：[('FunctionDef', 'AI_give_params', 86, 95, None), ('ClassDef', 'PipelineEngine', 97, 104, None), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine')]
-        在上述示例中，PipelineEngine是get_all_pys的父级结构。
+        Output Examples: [('FunctionDef', 'AI_give_params', 86, 95, None), ('ClassDef', 'PipelineEngine', 97, 104, None), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine')]
+        On the example above, PipelineEngine is the Father structure for get_all_pys.
+
+        Args:
+            code_content: The code content of the whole file to be parsed.
 
         Returns:
             A list of tuples containing the type of the node (FunctionDef, ClassDef, AsyncFunctionDef),
@@ -156,25 +173,43 @@ class FileHandler:
         return functions_and_classes
         
     def generate_file_structure(self, file_path):
-            """
-            Generates the file structure for the given file path.
+        """
+        Generates the file structure for the given file path.
 
-            Args:
-                file_path (str): The relative path of the file.
+        Args:
+            file_path (str): The relative path of the file.
 
-            Returns:
-                dict: A dictionary containing the file path and the generated file structure.
-            """
-            with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
-                content = f.read()
-                structures = self.get_functions_and_classes(content)
-                file_objects = {}
-                for struct in structures:
-                    structure_type, name, start_line, end_line, parent = struct
-                    code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, file_path)
-                    file_objects[name] = code_info
+        Returns:
+            dict: A dictionary containing the file path and the generated file structure.
+        
+        Output example:
+        {
+            "function_name": {
+                "type": "function",
+                "start_line": 10,
+                ··· ···
+                "end_line": 20,
+                "parent": "class_name"
+            },
+            "class_name": {
+                "type": "class",
+                "start_line": 5,
+                ··· ···
+                "end_line": 25,
+                "parent": None
+            }
+        }
+        """
+        with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
+            content = f.read()
+            structures = self.get_functions_and_classes(content)
+            file_objects = {}
+            for struct in structures:
+                structure_type, name, start_line, end_line, parent = struct
+                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, file_path)
+                file_objects[name] = code_info
 
-            return file_objects
+        return file_objects
 
     def generate_overall_structure(self) -> dict:
         """
@@ -190,13 +225,20 @@ class FileHandler:
             repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
         return repo_structure
     
-    # def convert_structure_to_json(self, repo_structure):
-    #     json_data = {"files": []}
-    #     for file_data in file_structure:
-    #         json_data["files"].append(file_data)
-    #     return json_data
 
     def convert_to_markdown_file(self, file_path=None):
+        """
+        Converts the content of a file to markdown format.
+
+        Args:
+            file_path (str, optional): The relative path of the file to be converted. If not provided, the default file path, which is None, will be used.
+
+        Returns:
+            str: The content of the file in markdown format.
+        
+        Raises:
+            ValueError: If no file object is found for the specified file path in project_hierarchy.json.
+        """
         with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
@@ -232,6 +274,19 @@ class FileHandler:
         return markdown
 
     def convert_all_to_markdown_files_from_json(self):
+        """
+        Converts all files to markdown format based on the JSON data.
+
+        Reads the project hierarchy from a JSON file, checks if the Markdown_docs folder exists,
+        creates it if it doesn't, and then iterates through each file in the JSON data.
+        For each file, it converts the file to markdown format and writes it to the Markdown_docs folder.
+
+        Args:
+            self (object): The file_handler object.
+
+        Returns:
+            None
+        """
         with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 

@@ -18,9 +18,9 @@ class Runner:
     
     def generate_hierachy(self):
         """
-        函数的作用是为整个项目生成一个最初的全局结构信息
+        The function is to generate an initial global structure information for the entire project.
         """
-        # 初始化一个File_handler
+        # Initialize a File_handler
         file_handler = FileHandler(self.project_manager.repo_path, None)
         repo_structure = file_handler.generate_overall_structure()
         # json_output = file_handler.convert_structure_to_json(repo_structure)
@@ -34,13 +34,13 @@ class Runner:
 
     def get_all_pys(self, directory):
         """
-        获取给定目录下的所有 Python 文件。
+        Get all Python files in the given directory.
 
         Args:
-            directory (str): 要搜索的目录。
+            directory (str): The directory to search.
 
         Returns:
-            list: 所有 Python 文件的路径列表。
+            list: A list of paths to all Python files.
         """
         python_files = []
 
@@ -54,7 +54,7 @@ class Runner:
 
     def first_generate(self):
         """
-        根据全局json结构的信息，生成整个项目所有python文件的文档
+        Generate documentation for all Python files in the project based on the information in the global JSON structure.
         """
         logger.info("Starting to generate documentation.")
         # 检测是否存在全局的 project_hierarchy.json 结构信息
@@ -167,31 +167,41 @@ class Runner:
         
 
     def add_new_item(self, file_handler, json_data):
-        file_dict = {}
-        # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
-        for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
-            code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-            md_content = self.chat_engine.generate_doc(code_info, file_handler)
-            code_info["md_content"] = md_content
-            # 文件对象file_dict中添加一个新的对象
-            file_dict[name] = code_info
+            """
+            Add new projects to the JSON file and generate corresponding documentation.
 
-        json_data[file_handler.file_path] = file_dict
-        # 将新的项写入json文件
-        with open(self.project_manager.project_hierarchy, 'w') as f:
-            json.dump(json_data, f, indent=4, ensure_ascii=False)
-        logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
-        # 将变更部分的json文件内容转换成markdown内容
-        markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
-        # 将markdown内容写入.md文件
-        file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-        logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
+            Args:
+                file_handler (FileHandler): The file handler object for reading and writing files.
+                json_data (dict): The JSON data storing the project structure information.
+
+            Returns:
+                None
+            """
+            file_dict = {}
+            # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
+            for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
+                code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
+                md_content = self.chat_engine.generate_doc(code_info, file_handler)
+                code_info["md_content"] = md_content
+                # 文件对象file_dict中添加一个新的对象
+                file_dict[name] = code_info
+
+            json_data[file_handler.file_path] = file_dict
+            # 将新的项写入json文件
+            with open(self.project_manager.project_hierarchy, 'w') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
+            logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
+            # 将变更部分的json文件内容转换成markdown内容
+            markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
+            # 将markdown内容写入.md文件
+            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
 
 
     def process_file_changes(self, repo_path, file_path, is_new_file):
         """
-        函数将在检测到的变更文件的循环中被调用，作用是根据文件绝对路径处理变更的文件，包括新增的文件和已存在的文件。
-        其中，changes_in_pyfile是一个字典，包含了发生变更的结构的信息，示例格式为：{'added': {'add_context_stack', '__init__'}, 'removed': set()}
+        This function is called in the loop of detected changed files. Its purpose is to process changed files according to the absolute file path, including new files and existing files.
+        Among them, changes_in_pyfile is a dictionary that contains information about the changed structures. An example format is: {'added': {'add_context_stack', '__init__'}, 'removed': set()}
 
         Args:
             repo_path (str): The path to the repository.
@@ -240,70 +250,93 @@ class Runner:
 
 
     def update_existing_item(self, file_dict, file_handler, changes_in_pyfile):
-        new_obj, del_obj = self.get_new_objects(file_handler)
+            """
+            Update existing projects.
 
-        # 处理被删除的对象
-        for obj_name in del_obj: # 真正被删除的对象
-            if obj_name in file_dict:
-                del file_dict[obj_name]
-                logger.info(f"已删除 {obj_name} 对象。")
+            Args:
+                file_dict (dict): A dictionary containing file structure information.
+                file_handler (FileHandler): The file handler object.
+                changes_in_pyfile (dict): A dictionary containing information about the objects that have changed in the file.
 
-        referencer_list = []
+            Returns:
+                dict: The updated file structure information dictionary.
+            """
+            new_obj, del_obj = self.get_new_objects(file_handler)
 
-        # 生成文件的结构信息，获得当前文件中的所有对象， 这里其实就是文件更新之后的结构了
-        current_objects = file_handler.generate_file_structure(file_handler.file_path) 
+            # 处理被删除的对象
+            for obj_name in del_obj: # 真正被删除的对象
+                if obj_name in file_dict:
+                    del file_dict[obj_name]
+                    logger.info(f"已删除 {obj_name} 对象。")
 
-        current_info_dict = {obj["name"]: obj for obj in current_objects.values()}
+            referencer_list = []
 
-        # 更新全局文件结构信息，比如代码起始行\终止行等
-        for current_obj_name, current_obj_info in current_info_dict.items():
-            if current_obj_name in file_dict:
-                # 如果当前对象在旧对象列表中存在，更新旧对象的信息
-                file_dict[current_obj_name]["type"] = current_obj_info["type"]
-                file_dict[current_obj_name]["code_start_line"] = current_obj_info["code_start_line"]
-                file_dict[current_obj_name]["code_end_line"] = current_obj_info["code_end_line"]
-                file_dict[current_obj_name]["parent"] = current_obj_info["parent"]
-                file_dict[current_obj_name]["name_column"] = current_obj_info["name_column"]
-            else:
-                # 如果当前对象在旧对象列表中不存在，将新对象添加到旧对象列表中
-                file_dict[current_obj_name] = current_obj_info
+            # 生成文件的结构信息，获得当前文件中的所有对象， 这里其实就是文件更新之后的结构了
+            current_objects = file_handler.generate_file_structure(file_handler.file_path) 
+
+            current_info_dict = {obj["name"]: obj for obj in current_objects.values()}
+
+            # 更新全局文件结构信息，比如代码起始行\终止行等
+            for current_obj_name, current_obj_info in current_info_dict.items():
+                if current_obj_name in file_dict:
+                    # 如果当前对象在旧对象列表中存在，更新旧对象的信息
+                    file_dict[current_obj_name]["type"] = current_obj_info["type"]
+                    file_dict[current_obj_name]["code_start_line"] = current_obj_info["code_start_line"]
+                    file_dict[current_obj_name]["code_end_line"] = current_obj_info["code_end_line"]
+                    file_dict[current_obj_name]["parent"] = current_obj_info["parent"]
+                    file_dict[current_obj_name]["name_column"] = current_obj_info["name_column"]
+                else:
+                    # 如果当前对象在旧对象列表中不存在，将新对象添加到旧对象列表中
+                    file_dict[current_obj_name] = current_obj_info
 
 
-        # 对于每一个对象：获取其引用者列表
-        for obj_name, _ in changes_in_pyfile['added']:
-            for current_object in current_objects.values(): # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
-                if obj_name == current_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
-                    # 获取每个需要生成文档的对象的引用者
-                    referencer_obj = {
-                        "obj_name": obj_name,
-                        "obj_referencer_list": self.project_manager.find_all_referencer(
-                            variable_name=current_object["name"],
-                            file_path=file_handler.file_path,
-                            line_number=current_object["code_start_line"],
-                            column_number=current_object["name_column"]
-                        )
-                    }
-                    referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
+            # 对于每一个对象：获取其引用者列表
+            for obj_name, _ in changes_in_pyfile['added']:
+                for current_object in current_objects.values(): # 引入new_objects的目的是获取到find_all_referencer中必要的参数信息。在changes_in_pyfile['added']中只有对象和其父级结构的名称，缺少其他参数
+                    if obj_name == current_object["name"]:  # 确保只有当added中的对象名称匹配new_objects时才添加引用者
+                        # 获取每个需要生成文档的对象的引用者
+                        referencer_obj = {
+                            "obj_name": obj_name,
+                            "obj_referencer_list": self.project_manager.find_all_referencer(
+                                variable_name=current_object["name"],
+                                file_path=file_handler.file_path,
+                                line_number=current_object["code_start_line"],
+                                column_number=current_object["name_column"]
+                            )
+                        }
+                        referencer_list.append(referencer_obj) # 对于每一个正在处理的对象，添加他的引用者字典到全部对象的应用者列表中
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            # 通过线程池并发执行
-            futures = []
-            for changed_obj in changes_in_pyfile['added']: # 对于每一个待处理的对象
-                for ref_obj in referencer_list:
-                    if changed_obj[0] == ref_obj["obj_name"]: # 在referencer_list中找到它的引用者字典！
-                        future = executor.submit(self.update_object, file_dict, file_handler, changed_obj[0], ref_obj["obj_referencer_list"])
-                        logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
-                        futures.append(future)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                # 通过线程池并发执行
+                futures = []
+                for changed_obj in changes_in_pyfile['added']: # 对于每一个待处理的对象
+                    for ref_obj in referencer_list:
+                        if changed_obj[0] == ref_obj["obj_name"]: # 在referencer_list中找到它的引用者字典！
+                            future = executor.submit(self.update_object, file_dict, file_handler, changed_obj[0], ref_obj["obj_referencer_list"])
+                            logger.info(f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档...")
+                            futures.append(future)
 
-            for future in futures:
-                future.result()
+                for future in futures:
+                    future.result()
 
-        # 更新传入的file参数
-        return file_dict
+            # 更新传入的file参数
+            return file_dict
     
 
     def update_object(self, file_dict, file_handler, obj_name, obj_referencer_list):
-        if obj_name in file_dict: # file_dict保存的是原先的旧的对象信息
+        """
+        Generate documentation content and update corresponding field information of the object.
+
+        Args:
+            file_dict (dict): A dictionary containing old object information.
+            file_handler: The file handler.
+            obj_name (str): The object name.
+            obj_referencer_list (list): The list of object referencers.
+
+        Returns:
+            None
+        """
+        if obj_name in file_dict:
             obj = file_dict[obj_name]
             response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
             obj["md_content"] = response_message.content
@@ -312,15 +345,17 @@ class Runner:
 
     def get_new_objects(self, file_handler):
         """
-        函数通过比较当前版本和上一个版本的.py文件，获取新增和删除的对象
+        The function gets the added and deleted objects by comparing the current version and the previous version of the .py file.
 
         Args:
-            file_handler (FileHandler): 文件处理器对象。
+            file_handler (FileHandler): The file handler object.
+
         Returns:
-            tuple: 包含新增和删除对象的元组，格式为 (new_obj, del_obj)
-        输出示例：
-        new_obj: ['add_context_stack', '__init__']
-        del_obj: []
+            tuple: A tuple containing the added and deleted objects, in the format (new_obj, del_obj)
+
+        Output example:
+            new_obj: ['add_context_stack', '__init__']
+            del_obj: []
         """
         current_version, previous_version = file_handler.get_modified_file_versions()
         parse_current_py = file_handler.get_functions_and_classes(current_version)
@@ -340,7 +375,6 @@ if __name__ == "__main__":
     runner = Runner()
     
     runner.run()
-    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 

@@ -22,70 +22,71 @@ class ChangeDetector:
         self.repo = git.Repo(repo_path)
 
     def get_staged_pys(self):
-        """
-        获取仓库中已经暂存的python文件变更。
+            """
+            Get added python files in the repository that have been staged.
 
-        这个函数只追踪 Git 中已经暂存的 Python 文件变更，
-        即那些已经执行了 `git add` 的文件。
+            This function only tracks the changes of Python files in Git that have been staged,
+            i.e., the files that have been added using `git add`.
 
-        Returns:
-            dict: 变更的python文件字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的
-        """
-        repo = self.repo
-        staged_files = {}
+            Returns:
+                dict: A dictionary of changed Python files, where the keys are the file paths and the values are booleans indicating whether the file is newly created or not.
+            
+            """
+            repo = self.repo
+            staged_files = {}
 
-        # 检测已暂存的变更
-        # 请注意！GitPython库的逻辑和git不同。这里的R=True参数的作用是反转版本对比逻辑。
-        # 在GitPython库中，repo.index.diff('HEAD')是将暂存区（index）作为新状态（new state）与原本HEAD的提交（old state）进行比较，这意味着，如果现在的暂存区中有一个新文件，它会显示为在HEAD中不存在，即被“删除”。
-        # R=True就是把这个逻辑反转过来，把上一次的提交（HEAD）正确地作为旧状态与现在的暂存区（新状态）（Index）进行比较。在这种情况下，暂存区中的新文件会正确地显示为新增，因为它在HEAD中不存在。
-        diffs = repo.index.diff("HEAD", R=True)
+            # Detect Staged Changes
+            # Please note! The logic of the GitPython library is different from git. Here, the R=True parameter is used to reverse the version comparison logic.
+            # In the GitPython library, repo.index.diff('HEAD') compares the staging area (index) as the new state with the original HEAD commit (old state). This means that if there is a new file in the current staging area, it will be shown as non-existent in HEAD, i.e., "deleted".
+            # R=True reverses this logic, correctly treating the last commit (HEAD) as the old state and comparing it with the current staging area (new state) (Index). In this case, a new file in the staging area will correctly show as added because it does not exist in HEAD.
+            diffs = repo.index.diff("HEAD", R=True)
 
-        for diff in diffs:
-            if diff.change_type in ["A", "M"] and diff.a_path.endswith(".py"):
-                is_new_file = diff.change_type == "A"
-                staged_files[diff.a_path] = is_new_file
+            for diff in diffs:
+                if diff.change_type in ["A", "M"] and diff.a_path.endswith(".py"):
+                    is_new_file = diff.change_type == "A"
+                    staged_files[diff.a_path] = is_new_file
 
-        return staged_files
+            return staged_files
 
 
     def get_file_diff(self, file_path, is_new_file):
         """
-        函数的作用是获取某个文件的变更内容。对于新文件，使用 git diff --staged 获取差异。
+        The function's purpose is to retrieve the changes made to a specific file. For new files, it uses git diff --staged to get the differences.
         Args:
-            file_path (str): 文件相对路径
-            is_new_file (bool): 指示文件是否是新文件
+            file_path (str): The relative path of the file
+            is_new_file (bool): Indicates whether the file is a new file
         Returns:
-            list: 变更内容列表
+            list: List of changes made to the file
         """
         repo = self.repo
 
         if is_new_file:
-            # 对于新文件，先将其添加到暂存区
+            # For new files, first add them to the staging area.
             add_command = f'git -C {repo.working_dir} add "{file_path}"'
             subprocess.run(add_command, shell=True, check=True)
 
-            # 获取暂存区的diff
+            # Get the diff from the staging area.
             diffs = repo.git.diff("--staged", file_path).splitlines()
         else:
-            # 对于非新文件，获取HEAD的diff
+            # For non-new files, get the diff from HEAD.
             diffs = repo.git.diff("HEAD", file_path).splitlines()
 
         return diffs
 
     def parse_diffs(self, diffs):
         """
-        解析差异内容，提取出添加和删除的对象信息，对象可以是类或者函数。
-        输出示例：{'added': [(86, '    '), (87, '    def to_json_new(self, comments = True):'), (88, '        data = {'), (89, '            "name": self.node_name,')...(95, '')], 'removed': []}
-        在上述示例中，PipelineEngine和AI_give_params是添加的对象，没有删除的对象。
-        但是这里的添加不代表是新加入的对象，因为在git diff中，对某一行的修改在diff中是以删除和添加的方式表示的。
-        所以对于修改的内容，也会表示为这个对象经过了added操作。
+        Parse the difference content, extract the added and deleted object information, the object can be a class or a function.
+        Output example: {'added': [(86, '    '), (87, '    def to_json_new(self, comments = True):'), (88, '        data = {'), (89, '            "name": self.node_name,')...(95, '')], 'removed': []}
+        In the above example, PipelineEngine and AI_give_params are added objects, and there are no deleted objects.
+        But the addition here does not mean that it is a newly added object, because in git diff, the modification of a line is represented as deletion and addition in diff.
+        So for the modified content, it will also be represented as this object has undergone an added operation.
 
-        如果需要明确知道某个对象是被新加入的，需要使用get_added_objs()函数。
+        If you need to know clearly that an object is newly added, you need to use the get_added_objs() function.
         Args:
-            diffs (list): 包含差异内容的列表。由类内部的get_file_diff()函数获取。
+            diffs (list): A list containing difference content. Obtained by the get_file_diff() function inside the class.
 
         Returns:
-            dict: 包含添加和删除行信息的字典，格式为 {'added': set(), 'removed': set()}
+            dict: A dictionary containing added and deleted line information, the format is {'added': set(), 'removed': set()}
         """
         changed_lines = {"added": [], "removed": []}
         line_number_current = 0
@@ -111,24 +112,25 @@ class ChangeDetector:
                 line_number_change += 1
 
         return changed_lines
-
-    # TODO: 问题的关键在于，变更的行号分别对应于旧的函数名（即被移除的）和新的函数名（即被添加的），而当前实现还没有正确处理这一点。
-    # 需要一种方式来关联变更行号与它们在变更前后的函数或类名。一种方法是在处理changed_lines之前先构建一个映射，该映射可以根据行号将变更后的名称映射回变更前的名称。
-    # 然后，在identify_changes_in_structure函数中，可以使用这个映射来正确地识别出变更的结构。
+    
+    
+    # TODO: The key issue is that the changed line numbers correspond to the old function names (i.e., those removed) and the new function names (i.e., those added), and the current implementation does not handle this correctly.
+    # We need a way to associate the changed line numbers with their function or class names before and after the change. One method is to build a mapping before processing changed_lines, which can map the names after the change back to the names before the change based on the line number.
+    # Then, in the identify_changes_in_structure function, this mapping can be used to correctly identify the changed structure.
     def identify_changes_in_structure(self, changed_lines, structures):
         """
-        识别发生更改的函数或类的结构：遍历所有的更改行，对于每一行，它检查这一行是否在某个结构（函数或类）的开始行和结束行之间。
-        如果是，那么这个结构就被认为是发生了更改的，将其名称和父级结构名称添加到结果字典 changes_in_structures 的相应集合中（取决于这一行是被添加的还是被删除的）。
+        Identify the structure of the function or class where changes have occurred: Traverse all changed lines, for each line, it checks whether this line is between the start line and the end line of a structure (function or class).
+        If so, then this structure is considered to have changed, and its name and the name of the parent structure are added to the corresponding set in the result dictionary changes_in_structures (depending on whether this line is added or deleted).
 
-        输出示例：{'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
+        Output example: {'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
 
         Args:
-            changed_lines (dict): 包含发生更改的行号的字典，{'added': [(行号，变更内容)], 'removed': [(行号，变更内容)]}
-            structures (list): 接收的是get_functions_and_classes包含函数或类结构的列表，每个结构由结构类型、名称、起始行号、结束行号和父级结构名称组成。
+            changed_lines (dict): A dictionary containing the line numbers where changes have occurred, {'added': [(line number, change content)], 'removed': [(line number, change content)]}
+            structures (list): The received is a list of function or class structures from get_functions_and_classes, each structure is composed of structure type, name, start line number, end line number, and parent structure name.
 
         Returns:
-            dict: 包含发生更改的结构的字典，键为更改类型，值为结构名称和父级结构名称的集合。
-                可能的更改类型为'added'（新增）和'removed'（移除）。
+            dict: A dictionary containing the structures where changes have occurred, the key is the change type, and the value is a set of structure names and parent structure names.
+                Possible change types are 'added' (new) and 'removed' (removed).
         """
         changes_in_structures = {"added": set(), "removed": set()}
         for change_type, lines in changed_lines.items():
@@ -146,7 +148,7 @@ class ChangeDetector:
     
     def get_unstaged_mds(self):
         """
-        获取仓库中未暂存的文件变更。
+        Get unstaged file changes in the repository.
         """
         unstaged_files = []
         diffs = self.repo.index.diff(None)
@@ -161,7 +163,7 @@ class ChangeDetector:
     
     def add_unstaged_mds(self):
         """
-        将所有未暂存的文件添加到暂存区。
+        Add all unstaged files to the staging area.
         """
         unstaged_markdown_files = self.get_unstaged_mds()
         for file_path in unstaged_markdown_files:
