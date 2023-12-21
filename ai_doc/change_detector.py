@@ -22,31 +22,31 @@ class ChangeDetector:
         self.repo = git.Repo(repo_path)
 
     def get_staged_pys(self):
-            """
-            Get added python files in the repository that have been staged.
+        """
+        Get added python files in the repository that have been staged.
 
-            This function only tracks the changes of Python files in Git that have been staged,
-            i.e., the files that have been added using `git add`.
+        This function only tracks the changes of Python files in Git that have been staged,
+        i.e., the files that have been added using `git add`.
 
-            Returns:
-                dict: A dictionary of changed Python files, where the keys are the file paths and the values are booleans indicating whether the file is newly created or not.
-            
-            """
-            repo = self.repo
-            staged_files = {}
+        Returns:
+            dict: A dictionary of changed Python files, where the keys are the file paths and the values are booleans indicating whether the file is newly created or not.
+        
+        """
+        repo = self.repo
+        staged_files = {}
 
-            # Detect Staged Changes
-            # Please note! The logic of the GitPython library is different from git. Here, the R=True parameter is used to reverse the version comparison logic.
-            # In the GitPython library, repo.index.diff('HEAD') compares the staging area (index) as the new state with the original HEAD commit (old state). This means that if there is a new file in the current staging area, it will be shown as non-existent in HEAD, i.e., "deleted".
-            # R=True reverses this logic, correctly treating the last commit (HEAD) as the old state and comparing it with the current staging area (new state) (Index). In this case, a new file in the staging area will correctly show as added because it does not exist in HEAD.
-            diffs = repo.index.diff("HEAD", R=True)
+        # Detect Staged Changes
+        # Please note! The logic of the GitPython library is different from git. Here, the R=True parameter is used to reverse the version comparison logic.
+        # In the GitPython library, repo.index.diff('HEAD') compares the staging area (index) as the new state with the original HEAD commit (old state). This means that if there is a new file in the current staging area, it will be shown as non-existent in HEAD, i.e., "deleted".
+        # R=True reverses this logic, correctly treating the last commit (HEAD) as the old state and comparing it with the current staging area (new state) (Index). In this case, a new file in the staging area will correctly show as added because it does not exist in HEAD.
+        diffs = repo.index.diff("HEAD", R=True)
 
-            for diff in diffs:
-                if diff.change_type in ["A", "M"] and diff.a_path.endswith(".py"):
-                    is_new_file = diff.change_type == "A"
-                    staged_files[diff.a_path] = is_new_file
+        for diff in diffs:
+            if diff.change_type in ["A", "M"] and diff.a_path.endswith(".py"):
+                is_new_file = diff.change_type == "A"
+                staged_files[diff.a_path] = is_new_file
 
-            return staged_files
+        return staged_files
 
 
     def get_file_diff(self, file_path, is_new_file):
