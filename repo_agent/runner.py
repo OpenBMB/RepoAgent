@@ -1,13 +1,13 @@
 import os, json
-from ai_doc.file_handler import FileHandler
-from ai_doc.change_detector import ChangeDetector
-from ai_doc.project_manager import ProjectManager
-from ai_doc.chat_engine import ChatEngine
+from repo_agent.file_handler import FileHandler
+from repo_agent.change_detector import ChangeDetector
+from repo_agent.project_manager import ProjectManager
+from repo_agent.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 from loguru import logger
-from ai_doc.config import CONFIG
+from repo_agent.config import CONFIG
 
 
 class Runner:

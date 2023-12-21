@@ -1,7 +1,9 @@
 # 🤗 介绍
 
-AI_doc是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
+RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
 它的设计目标是成为开发人员的便捷工具，用于创建、维护清晰易懂的代码文档并在团队成员之间应用协作。
+
+![RepoAgent](assets/images/RepoAgent.png)
 
 # 👾 背景
 在计算机编程领域，全面的项目文档非常重要，包括对每个Python文件的详细解释。这样的文档是理解、维护和增强代码库的基石。它为代码提供了必要的上下文解读，使当前和未来的开发人员更容易理解软件的目的、功能和结构。它不仅有助于当前和未来的开发人员理解项目的目的和结构，还确保项目随着时间的推移保持可访问和可修改，极大地降低了新团队成员的学习曲线。
@@ -20,7 +22,7 @@ AI_doc是一个由大型语言模型（LLMs）驱动的开源项目，旨在提�
 - **👭 为团队协作提供可持续、自动化的文档更新方法。**
 
 # 📍 安装
-## 配置AI_doc
+## 配置RepoAgent
 首先，确保您的机器安装了python3.9以上的版本
 ```
 $ python --version
@@ -29,9 +31,9 @@ python 3.11.4
 
 接着，克隆本项目，创建一个虚拟环境，并在环境内安装依赖
 ```
-cd AI_doc
-conda create -n AI_doc python=3.11.4
-conda activate AI_doc
+cd RepoAgent
+conda create -n RepoAgent python=3.11.4
+conda activate RepoAgent
 pip install -r requirements.txt
 ```
 下一步，在config.yml文件中配置OpenAI API 相关参数信息。
@@ -41,19 +43,19 @@ pip install -r requirements.txt
 
 # 📖 快速开始
 
-## 运行AI_doc
-进入AI_doc根目录，在命令行输入以下命令：
+## 运行RepoAgent
+进入RepoAgent根目录，在命令行输入以下命令：
 ```
-python -m ai_doc.runner
+python -m repo_agent.runner
 ```
-如果您是第一次对目标仓库生成文档，此时AI_doc会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
+如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
 
 当您首次完成对目标仓库生成全局文档后，或您clone下来的项目已经包含了全局文档信息后，就可以通过**pre-commit**配置目标仓库**hook**和团队一起无缝自动维护一个项目内部文档了！
 
 ## 配置目标仓库
 
-AI_doc目前支持对项目的文档生成和自动维护，因此需要对目标仓库进行一定的配置。
+RepoAgent目前支持对项目的文档生成和自动维护，因此需要对目标仓库进行一定的配置。
 
 首先，确保目标仓库是一个git仓库，且已经初始化。
 ```
@@ -70,7 +72,7 @@ repos:
     hooks:
     - id: ai-doc
       name: AI-doc
-      entry: python -m ai_doc.runner
+      entry: python -m repo_agent.runner
       language: system
       # 可以指定钩子触发的文件类型
       types: [python]
@@ -80,12 +82,12 @@ repos:
 ```
 pre-commit install
 ```
-这样，每次git commit时，都会触发AI_doc的钩子，自动检测目标仓库中的变更，并生成对应的文档。
+这样，每次git commit时，都会触发RepoAgent的钩子，自动检测目标仓库中的变更，并生成对应的文档。
 接着，可以对目标仓库进行一些修改，例如在目标仓库中添加一个新的文件，或者修改一个已有的文件。
 您只需要正常执行git的工作流程: git add, git commit, git push
-AI_doc hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
+RepoAgent hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
 
-执行后，由于AI_doc更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
+执行后，由于RepoAgent更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
 ![Execution Result](assets/images/execution_result.png)
 此时，hook已经正确执行了文档生成的操作，并在您的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
 接下来您只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
