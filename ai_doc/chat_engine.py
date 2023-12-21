@@ -31,10 +31,10 @@ class ChatEngine:
 
     def generate_doc(self, code_info, file_handler, referencer = []):
 
-        print("len(referencer):\n",len(referencer))
+        #print("len(referencer):\n",len(referencer))
 
         def get_code_from_json(json_file, referencer):
-            with open(json_file, 'r') as f:
+            with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
             code_from_referencer = {}

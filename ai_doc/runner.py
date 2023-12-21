@@ -62,7 +62,7 @@ class Runner:
             self.generate_hierachy()
             logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
-        with open(self.project_manager.project_hierarchy, 'r') as f:
+        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
         # 遍历json_data中的每个对象
@@ -110,7 +110,7 @@ class Runner:
                 futures = []
 
             # 在对文件的循环内，将json_data写回文件
-            with open(self.project_manager.project_hierarchy, 'w') as f:
+            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
 
             # 对于每个文件，转换json内容到markdown
@@ -178,7 +178,7 @@ class Runner:
 
         json_data[file_handler.file_path] = file_dict
         # 将新的项写入json文件
-        with open(self.project_manager.project_hierarchy, 'w') as f:
+        with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
@@ -209,7 +209,7 @@ class Runner:
         logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
         
         # 判断project_hierarchy.json文件中能否找到对应.py文件路径的项
-        with open(self.project_manager.project_hierarchy, 'r') as f:
+        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
         # 如果找到了对应文件
@@ -217,7 +217,7 @@ class Runner:
             # 更新json文件中的内容
             json_data[file_handler.file_path] = self.update_existing_item(json_data[file_handler.file_path], file_handler, changes_in_pyfile)
             # 将更新后的file写回到json文件中
-            with open(self.project_manager.project_hierarchy, 'w') as f:
+            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
             
             logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")

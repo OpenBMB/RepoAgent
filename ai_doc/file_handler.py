@@ -21,7 +21,7 @@ class FileHandler:
             str: 当前变更文件的文件内容
         """
         abs_file_path = os.path.join(self.repo_path, self.file_path)
-        with open(abs_file_path, 'r') as file:
+        with open(abs_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
         return content
 
@@ -35,7 +35,7 @@ class FileHandler:
         code_info['code_end_line'] = end_line
         code_info['parent'] = parent
 
-        with open(os.path.join(self.repo_path, file_path if file_path != None else self.file_path), 'r') as code_file:
+        with open(os.path.join(self.repo_path, file_path if file_path != None else self.file_path), 'r', encoding='utf-8') as code_file:
             lines = code_file.readlines()
             code_content = ''.join(lines[start_line-1:end_line])
             # 获取对象名称在第一行代码中的位置
@@ -69,7 +69,7 @@ class FileHandler:
             
         file_path = os.path.join(self.repo_path, file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
 
 
@@ -84,7 +84,7 @@ class FileHandler:
 
         # 读取当前工作目录中的文件（修改后的版本）
         current_version_path = os.path.join(self.repo_path, self.file_path)
-        with open(current_version_path, 'r') as file:
+        with open(current_version_path, 'r', encoding='utf-8') as file:
             current_version = file.read()
 
         # 获取最后一次提交中的文件版本（修改前的版本）
