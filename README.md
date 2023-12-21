@@ -1,7 +1,9 @@
 # 🤗 Introduction
 
-AI_doc is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
+RepoAgent is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
 It is designed to be a handy tool for developers who need to organize their code and cooperate with teammates.
+
+![RepoAgent](assets/images/RepoAgent.png)
 
 # Quick links
 
@@ -11,8 +13,8 @@ It is designed to be a handy tool for developers who need to organize their code
 - [Features](#-features)
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
-  - [Configuring AI_doc](#configuring-ai_doc)
-  - [Run AI_doc](#run-ai_doc)
+  - [Configuring RepoAgent](#configuring-RepoAgent)
+  - [Run RepoAgent](#run-RepoAgent)
   - [Configuring the Target Repository](#configuring-the-target-repository)
 - [Future Work](#-future-work)
 - [Supported Language](#supported-language)
@@ -45,16 +47,16 @@ python 3.11.4
 Next, clone the project, create a virtual environment, and install dependencies within this environment.
 
 ```
-cd AI_doc
-conda create -n AI_doc python=3.11.4
-conda activate AI_doc
+cd RepoAgent
+conda create -n RepoAgent python=3.11.4
+conda activate RepoAgent
 pip install -r requirements.txt
 ```
 
 
 # 📖 Quick Start
 
-## Configuring AI_doc
+## Configuring RepoAgent
 First, configure the OpenAI API parameters in the config.yml file.
 For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
 
@@ -85,14 +87,14 @@ Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
 ```
 
-## Run AI_doc
+## Run RepoAgent
 
-Enter the root directory of AI_doc and type the following command in the terminal:
+Enter the root directory of RepoAgent and type the following command in the terminal:
 ```
 python -m ai_doc.runner
 ```
 
-If it's your first time generating documentation for the target repository, AI_doc will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
+If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
 
 The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
 
@@ -101,7 +103,7 @@ Once you have initially generated the global documentation for the target reposi
 
 ## Configuring the Target Repository
 
-AI_doc currently supports generating documentation for projects, which requires some configuration in the target repository.
+RepoAgent currently supports generating documentation for projects, which requires some configuration in the target repository.
 
 First, ensure that the target repository is a git repository and has been initialized.
 ```
@@ -120,7 +122,7 @@ repos:
     hooks:
     - id: ai-doc
       name: AI-doc
-      entry: python path/to/your/AI_doc/runner.py
+      entry: python path/to/your/RepoAgent/runner.py
       language: system
       # You can specify the file types that trigger the hook
       types: [python]
@@ -130,12 +132,12 @@ After configuring the yaml file, execute the following command to install the ho
 ```
 pre-commit install
 ```
-This way, each time you perform a git commit, the AI_doc hook will be triggered, automatically detecting changes in the target repository and generating corresponding documentation.
+This way, each time you perform a git commit, the RepoAgent hook will be triggered, automatically detecting changes in the target repository and generating corresponding documentation.
 Next, make some modifications to the target repository, such as adding a new file or modifying an existing one.
 You just need to follow the normal git workflow: git add, git commit, git push.
-The AI_doc hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
+The RepoAgent hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
 
-After execution, as AI_doc modifies files in the target repository, it will display 'Failed' upon completion of the hook. This is normal.
+After execution, as RepoAgent modifies files in the target repository, it will display 'Failed' upon completion of the hook. This is normal.
 ![Execution Result](assets/images/execution_result.png)
 At this point, the hook has correctly performed the documentation generation operation and created a folder named Markdown_Docs in the root directory of your target repository.
 Next, you just need to git add the Markdown_Docs folder to the staging area and use:
