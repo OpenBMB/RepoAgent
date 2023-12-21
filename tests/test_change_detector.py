@@ -1,6 +1,6 @@
 import unittest
 import os
-from ai_doc.change_detector import ChangeDetector
+from repo_agent.change_detector import ChangeDetector
 from git import Repo
 
 class TestChangeDetector(unittest.TestCase):

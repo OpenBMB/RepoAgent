@@ -151,42 +151,49 @@ to submit your commit.
 
 - [x] Optimize the project structure and refine the responsibilities of the classes
 - [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
-- [ ] Implement Black commit
-- [ ] Support the selection of document language
+- [x] Implement Black commit
+- [x] Support the selection of document language
 - [x] Enable the identification of inter-object reference relationships
-- [x] **Bi-direct reference** Bi-directional reference construction topology
-- [ ] Open source
+- [] **Bi-direct reference** Bi-directional reference construction topology
+- [x] Open source
 
 # Supported Language
-Set the target language with the two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Here are languages we currently support:
+Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
 
-| Code | Language   |
-|------|------------|
-| en   | English    |
-| es   | Spanish    |
-| fr   | French     |
-| de   | German     |
-| zh   | Chinese    |
-| ja   | Japanese   |
-| ru   | Russian    |
-| it   | Italian    |
-| ko   | Korean     |
-| nl   | Dutch      |
-| pt   | Portuguese |
-| ar   | Arabic     |
-| tr   | Turkish    |
-| sv   | Swedish    |
-| da   | Danish     |
-| fi   | Finnish    |
-| no   | Norwegian  |
-| pl   | Polish     |
-| cs   | Czech      |
-| hu   | Hungarian  |
-| el   | Greek      |
-| he   | Hebrew     |
-| th   | Thai       |
-| hi   | Hindi      |
-| bn   | Bengali    |
+<details>
+<summary>Languages List</summary>
+
+| Flag | Code | Language   |
+|------|------|------------|
+| 🇬🇧 | en   | English    |
+| 🇪🇸 | es   | Spanish    |
+| 🇫🇷 | fr   | French     |
+| 🇩🇪 | de   | German     |
+| 🇨🇳 | zh   | Chinese    |
+| 🇯🇵 | ja   | Japanese   |
+| 🇷🇺 | ru   | Russian    |
+| 🇮🇹 | it   | Italian    |
+| 🇰🇷 | ko   | Korean     |
+| 🇳🇱 | nl   | Dutch      |
+| 🇵🇹 | pt   | Portuguese |
+| 🇸🇦 | ar   | Arabic     |
+| 🇹🇷 | tr   | Turkish    |
+| 🇸🇪 | sv   | Swedish    |
+| 🇩🇰 | da   | Danish     |
+| 🇫🇮 | fi   | Finnish    |
+| 🇳🇴 | no   | Norwegian  |
+| 🇵🇱 | pl   | Polish     |
+| 🇨🇿 | cs   | Czech      |
+| 🇭🇺 | hu   | Hungarian  |
+| 🇬🇷 | el   | Greek      |
+| 🇮🇱 | he   | Hebrew     |
+| 🇹🇭 | th   | Thai       |
+| 🇮🇳 | hi   | Hindi      |
+| 🇧🇩 | bn   | Bengali    |
+
+</details>
+
+> e.g., `language: en` for English.
 
 # 📜 License
 
