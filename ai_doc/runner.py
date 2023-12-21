@@ -6,14 +6,9 @@ from ai_doc.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
-import logging
 from loguru import logger
 from ai_doc.config import CONFIG
 
-logger.info("This is an info message.")
-
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
 
 class Runner:
     def __init__(self):
@@ -23,9 +18,9 @@ class Runner:
     
     def generate_hierachy(self):
         """
-        函数的作用是为整个项目生成一个最初的全局结构信息
+        The function is to generate an initial global structure information for the entire project.
         """
-        # 初始化一个File_handler
+        # Initialize a File_handler
         file_handler = FileHandler(self.project_manager.repo_path, None)
         repo_structure = file_handler.generate_overall_structure()
         # json_output = file_handler.convert_structure_to_json(repo_structure)
@@ -39,13 +34,13 @@ class Runner:
 
     def get_all_pys(self, directory):
         """
-        获取给定目录下的所有 Python 文件。
+        Get all Python files in the given directory.
 
         Args:
-            directory (str): 要搜索的目录。
+            directory (str): The directory to search.
 
         Returns:
-            list: 所有 Python 文件的路径列表。
+            list: A list of paths to all Python files.
         """
         python_files = []
 
@@ -59,14 +54,15 @@ class Runner:
 
     def first_generate(self):
         """
-        根据全局json结构的信息，生成整个项目所有python文件的文档
+        Generate documentation for all Python files in the project based on the information in the global JSON structure.
         """
+        logger.info("Starting to generate documentation.")
         # 检测是否存在全局的 project_hierarchy.json 结构信息
         if not os.path.exists(self.project_manager.project_hierarchy):
             self.generate_hierachy()
             logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
-        with open(self.project_manager.project_hierarchy, 'r') as f:
+        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
         # 遍历json_data中的每个对象
@@ -114,7 +110,7 @@ class Runner:
                 futures = []
 
             # 在对文件的循环内，将json_data写回文件
-            with open(self.project_manager.project_hierarchy, 'w') as f:
+            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
 
             # 对于每个文件，转换json内容到markdown
@@ -142,6 +138,7 @@ class Runner:
         Returns:
             None
         """
+        logger.info("Starting to detect changes.")
         # 首先检测是否存在全局的 project_hierarchy.json 结构信息
         abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
         if not os.path.exists(abs_project_hierarchy_path):
@@ -170,6 +167,16 @@ class Runner:
         
 
     def add_new_item(self, file_handler, json_data):
+        """
+        Add new projects to the JSON file and generate corresponding documentation.
+
+        Args:
+            file_handler (FileHandler): The file handler object for reading and writing files.
+            json_data (dict): The JSON data storing the project structure information.
+
+        Returns:
+            None
+        """
         file_dict = {}
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
@@ -181,7 +188,7 @@ class Runner:
 
         json_data[file_handler.file_path] = file_dict
         # 将新的项写入json文件
-        with open(self.project_manager.project_hierarchy, 'w') as f:
+        with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
@@ -193,8 +200,8 @@ class Runner:
 
     def process_file_changes(self, repo_path, file_path, is_new_file):
         """
-        函数将在检测到的变更文件的循环中被调用，作用是根据文件绝对路径处理变更的文件，包括新增的文件和已存在的文件。
-        其中，changes_in_pyfile是一个字典，包含了发生变更的结构的信息，示例格式为：{'added': {'add_context_stack', '__init__'}, 'removed': set()}
+        This function is called in the loop of detected changed files. Its purpose is to process changed files according to the absolute file path, including new files and existing files.
+        Among them, changes_in_pyfile is a dictionary that contains information about the changed structures. An example format is: {'added': {'add_context_stack', '__init__'}, 'removed': set()}
 
         Args:
             repo_path (str): The path to the repository.
@@ -212,7 +219,7 @@ class Runner:
         logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
         
         # 判断project_hierarchy.json文件中能否找到对应.py文件路径的项
-        with open(self.project_manager.project_hierarchy, 'r') as f:
+        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
         # 如果找到了对应文件
@@ -220,7 +227,7 @@ class Runner:
             # 更新json文件中的内容
             json_data[file_handler.file_path] = self.update_existing_item(json_data[file_handler.file_path], file_handler, changes_in_pyfile)
             # 将更新后的file写回到json文件中
-            with open(self.project_manager.project_hierarchy, 'w') as f:
+            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
             
             logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")
@@ -243,6 +250,17 @@ class Runner:
 
 
     def update_existing_item(self, file_dict, file_handler, changes_in_pyfile):
+        """
+        Update existing projects.
+
+        Args:
+            file_dict (dict): A dictionary containing file structure information.
+            file_handler (FileHandler): The file handler object.
+            changes_in_pyfile (dict): A dictionary containing information about the objects that have changed in the file.
+
+        Returns:
+            dict: The updated file structure information dictionary.
+        """
         new_obj, del_obj = self.get_new_objects(file_handler)
 
         # 处理被删除的对象
@@ -306,7 +324,19 @@ class Runner:
     
 
     def update_object(self, file_dict, file_handler, obj_name, obj_referencer_list):
-        if obj_name in file_dict: # file_dict保存的是原先的旧的对象信息
+        """
+        Generate documentation content and update corresponding field information of the object.
+
+        Args:
+            file_dict (dict): A dictionary containing old object information.
+            file_handler: The file handler.
+            obj_name (str): The object name.
+            obj_referencer_list (list): The list of object referencers.
+
+        Returns:
+            None
+        """
+        if obj_name in file_dict:
             obj = file_dict[obj_name]
             response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
             obj["md_content"] = response_message.content
@@ -315,15 +345,17 @@ class Runner:
 
     def get_new_objects(self, file_handler):
         """
-        函数通过比较当前版本和上一个版本的.py文件，获取新增和删除的对象
+        The function gets the added and deleted objects by comparing the current version and the previous version of the .py file.
 
         Args:
-            file_handler (FileHandler): 文件处理器对象。
+            file_handler (FileHandler): The file handler object.
+
         Returns:
-            tuple: 包含新增和删除对象的元组，格式为 (new_obj, del_obj)
-        输出示例：
-        new_obj: ['add_context_stack', '__init__']
-        del_obj: []
+            tuple: A tuple containing the added and deleted objects, in the format (new_obj, del_obj)
+
+        Output example:
+            new_obj: ['add_context_stack', '__init__']
+            del_obj: []
         """
         current_version, previous_version = file_handler.get_modified_file_versions()
         parse_current_py = file_handler.get_functions_and_classes(current_version)
@@ -343,7 +375,6 @@ if __name__ == "__main__":
     runner = Runner()
     
     runner.run()
-    # runner.generate_hierachy()
 
     logger.info("文档任务完成。")
 

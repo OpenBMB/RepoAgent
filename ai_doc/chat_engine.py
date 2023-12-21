@@ -18,7 +18,7 @@ def get_import_statements():
 
 class ChatEngine:
     """
-    文档生成器，用于生成函数或类的文档
+    ChatEngine is used to generate the doc of functions or classes.
     """
     def __init__(self, CONFIG):
         self.config = CONFIG
@@ -31,10 +31,10 @@ class ChatEngine:
 
     def generate_doc(self, code_info, file_handler, referencer = []):
 
-        print("len(referencer):\n",len(referencer))
+        #print("len(referencer):\n",len(referencer))
 
         def get_code_from_json(json_file, referencer):
-            with open(json_file, 'r') as f:
+            with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
             code_from_referencer = {}
@@ -53,13 +53,11 @@ class ChatEngine:
                         code_from_referencer[file_path].append(min_obj['code_content'])
             return code_from_referencer
                 
-        # 从code_info中获取代码信息
         code_type = code_info["type"]
         code_name = code_info["name"]
         code_content = code_info["code_content"]
         have_return = code_info["have_return"]
 
-        # 初始化一个项目管理器
         project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
         project_structure = project_manager.get_project_structure()
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
@@ -67,13 +65,10 @@ class ChatEngine:
         referenced = True if len(code_from_referencer) > 0 else False
         referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
 
-        # 判断及占位符
-        model = "gpt-4"
-
         # language
         language = self.config["language"]
         if language not in language_mapping:
-            raise KeyError(f"Language code {language} is not supported! Supported languages are: {json.dumps(language_mapping)}")
+            raise KeyError(f"Language code {language} is not given! Supported languages are: {json.dumps(language_mapping)}")
         
         language = language_mapping[language]
         
@@ -102,21 +97,20 @@ class ChatEngine:
         # print("\nusr_prompt:\n",str(usr_prompt))
 
         max_attempts = 5  # 设置最大尝试次数
-
+        model = self.config["default_completion_kwargs"]["model"]
+        
+        # 检查tokens长度
+        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 3500:
+            print("The code is too long, using gpt-3.5-turbo-16k to process it.")
+            model = "gpt-3.5-turbo-16k"
+        
         for attempt in range(max_attempts):
             try:
-                # 检查tokens长度
-                if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) < 3500:
-                    model = "gpt-4"
-                else:
-                    print("The code is too long, using gpt-3.5-turbo-16k to process it.")
-                    model = "gpt-3.5-turbo-16k"
-                    
                 # 获取基本配置
                 client = OpenAI(
                     api_key=self.config["api_keys"][model][0]["api_key"],
                     base_url=self.config["api_keys"][model][0]["base_url"],
-                    timeout=self.config["request_timeout"]
+                    timeout=self.config["default_completion_kwargs"]["request_timeout"]
                 )
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]
@@ -126,7 +120,7 @@ class ChatEngine:
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    temperature=0,
+                    temperature=self.config["default_completion_kwargs"]["temperature"],
                 )
 
                 response_message = response.choices[0].message
@@ -136,7 +130,7 @@ class ChatEngine:
             
             except APIConnectionError as e:
                 print(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
-                # 等待7秒后重试
+                # Retry after 7 seconds
                 time.sleep(7)
                 if attempt + 1 == max_attempts:
                     raise
@@ -144,7 +138,7 @@ class ChatEngine:
             except BadRequestError as e:
                 if 'context_length_exceeded' in str(e):
                     print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}")
-                    # 设置referenced为False，并移除referencer_content
+                    # Set referenced to False and remove referencer_content
                     referenced = False
                     referencer_content = ""
                     reference_letter = ""
@@ -162,13 +156,13 @@ class ChatEngine:
                         referencer_content=referencer_content,
                         language=language
                     )
-                    continue  # 重新尝试请求
+                    continue  # Try to request again
                 else:
                     print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
 
             except Exception as e:
                 print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
-                # 等待10秒后重试
+                # Retry after 10 seconds
                 time.sleep(10)
                 if attempt + 1 == max_attempts:
                     raise
