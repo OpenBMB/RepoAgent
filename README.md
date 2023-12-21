@@ -120,9 +120,9 @@ Create a file named `.pre-commit-config.yaml` in the root directory of the targe
 repos:
   - repo: local
     hooks:
-    - id: ai-doc
-      name: AI-doc
-      entry: python path/to/your/RepoAgent/runner.py
+    - id: repo-agent
+      name: RepoAgent
+      entry: python path/to/your/repo_agent/runner.py
       language: system
       # You can specify the file types that trigger the hook
       types: [python]
@@ -137,10 +137,9 @@ Next, make some modifications to the target repository, such as adding a new fil
 You just need to follow the normal git workflow: git add, git commit, git push.
 The RepoAgent hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
 
-After execution, as RepoAgent modifies files in the target repository, it will display 'Failed' upon completion of the hook. This is normal.
-![Execution Result](assets/images/execution_result.png)
-At this point, the hook has correctly performed the documentation generation operation and created a folder named Markdown_Docs in the root directory of your target repository.
-Next, you just need to git add the Markdown_Docs folder to the staging area and use:
+After execution, RepoAgent will automatically modify the Markdown files in the target repository and commit them to the staging area. When the execution is complete, it will display Passed in green, as shown in the figure below:
+![Execution Result](assets/images/ExecutionResult.png)
+Next, you only need to use:
 ```
 git commit -m "your commit message" --no-verify
 git push

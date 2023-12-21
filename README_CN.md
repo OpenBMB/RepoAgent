@@ -107,14 +107,14 @@ git init
 ```
 pip install pre-commit
 ```
-在目标仓库根目录下，创建一个名为.pre-commit-config.yaml的文件，示例如下：
+在目标仓库根目录下，创建一个名为`.pre-commit-config.yaml`的文件，示例如下：
 ```
 repos:
   - repo: local
     hooks:
-    - id: ai-doc
-      name: AI-doc
-      entry: python -m repo_agent.runner
+    - id: repo-agent
+      name: RepoAgent
+      entry: python path/to/your/repo_agent/runner.py
       language: system
       # 可以指定钩子触发的文件类型
       types: [python]
@@ -129,10 +129,9 @@ pre-commit install
 您只需要正常执行git的工作流程: git add, git commit, git push
 RepoAgent hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
 
-执行后，由于RepoAgent更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
-![Execution Result](assets/images/execution_result.png)
-此时，hook已经正确执行了文档生成的操作，并在您的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
-接下来您只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
+执行后，RepoAgent会自动更改目标仓库中的Markdown文件并提交到暂存区，执行完毕后会显示绿色的Passed，如下图所示：
+![Execution Result](assets/images/ExecutionResult.png)
+接下来您只需要使用：
 ```
 git commit -m "your commit message" --no-verify
 git push
