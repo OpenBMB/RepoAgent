@@ -4,9 +4,9 @@ from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from .config import language_mapping
-from .project_manager import ProjectManager
-from .prompt import SYS_PROMPT, USR_PROMPT
+from config import language_mapping
+from project_manager import ProjectManager
+from prompt import SYS_PROMPT, USR_PROMPT
 import inspect
 
 
@@ -104,7 +104,8 @@ class ChatEngine:
             print("The code is too long, using gpt-3.5-turbo-16k to process it.")
             model = "gpt-3.5-turbo-16k"
         
-        for attempt in range(max_attempts):
+        attempt = 0
+        while attempt < max_attempts:
             try:
                 # 获取基本配置
                 client = OpenAI(
@@ -132,7 +133,8 @@ class ChatEngine:
                 print(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
                 # Retry after 7 seconds
                 time.sleep(7)
-                if attempt + 1 == max_attempts:
+                attempt += 1
+                if attempt == max_attempts:
                     raise
 
             except BadRequestError as e:
@@ -156,6 +158,7 @@ class ChatEngine:
                         referencer_content=referencer_content,
                         language=language
                     )
+                    attempt += 1
                     continue  # Try to request again
                 else:
                     print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
@@ -164,7 +167,8 @@ class ChatEngine:
                 print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
                 # Retry after 10 seconds
                 time.sleep(10)
-                if attempt + 1 == max_attempts:
+                attempt += 1
+                if attempt == max_attempts:
                     raise
 
 

@@ -3,8 +3,8 @@
 import git
 import os,json
 import ast
-from .config import CONFIG
-from .utils.gitignore_checker import GitignoreChecker
+from config import CONFIG
+from utils.gitignore_checker import GitignoreChecker
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
@@ -131,7 +131,7 @@ class FileHandler:
                 end_lineno = max(end_lineno, child_end)
         return end_lineno
 
-    def add_parent_references(self, node):
+    def add_parent_references(self, node, parent=None):
         """
         Adds a parent reference to each node in the AST.
 
