@@ -126,17 +126,12 @@ pre-commit install
 ```
 这样，每次git commit时，都会触发RepoAgent的钩子，自动检测目标仓库中的变更，并生成对应的文档。
 接着，可以对目标仓库进行一些修改，例如在目标仓库中添加一个新的文件，或者修改一个已有的文件。
-您只需要正常执行git的工作流程: git add, git commit, git push
+您只需要正常执行git的工作流程: git add, git commit -m "your commit message", git push
 RepoAgent hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
 
-执行后，RepoAgent会自动更改目标仓库中的Markdown文件并提交到暂存区，执行完毕后会显示绿色的Passed，如下图所示：
+执行后，RepoAgent会自动更改目标仓库中的已暂存文件并正式提交commit，执行完毕后会显示绿色的Passed，如下图所示：
 ![Execution Result](assets/images/ExecutionResult.png)
-接下来您只需要使用：
-```
-git commit -m "your commit message" --no-verify
-git push
-```
-提交您的commit即可。
+
 
 # ✅ 未来工作
 

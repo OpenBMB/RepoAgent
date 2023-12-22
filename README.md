@@ -132,19 +132,13 @@ After configuring the yaml file, execute the following command to install the ho
 ```
 pre-commit install
 ```
-This way, each time you perform a git commit, the RepoAgent hook will be triggered, automatically detecting changes in the target repository and generating corresponding documentation.
-Next, make some modifications to the target repository, such as adding a new file or modifying an existing one.
-You just need to follow the normal git workflow: git add, git commit, git push.
-The RepoAgent hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
+In this way, each git commit will trigger the RepoAgent's hook, automatically detecting changes in the target repository and generating corresponding documents.
+Next, you can make some modifications to the target repository, such as adding a new file to the target repository, or modifying an existing file.
+You just need to follow the normal git workflow: git add, git commit -m "your commit message", git push
+The RepoAgent hook will automatically trigger at git commit, detect the files you added in the previous step, and generate corresponding documents.
 
-After execution, RepoAgent will automatically modify the Markdown files in the target repository and commit them to the staging area. When the execution is complete, it will display Passed in green, as shown in the figure below:
+After execution, RepoAgent will automatically modify the staged files in the target repository and formally submit the commit. After the execution is completed, the green "Passed" will be displayed, as shown in the figure below:
 ![Execution Result](assets/images/ExecutionResult.png)
-Next, you only need to use:
-```
-git commit -m "your commit message" --no-verify
-git push
-```
-to submit your commit.
 
 # ✅ Future Work
 
@@ -153,7 +147,7 @@ to submit your commit.
 - [x] Implement Black commit
 - [x] Support the selection of document language
 - [x] Enable the identification of inter-object reference relationships
-- [] **Bi-direct reference** Bi-directional reference construction topology
+- [ ] **Bi-direct reference** Bi-directional reference construction topology
 - [x] Open source
 
 # Supported Language
