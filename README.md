@@ -91,7 +91,7 @@ language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` 
 
 Enter the root directory of RepoAgent and type the following command in the terminal:
 ```
-python -m repo_agent.runner
+python repo_agent/runner.py
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.

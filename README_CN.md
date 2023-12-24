@@ -88,7 +88,7 @@ language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` 
 ## 运行RepoAgent
 进入RepoAgent根目录，在命令行输入以下命令：
 ```
-python -m repo_agent.runner
+python repo_agent/runner.py
 ```
 如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
