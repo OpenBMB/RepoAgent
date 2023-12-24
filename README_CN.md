@@ -5,19 +5,36 @@ RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在�
 
 ![RepoAgent](assets/images/RepoAgent.png)
 
+# 快速链接
+
+- [🤗 介绍](#-介绍)
+- [快速链接](#快速链接)
+- [👾 背景](#-背景)
+- [🪭 特性](#-特性)
+- [📍 安装](#-安装)
+  - [配置RepoAgent](#配置repoagent)
+- [📖 快速开始](#-快速开始)
+  - [运行RepoAgent](#运行repoagent)
+  - [配置目标仓库](#配置目标仓库)
+- [✅ 未来工作](#-未来工作)
+- [支持语言](#支持语言)
+- [📜 许可证](#-许可证)
+- [📊 引用](#-引用)
+
+
 # 👾 背景
 在计算机编程领域，全面的项目文档非常重要，包括对每个Python文件的详细解释。这样的文档是理解、维护和增强代码库的基石。它为代码提供了必要的上下文解读，使当前和未来的开发人员更容易理解软件的目的、功能和结构。它不仅有助于当前和未来的开发人员理解项目的目的和结构，还确保项目随着时间的推移保持可访问和可修改，极大地降低了新团队成员的学习曲线。
 
 传统上，创建和维护软件文档需要大量的人力和专业知识，这对于没有专门人员的小团队来说是一个挑战。大型语言模型（LLMs）如GPT的引入改变了这一情况，使得AI能够处理大部分文档编写过程。这种转变使得人类开发人员可以专注于验证和微调修改，极大地减轻了文档编写的人工负担。
 
-**🏆 我们的目标是创建一个超级智能的文档助手，通过自动生成并维护文档为人类节省时间。**
+**🏆 我们的目标是创建一个超级智能的文档助手，节省时间并为人类生成文档。**
 
 # 🪭 特性
 
-- **🤖 自动检测Git仓库中的变更，跟踪文件及对象内容的添加、删除和修改。**
+- **🤖 自动检测Git仓库中的变更，跟踪文件的添加、删除和修改。**
 - **📝 通过AST独立分析代码结构，为各个对象生成文档。**
 - **🔍 精准识别对象间调用关系，丰富文档内容的全局视野**
-- **📚 根据变更无缝替换对应部分的Markdown内容，保持文档的一致性。**
+- **📚 根据变更无缝替换Markdown内容，保持文档的一致性。**
 - **🕙 执行多线程并发操作，提高文档生成的效率。**
 - **👭 为团队协作提供可持续、自动化的文档更新方法。**
 
@@ -39,14 +56,39 @@ pip install -r requirements.txt
 下一步，在config.yml文件中配置OpenAI API 相关参数信息。
 具体获取方法请参考[OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys)。
 
-在`config.yml`文件中，配置OpenAI API的相关参数信息、目标仓库的路径、文档语言（未来支持）等。
+在`config.yml`文件中，配置OpenAI API的相关参数信息、目标仓库的路径、文档语言等。
+```yaml
+api_keys:
+  gpt-3.5-turbo-16k:
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      api_type: azure
+      api_version: XXX
+      engine: GPT-35-Turbo-16k
+      # you can use any kwargs supported by openai.ChatCompletion here
+    - api_key: sk-xxxxx
+      organization: org-xxxxxx
+      model: gpt-3.5-turbo-16k
+  ...
+
+default_completion_kwargs:
+  model: gpt-3.5-turbo-16k
+  temperature: 0.2
+  request_timeout: 60
+
+repo_path: /path/to/your/repo
+project_hierarchy: .project_hierarchy.json # The paths of the global structure information json file
+Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
+
+language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
+```
 
 # 📖 快速开始
 
 ## 运行RepoAgent
 进入RepoAgent根目录，在命令行输入以下命令：
 ```
-python -m ai_doc.runner
+python repo_agent/runner.py
 ```
 如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
@@ -65,14 +107,14 @@ git init
 ```
 pip install pre-commit
 ```
-在目标仓库根目录下，创建一个名为.pre-commit-config.yaml的文件，示例如下：
+在目标仓库根目录下，创建一个名为`.pre-commit-config.yaml`的文件，示例如下：
 ```
 repos:
   - repo: local
     hooks:
-    - id: ai-doc
-      name: AI-doc
-      entry: python -m ai_doc.runner
+    - id: repo-agent
+      name: RepoAgent
+      entry: python path/to/your/repo_agent/runner.py
       language: system
       # 可以指定钩子触发的文件类型
       types: [python]
@@ -84,28 +126,60 @@ pre-commit install
 ```
 这样，每次git commit时，都会触发RepoAgent的钩子，自动检测目标仓库中的变更，并生成对应的文档。
 接着，可以对目标仓库进行一些修改，例如在目标仓库中添加一个新的文件，或者修改一个已有的文件。
-您只需要正常执行git的工作流程: git add, git commit, git push
+您只需要正常执行git的工作流程: git add, git commit -m "your commit message", git push
 RepoAgent hook会在git commit时自动触发，检测前一步您git add的文件，并生成对应的文档。
 
-执行后，由于RepoAgent更改了目标仓库的文件，会在hook执行完毕后显示Failed，这是正常的。
-![Execution Result](assets/images/execution_result.png)
-此时，hook已经正确执行了文档生成的操作，并在您的目标仓库的根目录下创建了一个名为Markdown_Docs的文件夹。
-接下来您只需要git add Markdown_Docs文件夹将新文档添加到暂存区，并使用：
-```
-git commit -m "your commit message" --no-verify
-git push
-```
-提交您的commit即可。
+执行后，RepoAgent会自动更改目标仓库中的已暂存文件并正式提交commit，执行完毕后会显示绿色的Passed，如下图所示：
+![Execution Result](assets/images/ExecutionResult.png)
+
 
 # ✅ 未来工作
 
 - [x] 优化项目结构并细化类的职责
 - [x] 对象间父子关系层级结构识别及维护
-- [ ] 实现 Black commit
-- [ ] 支持选择文档语言
+- [x] 实现 Black commit
+- [x] 支持选择文档语言
 - [x] 启用对象间调用关系的识别
-- [x] **Bi-direct reference** 双向引用 构建 拓扑结构
-- [ ] 开源
+- [ ] **Bi-direct reference** 双向引用 构建 拓扑结构
+- [x] 开源
+
+# 支持语言
+在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
+
+<details>
+<summary>语言列表</summary>
+
+| 国旗 | 语言代码 | 语言   |
+|------|------|------------|
+| 🇬🇧 | en   | English    |
+| 🇪🇸 | es   | Spanish    |
+| 🇫🇷 | fr   | French     |
+| 🇩🇪 | de   | German     |
+| 🇨🇳 | zh   | Chinese    |
+| 🇯🇵 | ja   | Japanese   |
+| 🇷🇺 | ru   | Russian    |
+| 🇮🇹 | it   | Italian    |
+| 🇰🇷 | ko   | Korean     |
+| 🇳🇱 | nl   | Dutch      |
+| 🇵🇹 | pt   | Portuguese |
+| 🇸🇦 | ar   | Arabic     |
+| 🇹🇷 | tr   | Turkish    |
+| 🇸🇪 | sv   | Swedish    |
+| 🇩🇰 | da   | Danish     |
+| 🇫🇮 | fi   | Finnish    |
+| 🇳🇴 | no   | Norwegian  |
+| 🇵🇱 | pl   | Polish     |
+| 🇨🇿 | cs   | Czech      |
+| 🇭🇺 | hu   | Hungarian  |
+| 🇬🇷 | el   | Greek      |
+| 🇮🇱 | he   | Hebrew     |
+| 🇹🇭 | th   | Thai       |
+| 🇮🇳 | hi   | Hindi      |
+| 🇧🇩 | bn   | Bengali    |
+
+</details>
+
+> 例如，`language: en`代表生成的文档使用英语。
 
 # 📜 许可证
 

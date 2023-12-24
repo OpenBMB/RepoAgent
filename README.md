@@ -91,7 +91,7 @@ language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` 
 
 Enter the root directory of RepoAgent and type the following command in the terminal:
 ```
-python -m ai_doc.runner
+python repo_agent/runner.py
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
@@ -120,9 +120,9 @@ Create a file named `.pre-commit-config.yaml` in the root directory of the targe
 repos:
   - repo: local
     hooks:
-    - id: ai-doc
-      name: AI-doc
-      entry: python path/to/your/RepoAgent/runner.py
+    - id: repo-agent
+      name: RepoAgent
+      entry: python path/to/your/repo_agent/runner.py
       language: system
       # You can specify the file types that trigger the hook
       types: [python]
@@ -132,61 +132,61 @@ After configuring the yaml file, execute the following command to install the ho
 ```
 pre-commit install
 ```
-This way, each time you perform a git commit, the RepoAgent hook will be triggered, automatically detecting changes in the target repository and generating corresponding documentation.
-Next, make some modifications to the target repository, such as adding a new file or modifying an existing one.
-You just need to follow the normal git workflow: git add, git commit, git push.
-The RepoAgent hook will automatically trigger during git commit, detecting the files you added in the previous step and generating the corresponding documentation.
+In this way, each git commit will trigger the RepoAgent's hook, automatically detecting changes in the target repository and generating corresponding documents.
+Next, you can make some modifications to the target repository, such as adding a new file to the target repository, or modifying an existing file.
+You just need to follow the normal git workflow: git add, git commit -m "your commit message", git push
+The RepoAgent hook will automatically trigger at git commit, detect the files you added in the previous step, and generate corresponding documents.
 
-After execution, as RepoAgent modifies files in the target repository, it will display 'Failed' upon completion of the hook. This is normal.
-![Execution Result](assets/images/execution_result.png)
-At this point, the hook has correctly performed the documentation generation operation and created a folder named Markdown_Docs in the root directory of your target repository.
-Next, you just need to git add the Markdown_Docs folder to the staging area and use:
-```
-git commit -m "your commit message" --no-verify
-git push
-```
-to submit your commit.
+After execution, RepoAgent will automatically modify the staged files in the target repository and formally submit the commit. After the execution is completed, the green "Passed" will be displayed, as shown in the figure below:
+![Execution Result](assets/images/ExecutionResult.png)
 
 # ✅ Future Work
 
 - [x] Optimize the project structure and refine the responsibilities of the classes
 - [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
-- [ ] Implement Black commit
-- [ ] Support the selection of document language
+- [x] Implement Black commit
+- [x] Support the selection of document language
 - [x] Enable the identification of inter-object reference relationships
-- [x] **Bi-direct reference** Bi-directional reference construction topology
-- [ ] Open source
+- [ ] **Bi-direct reference** Bi-directional reference construction topology
+- [x] Open source
 
 # Supported Language
-Set the target language with the two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Here are languages we currently support:
+Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
 
-| Code | Language   |
-|------|------------|
-| en   | English    |
-| es   | Spanish    |
-| fr   | French     |
-| de   | German     |
-| zh   | Chinese    |
-| ja   | Japanese   |
-| ru   | Russian    |
-| it   | Italian    |
-| ko   | Korean     |
-| nl   | Dutch      |
-| pt   | Portuguese |
-| ar   | Arabic     |
-| tr   | Turkish    |
-| sv   | Swedish    |
-| da   | Danish     |
-| fi   | Finnish    |
-| no   | Norwegian  |
-| pl   | Polish     |
-| cs   | Czech      |
-| hu   | Hungarian  |
-| el   | Greek      |
-| he   | Hebrew     |
-| th   | Thai       |
-| hi   | Hindi      |
-| bn   | Bengali    |
+<details>
+<summary>Languages List</summary>
+
+| Flag | Code | Language   |
+|------|------|------------|
+| 🇬🇧 | en   | English    |
+| 🇪🇸 | es   | Spanish    |
+| 🇫🇷 | fr   | French     |
+| 🇩🇪 | de   | German     |
+| 🇨🇳 | zh   | Chinese    |
+| 🇯🇵 | ja   | Japanese   |
+| 🇷🇺 | ru   | Russian    |
+| 🇮🇹 | it   | Italian    |
+| 🇰🇷 | ko   | Korean     |
+| 🇳🇱 | nl   | Dutch      |
+| 🇵🇹 | pt   | Portuguese |
+| 🇸🇦 | ar   | Arabic     |
+| 🇹🇷 | tr   | Turkish    |
+| 🇸🇪 | sv   | Swedish    |
+| 🇩🇰 | da   | Danish     |
+| 🇫🇮 | fi   | Finnish    |
+| 🇳🇴 | no   | Norwegian  |
+| 🇵🇱 | pl   | Polish     |
+| 🇨🇿 | cs   | Czech      |
+| 🇭🇺 | hu   | Hungarian  |
+| 🇬🇷 | el   | Greek      |
+| 🇮🇱 | he   | Hebrew     |
+| 🇹🇭 | th   | Thai       |
+| 🇮🇳 | hi   | Hindi      |
+| 🇧🇩 | bn   | Bengali    |
+
+</details>
+
+> e.g., `language: en` for English.
 
 # 📜 License
 

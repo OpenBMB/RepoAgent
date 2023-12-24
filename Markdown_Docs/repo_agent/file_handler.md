@@ -218,7 +218,7 @@ print(previous_version) # 输出: None
 **输出样例**：
 一个可能的返回值为如下形式：
 {
-  "file_path": "/Users/logic/Documents/VisualStudioWorkspace/RepoAgent/ai_doc/file_handler.py",
+  "file_path": "/Users/logic/Documents/VisualStudioWorkspace/RepoAgent/repo_agent/file_handler.py",
   "objects": [
     {
       "structure_type": "function",
@@ -226,7 +226,7 @@ print(previous_version) # 输出: None
       "start_line": 10,
       "end_line": 25,
       "parent": null,
-      "file_path": "/Users/logic/Documents/VisualStudioWorkspace/RepoAgent/ai_doc/file_handler.py"
+      "file_path": "/Users/logic/Documents/VisualStudioWorkspace/RepoAgent/repo_agent/file_handler.py"
     },
     ...
   ]

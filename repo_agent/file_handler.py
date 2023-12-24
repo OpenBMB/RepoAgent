@@ -1,10 +1,10 @@
 # FileHandler 类，实现对文件的读写操作，这里的文件包括markdown文件和python文件
-# ai_doc/file_handler.py
+# repo_agent/file_handler.py
 import git
 import os,json
 import ast
-from .config import CONFIG
-from .utils.gitignore_checker import GitignoreChecker
+from config import CONFIG
+from utils.gitignore_checker import GitignoreChecker
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
@@ -131,7 +131,7 @@ class FileHandler:
                 end_lineno = max(end_lineno, child_end)
         return end_lineno
 
-    def add_parent_references(self, node):
+    def add_parent_references(self, node, parent=None):
         """
         Adds a parent reference to each node in the AST.
 

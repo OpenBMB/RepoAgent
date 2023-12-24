@@ -1,13 +1,13 @@
 import os, json
-from ai_doc.file_handler import FileHandler
-from ai_doc.change_detector import ChangeDetector
-from ai_doc.project_manager import ProjectManager
-from ai_doc.chat_engine import ChatEngine
+from file_handler import FileHandler
+from change_detector import ChangeDetector
+from project_manager import ProjectManager
+from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 from loguru import logger
-from ai_doc.config import CONFIG
+from config import CONFIG
 
 
 class Runner:
@@ -121,12 +121,11 @@ class Runner:
 
             
 
-    def git_commit(self, file_path, commit_message):
+    def git_commit(self, commit_message):
         try:
-            subprocess.check_call(['git', 'add', file_path])
             subprocess.check_call(['git', 'commit', '--no-verify', '-m', commit_message])
         except subprocess.CalledProcessError as e:
-            print(f'An error occurred while trying to commit {file_path}: {str(e)}')
+            print(f'An error occurred while trying to commit {str(e)}')
 
 
     def run(self):
@@ -181,7 +180,8 @@ class Runner:
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
             code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-            md_content = self.chat_engine.generate_doc(code_info, file_handler)
+            response_message = self.chat_engine.generate_doc(code_info, file_handler)
+            md_content = response_message.content
             code_info["md_content"] = md_content
             # 文件对象file_dict中添加一个新的对象
             file_dict[name] = code_info
@@ -243,10 +243,13 @@ class Runner:
             self.add_new_item(file_handler,json_data)
 
         # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
-        git_add_result = self.change_detector.add_unstaged_mds()
+        git_add_result = self.change_detector.add_unstaged_files()
         
         if len(git_add_result) > 0:
-            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区') 
+            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区')
+        
+        # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
+         
 
 
     def update_existing_item(self, file_dict, file_handler, changes_in_pyfile):
