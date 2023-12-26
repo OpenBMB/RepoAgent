@@ -3,6 +3,7 @@ from ai_doc.file_handler import FileHandler
 from ai_doc.change_detector import ChangeDetector
 from ai_doc.project_manager import ProjectManager
 from ai_doc.chat_engine import ChatEngine
+from ai_doc.doc_meta_info import MetaInfo
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
@@ -15,6 +16,17 @@ class Runner:
         self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
+
+        self.ensure_project_hierarchy()
+        self.meta_info = MetaInfo.from_project_hierarchy_json(CONFIG['repo_path'])
+        # self.meta_info.target_repo_hierarchical_tree.print_recursive()
+        # topology_list = self.meta_info.get_topology()
+
+    def ensure_project_hierarchy(self):
+        if not os.path.exists(self.project_manager.project_hierarchy):
+            self.generate_hierachy()
+            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
+
     
     def generate_hierachy(self):
         """
@@ -57,10 +69,6 @@ class Runner:
         根据全局json结构的信息，生成整个项目所有python文件的文档
         """
         logger.info("Starting to generate documentation.")
-        # 检测是否存在全局的 project_hierarchy.json 结构信息
-        if not os.path.exists(self.project_manager.project_hierarchy):
-            self.generate_hierachy()
-            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
         with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
@@ -139,11 +147,6 @@ class Runner:
             None
         """
         logger.info("Starting to detect changes.")
-        # 首先检测是否存在全局的 project_hierarchy.json 结构信息
-        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-        if not os.path.exists(abs_project_hierarchy_path):
-            self.generate_hierachy()
-            logger.info(f"已生成项目全局结构信息，存储路径为: {abs_project_hierarchy_path}")
     
         changed_files = self.change_detector.get_staged_pys()
 
@@ -339,8 +342,12 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-    runner.run()
-    # runner.generate_hierachy()
+    runner.meta_info.target_repo_hierarchical_tree.print_recursive()
+    topology_list = runner.meta_info.get_topology()
+    for node in topology_list:
+        print(node.get_full_name())
+    # runner.run()
+    # runner.first_generate()
 
     logger.info("文档任务完成。")
 

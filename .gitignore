@@ -1,5 +1,6 @@
 # 忽略私人配置文件，包含有api_key等信息
 config private.yml
+private.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -28,6 +29,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -164,3 +166,4 @@ cython_debug/
 
 # AI doc
 .project_hierarchy.json
+Markdown_Docs/

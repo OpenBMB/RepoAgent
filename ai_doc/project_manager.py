@@ -39,5 +39,5 @@ class ProjectManager:
             return []
     
 if __name__ == "__main__":
-    project_manager = ProjectManager()
+    project_manager = ProjectManager(repo_path="",project_hierarchy="")
     print(project_manager.get_project_structure())
