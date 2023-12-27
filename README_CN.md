@@ -1,3 +1,5 @@
+[英文](README.md) | [配置RepoAgent](#配置RepoAgent) | [快速开始](#快速开始) | [未来工作](#未来工作) | [支持语言](#支持语言) | [引用我们](#引用我们)
+
 # 🤗 介绍
 
 RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
@@ -5,29 +7,12 @@ RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在�
 
 ![RepoAgent](assets/images/RepoAgent.png)
 
-# 快速链接
-
-- [🤗 介绍](#-介绍)
-- [快速链接](#快速链接)
-- [👾 背景](#-背景)
-- [🪭 特性](#-特性)
-- [📍 安装](#-安装)
-  - [配置RepoAgent](#配置repoagent)
-- [📖 快速开始](#-快速开始)
-  - [运行RepoAgent](#运行repoagent)
-  - [配置目标仓库](#配置目标仓库)
-- [✅ 未来工作](#-未来工作)
-- [支持语言](#支持语言)
-- [📜 许可证](#-许可证)
-- [📊 引用](#-引用)
-
-
 # 👾 背景
 在计算机编程领域，全面的项目文档非常重要，包括对每个Python文件的详细解释。这样的文档是理解、维护和增强代码库的基石。它为代码提供了必要的上下文解读，使当前和未来的开发人员更容易理解软件的目的、功能和结构。它不仅有助于当前和未来的开发人员理解项目的目的和结构，还确保项目随着时间的推移保持可访问和可修改，极大地降低了新团队成员的学习曲线。
 
 传统上，创建和维护软件文档需要大量的人力和专业知识，这对于没有专门人员的小团队来说是一个挑战。大型语言模型（LLMs）如GPT的引入改变了这一情况，使得AI能够处理大部分文档编写过程。这种转变使得人类开发人员可以专注于验证和微调修改，极大地减轻了文档编写的人工负担。
 
-**🏆 我们的目标是创建一个超级智能的文档助手，节省时间并为人类生成文档。**
+**🏆 我们的目标是创建一个智能的文档助手，帮助人类阅读并理解repo项目，并生成文档，最终帮助人类提高效率、节省时间。**
 
 # 🪭 特性
 
@@ -38,8 +23,7 @@ RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在�
 - **🕙 执行多线程并发操作，提高文档生成的效率。**
 - **👭 为团队协作提供可持续、自动化的文档更新方法。**
 
-# 📍 安装
-## 配置RepoAgent
+# 📦 安装
 首先，确保您的机器安装了python3.9以上的版本
 ```
 $ python --version
@@ -53,10 +37,10 @@ conda create -n RepoAgent python=3.11.4
 conda activate RepoAgent
 pip install -r requirements.txt
 ```
-下一步，在config.yml文件中配置OpenAI API 相关参数信息。
-具体获取方法请参考[OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys)。
 
-在`config.yml`文件中，配置OpenAI API的相关参数信息、目标仓库的路径、文档语言等。
+# 📖 快速开始
+## 配置RepoAgent
+在`config.yml`文件中，配置OpenAI API的相关参数信息、如目标仓库的路径、文档语言等。
 ```yaml
 api_keys:
   gpt-3.5-turbo-16k:
@@ -72,7 +56,7 @@ api_keys:
   ...
 
 default_completion_kwargs:
-  model: gpt-3.5-turbo-16k
+  model: gpt-4
   temperature: 0.2
   request_timeout: 60
 
@@ -80,10 +64,8 @@ repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy.json # The paths of the global structure information json file
 Markdown_Docs_folder: /Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 
-language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
+language: zh # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
 ```
-
-# 📖 快速开始
 
 ## 运行RepoAgent
 进入RepoAgent根目录，在命令行输入以下命令：
@@ -135,15 +117,13 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 
 # ✅ 未来工作
 
-- [x] 优化项目结构并细化类的职责
 - [x] 对象间父子关系层级结构识别及维护
 - [x] 实现 Black commit
-- [x] 支持选择文档语言
-- [x] 启用对象间调用关系的识别
-- [ ] **Bi-direct reference** 双向引用 构建 拓扑结构
-- [x] 开源
+- [ ] **Bi-direct reference** 构建双向引用拓扑结构
+- [ ] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问。
+- [ ] 通过全局文档信息自动生成仓库Readme.md文件
 
-# 支持语言
+# 🇺🇳 支持语言
 在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
 
 <details>
@@ -181,6 +161,15 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 
 > 例如，`language: en`代表生成的文档使用英语。
 
-# 📜 许可证
+# 📊 引用我们
+```bibtex
+@misc{RepoAgent,
+  author = {Qinyu Luo, Yining Ye, Shihao Liang, Arno},
+  title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
+  year = {2023},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/LOGIC-10/RepoAgent}},
+}
+```
 
-# 📊 引用

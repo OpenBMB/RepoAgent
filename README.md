@@ -1,3 +1,5 @@
+[中文](README_CN.md) | [Configure RepoAgent](#configure-repoagent) | [Quick Start](#quick-start) | [Future Work](#future-work) | [Supported Language](#supported-language) | [Citation](#citation)
+
 # 🤗 Introduction
 
 RepoAgent is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
@@ -5,28 +7,12 @@ It is designed to be a handy tool for developers who need to organize their code
 
 ![RepoAgent](assets/images/RepoAgent.png)
 
-# Quick links
-
-- [Introduction](#-introduction)
-- [Quick links](#quick-links)
-- [Background](#-background)
-- [Features](#-features)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
-  - [Configuring RepoAgent](#configuring-RepoAgent)
-  - [Run RepoAgent](#run-RepoAgent)
-  - [Configuring the Target Repository](#configuring-the-target-repository)
-- [Future Work](#-future-work)
-- [Supported Language](#supported-language)
-- [License](#-license)
-- [Citation](#-citation)
-
 # 👾 Background
 In the realm of computer programming, the significance of comprehensive project documentation, including detailed explanations for each Python file, cannot be overstated. Such documentation serves as the cornerstone for understanding, maintaining, and enhancing the codebase. It provides essential context and rationale for the code, making it easier for current and future developers to comprehend the purpose, functionality, and structure of the software. It not only facilitates current and future developers in grasping the project's purpose and structure but also ensures that the project remains accessible and modifiable over time, significantly easing the learning curve for new team members.
 
 Traditionally, creating and maintaining software documentation demanded significant human effort and expertise, a challenge for small teams without dedicated personnel. The introduction of Large Language Models (LLMs) like GPT has transformed this, enabling AI to handle much of the documentation process. This shift allows human developers to focus on verification and fine-tuning, greatly reducing the manual burden of documentation.
 
-**🏆 Our goal is to create a super-intelligent doc assistant that saves time and formulate documents for human.**
+**🏆 Our goal is to create an intelligent document assistant that helps people read and understand repositories and generate documents, ultimately helping people improve efficiency and save time.**
 
 # 🪭 Features
 
@@ -76,7 +62,7 @@ api_keys:
   ...
 
 default_completion_kwargs:
-  model: gpt-3.5-turbo-16k
+  model: gpt-4
   temperature: 0.2
   request_timeout: 60
 
@@ -142,15 +128,13 @@ After execution, RepoAgent will automatically modify the staged files in the tar
 
 # ✅ Future Work
 
-- [x] Optimize the project structure and refine the responsibilities of the classes
 - [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
 - [x] Implement Black commit
-- [x] Support the selection of document language
-- [x] Enable the identification of inter-object reference relationships
-- [ ] **Bi-direct reference** Bi-directional reference construction topology
-- [x] Open source
+- [ ] **Bi-direct reference**  Construct Bi-directional reference topology
+- [ ] **chat with repo** Chat with the repository by giving code and document at the same time 
+- [ ] Generate Readme.md automatically combining with the global documentation
 
-# Supported Language
+# 🇺🇳 Supported Language
 Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
 
 <details>
@@ -188,7 +172,14 @@ Set the target language with the two-letter language codes (ISO 639-1 codes), Cl
 
 > e.g., `language: en` for English.
 
-# 📜 License
-
 # 📊 Citation
-
+```bibtex
+@misc{RepoAgent,
+  author = {Qinyu Luo, Yining Ye, Shihao Liang, Arno},
+  title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
+  year = {2023},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/LOGIC-10/RepoAgent}},
+}
+```
