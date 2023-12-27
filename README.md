@@ -1,4 +1,4 @@
-[中文](README_CN.md) | [Background](#👾-background) | [Features](#🪭-features) | [Quick Start](#📖-quick-start) | [Future Work](#✅-future-work) | [Supported Language](#🇺🇳-supported-language) | [Citation](#📊-citation)
+[中文](README_CN.md) | [Background](#-background) | [Features](#-features) | [Quick Start](#-quick-start) | [Future Work](#-future-work) | [Supported Language](#-supported-language) | [Citation](#-citation)
 
 # 🤗 Introduction
 
