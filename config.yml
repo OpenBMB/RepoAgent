@@ -30,8 +30,9 @@ default_completion_kwargs:
   temperature: 0.2
   request_timeout: 60
 
-repo_path: /path/to/your/repo
+repo_path: /path/to/your/local/repo
 project_hierarchy: .project_hierarchy.json
 Markdown_Docs_folder: /Markdown_Docs
+ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # optional and if needed, relative to repo_path
 
 language: zh

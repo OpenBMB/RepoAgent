@@ -65,6 +65,11 @@ class Runner:
 
             with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
+
+            # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
+            ignore_list = CONFIG.get('ignore_list', [])
+            # 过滤掉忽略列表中的文件
+            json_data = {file_path: file_dict for file_path, file_dict in json_data.items() if not any(ignore_item in file_path for ignore_item in ignore_list)}
             
             # 检查是否存在last_processed_file.txt文件
             if os.path.exists("last_processed_file.txt"):
@@ -172,8 +177,14 @@ class Runner:
         
         else:
             logger.info(f"检测到暂存区中变更的文件：{changed_files}")
+        
 
         repo_path = self.project_manager.repo_path
+
+        # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
+        ignore_list = CONFIG.get('ignore_list', [])
+        # 过滤掉忽略列表中的文件
+        changed_files = {file_path: is_new_file for file_path, is_new_file in changed_files.items() if not any(ignore_item in file_path for ignore_item in ignore_list)}
 
         for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
 
