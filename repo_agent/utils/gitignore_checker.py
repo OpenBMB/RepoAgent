@@ -19,11 +19,19 @@ class GitignoreChecker:
         """
         Load and parse the .gitignore file, then split the patterns into folder and file patterns.
 
+        If the specified .gitignore file is not found, fall back to the default path.
+
         Returns:
             tuple: A tuple containing two lists - one for folder patterns and one for file patterns.
         """
-        with open(self.gitignore_path, 'r', encoding='utf-8') as file:
-            gitignore_content = file.read()
+        try:
+            with open(self.gitignore_path, 'r', encoding='utf-8') as file:
+                gitignore_content = file.read()
+        except FileNotFoundError:
+            # Fallback to the default .gitignore path if the specified file is not found
+            default_path = os.path.join(os.path.dirname(__file__), '..', '..', '.gitignore')
+            with open(default_path, 'r', encoding='utf-8') as file:
+                gitignore_content = file.read()
 
         patterns = self._parse_gitignore(gitignore_content)
         return self._split_gitignore_patterns(patterns)
