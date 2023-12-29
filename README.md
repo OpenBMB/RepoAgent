@@ -111,7 +111,7 @@ repos:
       name: RepoAgent
       entry: python path/to/your/repo_agent/runner.py
       language: system
-      # You can specify the file types that trigger the hook
+      # You can specify the file types that trigger the hook, but currently only python is supported.
       types: [python]
 ```
 For specific configuration methods of hooks, please refer to [pre-commit](https://pre-commit.com/#plugins).
@@ -133,7 +133,10 @@ After execution, RepoAgent will automatically modify the staged files in the tar
 - [x] Implement Black commit
 - [ ] **Bi-direct reference**  Construct Bi-directional reference topology
 - [ ] **chat with repo** Chat with the repository by giving code and document at the same time 
-- [ ] Generate Readme.md automatically combining with the global documentation
+- [ ] Generate README.md automatically combining with the global documentation
+- [ ] **Multi-language support** Support more languages like Java, C or C++, etc.
+- [ ] Local model support like Llama, chatGLM, Qianwen, etc.
+- [ ] Automatically generate better visualizations such as Gitbook
 
 # 🇺🇳 Supported Language
 Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.

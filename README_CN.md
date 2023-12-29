@@ -99,7 +99,7 @@ repos:
       name: RepoAgent
       entry: python path/to/your/repo_agent/runner.py
       language: system
-      # 可以指定钩子触发的文件类型
+      # 可以指定钩子触发的文件类型，但是目前只支持python
       types: [python]
 ```
 具体hooks的配置方法请参考[pre-commit](https://pre-commit.com/#plugins)。
@@ -121,8 +121,11 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 - [x] 对象间父子关系层级结构识别及维护
 - [x] 实现 Black commit
 - [ ] **Bi-direct reference** 构建双向引用拓扑结构
-- [ ] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问。
-- [ ] 通过全局文档信息自动生成仓库Readme.md文件
+- [ ] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问
+- [ ] 通过全局文档信息自动生成仓库README.md文件
+- [ ] **多语言支持** 支持更多语言，如Java、C或C++等
+- [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
+- [ ] 自动生成Gitbook等更佳的可视化效果
 
 # 🇺🇳 支持语言
 在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
