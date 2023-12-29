@@ -68,9 +68,7 @@ class Runner:
 
             # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
             ignore_list = CONFIG.get('ignore_list', [])
-            # 过滤掉忽略列表中的文件
-            json_data = {file_path: file_dict for file_path, file_dict in json_data.items() if not any(ignore_item in file_path for ignore_item in ignore_list)}
-            
+ 
             # 检查是否存在last_processed_file.txt文件
             if os.path.exists("last_processed_file.txt"):
                 with open("last_processed_file.txt",'r') as file:
@@ -83,6 +81,10 @@ class Runner:
 
             # 遍历json_data中的每个对象 或 从last_processed_file开始遍历
             for rel_file_path, file_dict in list(json_data.items())[start_index:]:
+                
+                # 如果当前文件在忽略列表中，跳过
+                if rel_file_path in ignore_list:
+                    continue
 
                 # 判断当前文件是否为空，如果为空则跳过：
                 if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
@@ -183,12 +185,11 @@ class Runner:
 
         # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
         ignore_list = CONFIG.get('ignore_list', [])
-        # 过滤掉忽略列表中的文件
-        changed_files = {file_path: is_new_file for file_path, is_new_file in changed_files.items() if not any(ignore_item in file_path for ignore_item in ignore_list)}
 
         for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
-
-            # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
+            # 如果当前文件在忽略列表中，跳过
+            if file_path in ignore_list:
+                continue
             # 判断当前python文件内容是否为空，如果为空则跳过：
             if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
                 continue
