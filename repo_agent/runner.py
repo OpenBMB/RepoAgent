@@ -82,8 +82,8 @@ class Runner:
             # 遍历json_data中的每个对象 或 从last_processed_file开始遍历
             for rel_file_path, file_dict in list(json_data.items())[start_index:]:
                 
-                # 如果当前文件在忽略列表中，跳过
-                if rel_file_path in ignore_list:
+                # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+                if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
                     continue
 
                 # 判断当前文件是否为空，如果为空则跳过：
@@ -187,8 +187,8 @@ class Runner:
         ignore_list = CONFIG.get('ignore_list', [])
 
         for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
-            # 如果当前文件在忽略列表中，跳过
-            if file_path in ignore_list:
+            # 如果当前文件在忽略列表，或者列表中某个文件夹路径下，则跳过
+            if any(file_path.startswith(ignore_item) for ignore_item in ignore_list):
                 continue
             # 判断当前python文件内容是否为空，如果为空则跳过：
             if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
