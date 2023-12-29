@@ -4,9 +4,9 @@ ChangeDetector 类的核心在于能够识别自上次提交以来文件的变�
 """
 import git
 import re, os
-from file_handler import FileHandler
+from repo_agent.file_handler import FileHandler
 import subprocess
-from config import CONFIG
+from repo_agent.config import CONFIG
 
 
 class ChangeDetector:
