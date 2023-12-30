@@ -79,9 +79,9 @@ class FileHandler:
             # 移除开头的 '/'
             file_path = file_path[1:]
             
-        file_path = os.path.join(self.repo_path, file_path)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w', encoding='utf-8') as file:
+        abs_file_path = os.path.join(self.repo_path, file_path)
+        os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
+        with open(abs_file_path, 'w', encoding='utf-8') as file:
             file.write(content)
 
 

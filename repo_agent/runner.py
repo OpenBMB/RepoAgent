@@ -134,7 +134,7 @@ class Runner:
                 # 对于每个文件，转换json内容到markdown
                 markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
                 # 写入markdown内容到.md文件
-                file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+                file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
                 logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
             
             # 删除last_processed_file.txt文件
@@ -267,7 +267,7 @@ class Runner:
             # 将变更部分的json文件内容转换成markdown内容
             markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
             # 将markdown内容写入.md文件
-            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
 
         # 如果没有找到对应的文件，就添加一个新的项
