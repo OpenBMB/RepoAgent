@@ -29,3 +29,23 @@ language_mapping = {
     "hi": "Hindi",
     "bn": "Bengali"
 }
+
+class ConfigManager:
+    def __init__(self, file_path='config.yml'):
+        self.file_path = file_path
+        self.config = self.load_config()
+
+    def load_config(self):
+        try:
+            with open(self.file_path, 'r') as file:
+                return yaml.safe_load(file) or {}
+        except FileNotFoundError:
+            return {}
+
+    def update_partial_config(self, section, updates):
+        self.config[section] = {**self.config.get(section, {}), **updates}
+        self.save_config()
+
+    def save_config(self):
+        with open(self.file_path, 'w') as file:
+            yaml.dump(self.config, file, default_flow_style=False)

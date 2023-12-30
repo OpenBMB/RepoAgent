@@ -10,6 +10,7 @@ maintainers = [
 ]
 license = "Apache-2.0"
 readme = "README.md"
+repository = "https://github.com/LOGIC-10/RepoAgent"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -19,8 +20,12 @@ tiktoken = "^0.5.2"
 pyyaml = "^6.0.1"
 jedi = "^0.19.1"
 loguru = "^0.7.2"
+typer = {extras = ["all"], version = "^0.9.0"}
 
+[tool.poetry.package]
+include = ["config.yml"]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
