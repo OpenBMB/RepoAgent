@@ -32,7 +32,7 @@ default_completion_kwargs:
 
 repo_path: /path/to/your/local/repo
 project_hierarchy: .project_hierarchy.json
-Markdown_Docs_folder: /Markdown_Docs
+Markdown_Docs_folder: Markdown_Docs # Please pay attention to the way the path is written. Do not add a slash cuz the absolute path is written starting with a slash.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # optional and if needed, relative to repo_path
 
 language: zh
