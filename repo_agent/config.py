@@ -1,51 +1,25 @@
-import yaml
+from dynaconf import Dynaconf, Validator, loaders
+from dynaconf.utils.boxing import DynaBox
 
-CONFIG = yaml.load(open('config.yml', 'r'), Loader=yaml.FullLoader)
 
-language_mapping = {
-    "en": "English",
-    "es": "Spanish",
-    "fr": "French",
-    "de": "German",
-    "zh": "Chinese",
-    "ja": "Japanese",
-    "ru": "Russian",
-    "it": "Italian",
-    "ko": "Korean",
-    "nl": "Dutch",
-    "pt": "Portuguese",
-    "ar": "Arabic",
-    "tr": "Turkish",
-    "sv": "Swedish",
-    "da": "Danish",
-    "fi": "Finnish",
-    "no": "Norwegian",
-    "pl": "Polish",
-    "cs": "Czech",
-    "hu": "Hungarian",
-    "el": "Greek",
-    "he": "Hebrew",
-    "th": "Thai",
-    "hi": "Hindi",
-    "bn": "Bengali"
-}
+settings = Dynaconf(
+    environments=True, 
+    env="production", 
+    settings_files="repo_agent/configs/settings.toml",    
+    envvar_prefix="REPOAGENT"
+)
 
-class ConfigManager:
-    def __init__(self, file_path='config.yml'):
-        self.file_path = file_path
-        self.config = self.load_config()
+settings.validators.register(
+    Validator("OPENAI_API_KEY", must_exist=True),
+)
 
-    def load_config(self):
-        try:
-            with open(self.file_path, 'r') as file:
-                return yaml.safe_load(file) or {}
-        except FileNotFoundError:
-            return {}
+def export_settings():
+    # 获取当前环境的配置
+    data = settings.as_dict(env=settings.current_env)
+    
+    # 将配置写入 SETTINGS_MODULE 指定的文件
+    loaders.write(settings.SETTINGS_MODULE, DynaBox(data).to_dict(), merge=False, env=settings.current_env)
 
-    def update_partial_config(self, section, updates):
-        self.config[section] = {**self.config.get(section, {}), **updates}
-        self.save_config()
-
-    def save_config(self):
-        with open(self.file_path, 'w') as file:
-            yaml.dump(self.config, file, default_flow_style=False)
+    # 重新加载配置以应用更新
+    settings.reload()
+    

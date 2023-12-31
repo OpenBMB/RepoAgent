@@ -7,14 +7,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 from loguru import logger
-from config import CONFIG
+from config import settings
 
 
 class Runner:
     def __init__(self):
-        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
-        self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
-        self.chat_engine = ChatEngine(CONFIG=CONFIG)
+        self.project_manager = ProjectManager(repo_path=settings['repo_path'], project_hierarchy_path=settings['project_hierarchy_path']) 
+        self.change_detector = ChangeDetector(repo_path=settings['repo_path'])
+        self.chat_engine = ChatEngine(settings=settings)
     
     def generate_hierachy(self):
         """
@@ -25,7 +25,7 @@ class Runner:
         repo_structure = file_handler.generate_overall_structure()
         # json_output = file_handler.convert_structure_to_json(repo_structure)
 
-        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        json_file = os.path.join(settings['repo_path'], settings['project_hierarchy_path'])
         # Save the JSON to a file
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(repo_structure, f, indent=4, ensure_ascii=False)
@@ -58,16 +58,16 @@ class Runner:
         """
         try:
             logger.info("Starting to generate documentation.")
-            # 检测是否存在全局的 project_hierarchy.json 结构信息
-            if not os.path.exists(self.project_manager.project_hierarchy):
+            # 检测是否存在全局的 project_hierarchy_path.json 结构信息
+            if not os.path.exists(self.project_manager.project_hierarchy_path):
                 self.generate_hierachy()
-                logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
+                logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy_path}")
 
-            with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
+            with open(self.project_manager.project_hierarchy_path, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
 
             # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
-            ignore_list = CONFIG.get('ignore_list', [])
+            ignore_list = settings.get('ignore_list', [])
  
             # 检查是否存在last_processed_file.txt文件
             if os.path.exists("last_processed_file.txt"):
@@ -87,7 +87,7 @@ class Runner:
                     continue
 
                 # 判断当前文件是否为空，如果为空则跳过：
-                if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
+                if os.path.getsize(os.path.join(settings['repo_path'],rel_file_path)) == 0:
                     continue
 
                 # 对于每个单独文件里的每一个对象：获取其引用者列表
@@ -110,7 +110,7 @@ class Runner:
                 with ThreadPoolExecutor(max_workers=5) as executor: 
 
                     futures = []
-                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+                    file_handler = FileHandler(settings['repo_path'], rel_file_path)
 
                     # 遍历文件中的每个对象
                     for index, ref_obj in enumerate(referencer_list):
@@ -128,13 +128,13 @@ class Runner:
                     futures = []
 
                 # 在对文件的循环内，将json_data写回文件
-                with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
+                with open(self.project_manager.project_hierarchy_path, 'w', encoding='utf-8') as f:
                     json.dump(json_data, f, indent=4, ensure_ascii=False)
 
                 # 对于每个文件，转换json内容到markdown
                 markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
                 # 写入markdown内容到.md文件
-                file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+                file_handler.write_file(os.path.join(self.project_manager.repo_path, settings['markdown_docs_path'], file_handler.file_path.replace('.py', '.md')), markdown)
                 logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
             
             # 删除last_processed_file.txt文件
@@ -166,9 +166,9 @@ class Runner:
             None
         """
         logger.info("Starting to detect changes.")
-        # 首先检测是否存在全局的 project_hierarchy.json 结构信息
-        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-        if not os.path.exists(abs_project_hierarchy_path):
+        # 首先检测是否存在全局的 project_hierarchy_path.json 结构信息
+        abs_project_hierarchy_path_path = os.path.join(settings['repo_path'], settings['project_hierarchy_path'])
+        if not os.path.exists(abs_project_hierarchy_path_path):
             self.first_generate()
 
         changed_files = self.change_detector.get_staged_pys()
@@ -184,7 +184,7 @@ class Runner:
         repo_path = self.project_manager.repo_path
 
         # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
-        ignore_list = CONFIG.get('ignore_list', [])
+        ignore_list = settings.get('ignore_list', [])
 
         for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
             # 如果当前文件在忽略列表，或者列表中某个文件夹路径下，则跳过
@@ -220,13 +220,13 @@ class Runner:
 
         json_data[file_handler.file_path] = file_dict
         # 将新的项写入json文件
-        with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
+        with open(self.project_manager.project_hierarchy_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
         logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
         # 将markdown内容写入.md文件
-        file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+        file_handler.write_file(os.path.join(self.project_manager.repo_path, settings['markdown_docs_path'], file_handler.file_path.replace('.py', '.md')), markdown)
         logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
 
 
@@ -250,8 +250,8 @@ class Runner:
         changes_in_pyfile = self.change_detector.identify_changes_in_structure(changed_lines, file_handler.get_functions_and_classes(source_code))
         logger.info(f"检测到变更对象：\n{changes_in_pyfile}")
         
-        # 判断project_hierarchy.json文件中能否找到对应.py文件路径的项
-        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
+        # 判断project_hierarchy_path.json文件中能否找到对应.py文件路径的项
+        with open(self.project_manager.project_hierarchy_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
         # 如果找到了对应文件
@@ -259,7 +259,7 @@ class Runner:
             # 更新json文件中的内容
             json_data[file_handler.file_path] = self.update_existing_item(json_data[file_handler.file_path], file_handler, changes_in_pyfile)
             # 将更新后的file写回到json文件中
-            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
+            with open(self.project_manager.project_hierarchy_path, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=4, ensure_ascii=False)
             
             logger.info(f"已更新{file_handler.file_path}文件的json结构信息。")
@@ -267,7 +267,7 @@ class Runner:
             # 将变更部分的json文件内容转换成markdown内容
             markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
             # 将markdown内容写入.md文件
-            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            file_handler.write_file(os.path.join(self.project_manager.repo_path, settings['markdown_docs_path'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
 
         # 如果没有找到对应的文件，就添加一个新的项

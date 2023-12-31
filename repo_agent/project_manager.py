@@ -2,10 +2,10 @@ import os
 import jedi
 
 class ProjectManager:
-    def __init__(self, repo_path, project_hierarchy):
+    def __init__(self, repo_path, project_hierarchy_path):
         self.repo_path = repo_path
         self.project = jedi.Project(self.repo_path)
-        self.project_hierarchy = os.path.join(self.repo_path, project_hierarchy)
+        self.project_hierarchy_path = os.path.join(self.repo_path, project_hierarchy_path)
 
     def get_project_structure(self):
         def walk_dir(root, prefix=""):

@@ -3,7 +3,7 @@
 import git
 import os,json
 import ast
-from config import CONFIG
+from config import settings
 from utils.gitignore_checker import GitignoreChecker
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
@@ -11,7 +11,7 @@ class FileHandler:
     def __init__(self, repo_path, file_path):
         self.file_path = file_path # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierarchy = os.path.join(repo_path, CONFIG['project_hierarchy'])
+        self.project_hierarchy_path = os.path.join(repo_path, settings['project_hierarchy_path'])
 
     def read_file(self):
         """
@@ -237,9 +237,9 @@ class FileHandler:
             str: The content of the file in markdown format.
         
         Raises:
-            ValueError: If no file object is found for the specified file path in project_hierarchy.json.
+            ValueError: If no file object is found for the specified file path in project_hierarchy_path.json.
         """
-        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
+        with open(self.project_hierarchy_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
         if file_path is None:
@@ -249,7 +249,7 @@ class FileHandler:
         file_dict = json_data.get(file_path)
 
         if file_dict is None:
-            raise ValueError(f"No file object found for {self.file_path} in project_hierarchy.json")
+            raise ValueError(f"No file object found for {self.file_path} in project_hierarchy_path.json")
 
         markdown = ""
         parent_dict = {}
@@ -287,11 +287,11 @@ class FileHandler:
         Returns:
             None
         """
-        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
+        with open(self.project_hierarchy_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
         # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
-        markdown_docs_path = os.path.join(self.repo_path, CONFIG['Markdown_Docs_folder'])
+        markdown_docs_path = os.path.join(self.repo_path, settings['markdown_docs_path'])
         if not os.path.exists(markdown_docs_path):
             os.mkdir(markdown_docs_path)
 
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     # 打开py文件读取源代码
     # file_handler = FileHandler('/path/to/repo', '/path/to/file.py')
 
-    file_handler = FileHandler(CONFIG['repo_path'], 'XAgent/engines/pipeline_old.py')
+    file_handler = FileHandler(settings['repo_path'], 'XAgent/engines/pipeline_old.py')
     # file_handler.generate_markdown_from_json()
     file_handler.convert_all_to_markdown_files_from_json()
     # code_content = file_handler.read_file()

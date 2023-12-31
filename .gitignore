@@ -163,4 +163,7 @@ cython_debug/
 #.idea/
 
 # AI doc
-.project_hierarchy.json
+.project_hierarchy_path.json
+
+# Ignore dynaconf secret files
+.secrets.*
