@@ -115,6 +115,12 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 执行后，RepoAgent会自动更改目标仓库中的已暂存文件并正式提交commit，执行完毕后会显示绿色的Passed，如下图所示：
 ![Execution Result](assets/images/ExecutionResult.png)
 
+生成的文档将存放在目标仓库根目录下的指定文件夹中，生成的文档效果如下图所示：
+![Documentation](assets/images/Doc_example.png)
+
+我们使用默认模型**gpt-3.5-turbo**对一个约**27万行**的中大型项目[**XAgent**](https://github.com/OpenBMB/XAgent)生成了文档。您可以前往XAgent项目的Markdown_Docs文件目录下查看生成效果。如果您希望得到更好的文档效果，我们建议您使用更先进的模型，如**gpt-4**或**gpt-4-1106-preview**。
+
+**最后，您可以通过自定义Prompt来灵活调整文档的输出格式、模板等方面的效果。 我们很高兴您探索更科学的自动化Technical Writing Prompts并对社区作出贡献。**
 
 # ✅ 未来工作
 
