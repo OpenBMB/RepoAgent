@@ -11,6 +11,12 @@ maintainers = [
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/LOGIC-10/RepoAgent"
+packages = [
+    { include = "repo_agent" }
+]
+
+[tool.poetry.scripts]
+repoagent = "repo_agent.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.9"

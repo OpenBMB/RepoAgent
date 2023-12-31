@@ -1,11 +1,11 @@
 import os, json
-import re,sys
+import sys
 from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from project_manager import ProjectManager
-from prompt import SYS_PROMPT, USR_PROMPT
+from repo_agent.project_manager import ProjectManager
+from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 import inspect
 
 

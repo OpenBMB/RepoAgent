@@ -1,13 +1,12 @@
 import os, json
-from file_handler import FileHandler
-from change_detector import ChangeDetector
-from project_manager import ProjectManager
-from chat_engine import ChatEngine
+from repo_agent.file_handler import FileHandler
+from repo_agent.change_detector import ChangeDetector
+from repo_agent.project_manager import ProjectManager
+from repo_agent.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import yaml
 import subprocess
 from loguru import logger
-from config import settings
+from repo_agent.config import settings
 
 
 class Runner:
@@ -405,11 +404,4 @@ class Runner:
         return new_obj, del_obj
 
 
-if __name__ == "__main__":
-
-    runner = Runner()
-    
-    runner.run()
-
-    logger.info("文档任务完成。")
 
