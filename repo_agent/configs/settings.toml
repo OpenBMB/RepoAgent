@@ -33,7 +33,7 @@ hi = "Hindi"
 bn = "Bengali"
 
 [production.chat_completion_kwargs]
-model = "gpt-3.5-turbo-16k"
+model = "gpt-3.5-turbo"
 temperature = 0.2
 request_timeout = 60
 base_url = "https://api.openai.com/v1"

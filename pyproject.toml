@@ -19,7 +19,7 @@ packages = [
 repoagent = "repo_agent.main:app"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 gitpython = "^3.1.40"
 openai = "^1.6.1"
 tiktoken = "^0.5.2"
