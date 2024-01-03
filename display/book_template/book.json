@@ -3,7 +3,7 @@
     "title": "RepoAgent所生成文GitBook",
     "description": "RepoAgent根据项目repo所生成文档GitBook",
     "generator": "site",
-    "author": "sailaoda <wuyesai@gmail.com>",
+    "author": "RepoAgent <x-agent.net>",
     "language": "zh-hans",
     "gitbook": "3.2.3",
     "root": "./src",
@@ -11,8 +11,7 @@
     "links": {
         "sidebar": {
             "XAgent": "https://x-agent.net",
-            "RepoAgent": "",
-            "GitHub": "https://github.com/sailaoda"
+            "RepoAgent": "https://github.com/LOGIC-10/RepoAgent.git"
         }
     },
 
@@ -20,17 +19,10 @@
         "github-buttons": {
             "buttons": [
                 {
-                "repo": "golang",
-                "user": "sailaoda",
+                "repo": "RepoAgent",
+                "user": "LOGIC-10",
                 "type": "star",
                 "count": true,
-                "size": "small"
-                },
-                {
-                "user": "sailaoda",
-                "type": "follow",
-                "width": "140",
-                "count": false,
                 "size": "small"
                 }
             ]
@@ -51,7 +43,7 @@
             "showLevel": false
         },
         "disqus": {
-            "shortName": "saigobook"
+            "shortName": ""
         },
         "prism": {
             "css": [
