@@ -4,9 +4,29 @@ from repo_agent.config import settings, export_settings, validate_settings
 from pathlib import Path
 from repo_agent.runner import Runner
 from loguru import logger
+from importlib import metadata
 
-app = typer.Typer()
+# 尝试获取版本号，如果失败，则使用默认版本号。
+try:
+    version_number = metadata.version("repoagent")
+except metadata.PackageNotFoundError:
+    version_number = "0.0.0"
 
+# 定义版本信息字符串，以便在应用中复用。
+version_info = f"RepoAgent (version {version_number})"
+
+app = typer.Typer(help=version_info)
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context, version: bool = typer.Option(None, "--version", "-v", help="Show version.")):
+    if version:
+        typer.echo(version_info)
+        raise typer.Exit()
+    if ctx.invoked_subcommand is None:
+        # No subcommand was provided, show help
+        typer.echo(ctx.get_help())
+        raise typer.Exit()
+    
 
 @app.command(help="Run the documentation generation task.")
 def run():
@@ -93,3 +113,5 @@ def configure(
 
     export_settings()
     typer.echo("Configuration updated and saved.")
+
+
