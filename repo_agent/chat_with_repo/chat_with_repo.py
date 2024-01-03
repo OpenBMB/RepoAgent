@@ -67,7 +67,7 @@ class ChatbotResponder:
 # Main Execution Block
 if __name__ == "__main__":
     openai.api_key = 'sk-'
-    openai.base_url = 'https://sailaoda.cn/v1/'
+    openai.base_url = 'https://example.com'
     
     # Initialize DocumentIndexer and ChatbotResponder
     indexer = DocumentIndexer("../../Markdown_Docs/", [".md", ".py"])
