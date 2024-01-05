@@ -4,6 +4,7 @@ from change_detector import ChangeDetector
 from project_manager import ProjectManager
 from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from doc_meta_info import MetaInfo, DocItem, DocItemType
 import yaml
 import subprocess
 from loguru import logger
@@ -22,26 +23,24 @@ class Runner:
         # topology_list = self.meta_info.get_topology()
 
     def ensure_project_hierarchy(self):
+        # 如果没有生成全局的project_hierarchy，先生成一次
         if not os.path.exists(self.project_manager.project_hierarchy):
-            self.generate_hierachy()
+            """
+            The function is to generate an initial global structure information for the entire project.
+            """
+            # Initialize a File_handler
+            file_handler = FileHandler(self.project_manager.repo_path, None)
+            repo_structure = file_handler.generate_overall_structure()
+            # json_output = file_handler.convert_structure_to_json(repo_structure)
+
+            json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+            # Save the JSON to a file
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(repo_structure, f, indent=4, ensure_ascii=False)
+
+            # logger.info(f"JSON structure generated and saved to '{json_file}'.")
             logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
-    
-    def generate_hierachy(self):
-        """
-        The function is to generate an initial global structure information for the entire project.
-        """
-        # Initialize a File_handler
-        file_handler = FileHandler(self.project_manager.repo_path, None)
-        repo_structure = file_handler.generate_overall_structure()
-        # json_output = file_handler.convert_structure_to_json(repo_structure)
-
-        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-        # Save the JSON to a file
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(repo_structure, f, indent=4, ensure_ascii=False)
-
-        # logger.info(f"JSON structure generated and saved to '{json_file}'.")
 
     def get_all_pys(self, directory):
         """
@@ -61,18 +60,55 @@ class Runner:
                     python_files.append(os.path.join(root, file))
 
         return python_files
-        
+    
 
     def first_generate(self):
         """
         Generate documentation for all Python files in the project based on the information in the global JSON structure.
         """
+        logger.info("Starting to generate documentation.")
+        self.ensure_project_hierarchy()
+
+        topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
+        ignore_list = CONFIG.get('ignore_list', [])
+
+        #TODO: 崩溃与恢复
+
+        for doc_item in topology_list:
+            rel_file_path = doc_item.get_full_name()
+
+            def need_to_generate(doc_item: DocItem) -> bool:
+                """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
+                if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
+                    return False
+                doc_item = doc_item.father
+                while doc_item:
+                    if doc_item.item_type == DocItemType._file:
+                        # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+                        if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                            return False
+                        return True
+                    doc_item = doc_item.father
+                return False
+            if need_to_generate(doc_item):
+                self.chat_engine.generate_doc(
+                    doc_item = doc_item,
+                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path),
+                )
+
+
+    def first_generate_(self):
+        """
+        Generate documentation for all Python files in the project based on the information in the global JSON structure.
+        """
+        logger.info("Starting to generate documentation.")
+        self.ensure_project_hierarchy()
+
+        # self.meta_info.target_repo_hierarchical_tree.print_recursive()
+        topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
+        
+
         try:
-            logger.info("Starting to generate documentation.")
-            # 检测是否存在全局的 project_hierarchy.json 结构信息
-            if not os.path.exists(self.project_manager.project_hierarchy):
-                self.generate_hierachy()
-                logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
             with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
@@ -420,12 +456,8 @@ if __name__ == "__main__":
 
     runner = Runner()
     
-    runner.meta_info.target_repo_hierarchical_tree.print_recursive()
-    topology_list = runner.meta_info.get_topology()
-    for node in topology_list:
-        print(node.get_full_name())
-    # runner.run()
-    # runner.first_generate()
+    # runner.meta_info.target_repo_hierarchical_tree.print_recursive()
+    runner.first_generate()
 
     logger.info("文档任务完成。")
 

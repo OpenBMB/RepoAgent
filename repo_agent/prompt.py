@@ -4,12 +4,12 @@ Currently, you are in a project, and the hierarchical structure of this project 
 {project_structure}
 
 The path of the document you need to generate in this project is {file_path}.
-Now you need to generate a document for a {code_type_tell}, whose name is {code_name}.
+Now you need to generate a document for a {code_type_tell}, whose name is "{code_name}".
 
 The content of the code is as follows:
 {code_content}
 
-{reference_letter}
+{referenced_letter}
 {referencer_content}
 
 Please generate a detailed explanation document for this object based on the code of the target object itself {combine_ref_situation}.

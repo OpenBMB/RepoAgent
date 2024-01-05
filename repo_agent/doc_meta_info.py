@@ -10,7 +10,7 @@ import json
 from loguru import logger
 import jedi
 
-from ai_doc.config import CONFIG
+from config import CONFIG
 
 
 @unique
@@ -57,6 +57,9 @@ class DocItem():
     item_type: DocItemType = DocItemType._class_function
     available_type: SubTreeAvailable = SubTreeAvailable.uncheck
     obj_name: str = ""
+
+    document: str = ""
+
     content: Dict[Any,Any] = field(default_factory=dict) #原本存储的信息
 
     depth: int = 0
@@ -125,6 +128,7 @@ class DocItem():
         
         name_list = name_list[1:]
         return "/".join(name_list)
+    
     
     def find(self, recursive_file_path: list) -> DocItem:
         """从repo根节点根据path_list找到对应的文件
