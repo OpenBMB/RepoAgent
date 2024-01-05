@@ -1,6 +1,6 @@
 import unittest
 import os
-from ai_doc.change_detector import ChangeDetector
+from repo_agent.change_detector import ChangeDetector
 from git import Repo
 
 class TestChangeDetector(unittest.TestCase):
@@ -56,7 +56,7 @@ class TestChangeDetector(unittest.TestCase):
 
         # 使用 ChangeDetector 获取未暂存的 Markdown 文件
         change_detector = ChangeDetector(self.test_repo_path)
-        unstaged_files = change_detector.get_unstaged_mds()
+        unstaged_files = change_detector.get_to_be_staged_files()
 
         # 断言修改的文件在未暂存文件列表中
         self.assertIn('test_file.md', [os.path.basename(path) for path in unstaged_files])
@@ -70,10 +70,10 @@ class TestChangeDetector(unittest.TestCase):
 
         # 使用 ChangeDetector 添加未暂存的 Markdown 文件
         change_detector = ChangeDetector(self.test_repo_path)
-        change_detector.add_unstaged_mds()
+        change_detector.add_unstaged_files()
 
         # 检查文件是否被暂存
-        unstaged_files_after_add = change_detector.get_unstaged_mds()
+        unstaged_files_after_add = change_detector.get_to_be_staged_files()
 
         # 断言暂存操作后没有未暂存的 Markdown 文件
         self.assertEqual(len(unstaged_files_after_add), 0)

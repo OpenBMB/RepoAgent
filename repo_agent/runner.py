@@ -1,14 +1,13 @@
 import os, json
-from ai_doc.file_handler import FileHandler
-from ai_doc.change_detector import ChangeDetector
-from ai_doc.project_manager import ProjectManager
-from ai_doc.chat_engine import ChatEngine
-from ai_doc.doc_meta_info import MetaInfo
+from file_handler import FileHandler
+from change_detector import ChangeDetector
+from project_manager import ProjectManager
+from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import subprocess
 from loguru import logger
-from ai_doc.config import CONFIG
+from config import CONFIG
 
 
 class Runner:
@@ -30,9 +29,9 @@ class Runner:
     
     def generate_hierachy(self):
         """
-        函数的作用是为整个项目生成一个最初的全局结构信息
+        The function is to generate an initial global structure information for the entire project.
         """
-        # 初始化一个File_handler
+        # Initialize a File_handler
         file_handler = FileHandler(self.project_manager.repo_path, None)
         repo_structure = file_handler.generate_overall_structure()
         # json_output = file_handler.convert_structure_to_json(repo_structure)
@@ -46,13 +45,13 @@ class Runner:
 
     def get_all_pys(self, directory):
         """
-        获取给定目录下的所有 Python 文件。
+        Get all Python files in the given directory.
 
         Args:
-            directory (str): 要搜索的目录。
+            directory (str): The directory to search.
 
         Returns:
-            list: 所有 Python 文件的路径列表。
+            list: A list of paths to all Python files.
         """
         python_files = []
 
@@ -66,75 +65,106 @@ class Runner:
 
     def first_generate(self):
         """
-        根据全局json结构的信息，生成整个项目所有python文件的文档
+        Generate documentation for all Python files in the project based on the information in the global JSON structure.
         """
-        logger.info("Starting to generate documentation.")
-
-        with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-
-        # 遍历json_data中的每个对象
-        for rel_file_path, file_dict in json_data.items():
-
-            # 判断当前文件是否为空，如果为空则跳过：
-            if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
-                continue
-
-            # 对于每个单独文件里的每一个对象：获取其引用者列表
-            referencer_list = [] # 单独拿一个referencer_list出来存储引用者是为了避免JEDI并发处理报错
-            
-            for obj_name, obj_info in file_dict.items():
-                referencer_obj = {
-                    "obj_name": obj_name,
-                    "obj_referencer_list": self.project_manager.find_all_referencer(
-                        variable_name=obj_name,
-                        file_path=rel_file_path,
-                        line_number=obj_info["code_start_line"],
-                        column_number=obj_info["name_column"]
-                    )
-                }
-                referencer_list.append(referencer_obj)
-
-            
-            # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
-            with ThreadPoolExecutor(max_workers=5) as executor: 
-
-                futures = []
-                file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
-
-                # 遍历文件中的每个对象
-                for index, ref_obj in enumerate(referencer_list):
-                    if ref_obj["obj_name"] in file_dict:
-                        # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
-                        future = executor.submit(self.chat_engine.generate_doc, file_dict[ref_obj['obj_name']], file_handler, ref_obj["obj_referencer_list"])
-                        futures.append((future, ref_obj, index))
-
-                # 收集响应结果
-                for future, ref_obj, index in futures:
-                    logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
-                    response_message = future.result()  # 等待结果
-                    file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
-                
-                futures = []
-
-            # 在对文件的循环内，将json_data写回文件
-            with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, indent=4, ensure_ascii=False)
-
-            # 对于每个文件，转换json内容到markdown
-            markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
-            # 写入markdown内容到.md文件
-            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-            logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
-
-            
-
-    def git_commit(self, file_path, commit_message):
         try:
-            subprocess.check_call(['git', 'add', file_path])
+            logger.info("Starting to generate documentation.")
+            # 检测是否存在全局的 project_hierarchy.json 结构信息
+            if not os.path.exists(self.project_manager.project_hierarchy):
+                self.generate_hierachy()
+                logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
+
+            with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
+                json_data = json.load(f)
+
+            # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
+            ignore_list = CONFIG.get('ignore_list', [])
+ 
+            # 检查是否存在last_processed_file.txt文件
+            if os.path.exists("last_processed_file.txt"):
+                with open("last_processed_file.txt",'r') as file:
+                    last_processed_file = file.read()
+                keys = list(json_data.keys())
+                start_index = keys.index(last_processed_file) if last_processed_file in keys else 0
+            else:
+                last_processed_file = None
+                start_index = 0
+
+            # 遍历json_data中的每个对象 或 从last_processed_file开始遍历
+            for rel_file_path, file_dict in list(json_data.items())[start_index:]:
+                
+                # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+                if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                    continue
+
+                # 判断当前文件是否为空，如果为空则跳过：
+                if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
+                    continue
+
+                # 对于每个单独文件里的每一个对象：获取其引用者列表
+                referencer_list = [] # 单独拿一个referencer_list出来存储引用者是为了避免JEDI并发处理报错
+                
+                for obj_name, obj_info in file_dict.items():
+                    referencer_obj = {
+                        "obj_name": obj_name,
+                        "obj_referencer_list": self.project_manager.find_all_referencer(
+                            variable_name=obj_name,
+                            file_path=rel_file_path,
+                            line_number=obj_info["code_start_line"],
+                            column_number=obj_info["name_column"]
+                        )
+                    }
+                    referencer_list.append(referencer_obj)
+
+                
+                # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
+                with ThreadPoolExecutor(max_workers=5) as executor: 
+
+                    futures = []
+                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+
+                    # 遍历文件中的每个对象
+                    for index, ref_obj in enumerate(referencer_list):
+                        if ref_obj["obj_name"] in file_dict:
+                            # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
+                            future = executor.submit(self.chat_engine.generate_doc, file_dict[ref_obj['obj_name']], file_handler, ref_obj["obj_referencer_list"])
+                            futures.append((future, ref_obj, index))
+
+                    # 收集响应结果
+                    for future, ref_obj, index in futures:
+                        logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
+                        response_message = future.result()  # 等待结果
+                        file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
+                    
+                    futures = []
+
+                # 在对文件的循环内，将json_data写回文件
+                with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
+                    json.dump(json_data, f, indent=4, ensure_ascii=False)
+
+                # 对于每个文件，转换json内容到markdown
+                markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
+                # 写入markdown内容到.md文件
+                file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+                logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
+            
+            # 删除last_processed_file.txt文件
+            if os.path.exists("last_processed_file.txt"):
+                os.remove("last_processed_file.txt")
+
+        except Exception as e:
+            logger.error(f"An error occurred while trying to generate documentation: {str(e)}")
+            with open("last_processed_file.txt",'w') as file:
+                file.write(rel_file_path)
+            
+            raise e
+
+
+    def git_commit(self, commit_message):
+        try:
             subprocess.check_call(['git', 'commit', '--no-verify', '-m', commit_message])
         except subprocess.CalledProcessError as e:
-            print(f'An error occurred while trying to commit {file_path}: {str(e)}')
+            print(f'An error occurred while trying to commit {str(e)}')
 
 
     def run(self):
@@ -147,7 +177,11 @@ class Runner:
             None
         """
         logger.info("Starting to detect changes.")
-    
+        # 首先检测是否存在全局的 project_hierarchy.json 结构信息
+        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        if not os.path.exists(abs_project_hierarchy_path):
+            self.first_generate()
+
         changed_files = self.change_detector.get_staged_pys()
 
         if len(changed_files) == 0:
@@ -156,12 +190,17 @@ class Runner:
         
         else:
             logger.info(f"检测到暂存区中变更的文件：{changed_files}")
+        
 
         repo_path = self.project_manager.repo_path
 
-        for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
+        # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
+        ignore_list = CONFIG.get('ignore_list', [])
 
-            # file_path = os.path.join(repo_path, file_path)  # 将file_path变成绝对路径
+        for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
+            # 如果当前文件在忽略列表，或者列表中某个文件夹路径下，则跳过
+            if any(file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                continue
             # 判断当前python文件内容是否为空，如果为空则跳过：
             if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
                 continue
@@ -170,11 +209,22 @@ class Runner:
         
 
     def add_new_item(self, file_handler, json_data):
+        """
+        Add new projects to the JSON file and generate corresponding documentation.
+
+        Args:
+            file_handler (FileHandler): The file handler object for reading and writing files.
+            json_data (dict): The JSON data storing the project structure information.
+
+        Returns:
+            None
+        """
         file_dict = {}
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
         for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
             code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
-            md_content = self.chat_engine.generate_doc(code_info, file_handler)
+            response_message = self.chat_engine.generate_doc(code_info, file_handler)
+            md_content = response_message.content
             code_info["md_content"] = md_content
             # 文件对象file_dict中添加一个新的对象
             file_dict[name] = code_info
@@ -193,8 +243,8 @@ class Runner:
 
     def process_file_changes(self, repo_path, file_path, is_new_file):
         """
-        函数将在检测到的变更文件的循环中被调用，作用是根据文件绝对路径处理变更的文件，包括新增的文件和已存在的文件。
-        其中，changes_in_pyfile是一个字典，包含了发生变更的结构的信息，示例格式为：{'added': {'add_context_stack', '__init__'}, 'removed': set()}
+        This function is called in the loop of detected changed files. Its purpose is to process changed files according to the absolute file path, including new files and existing files.
+        Among them, changes_in_pyfile is a dictionary that contains information about the changed structures. An example format is: {'added': {'add_context_stack', '__init__'}, 'removed': set()}
 
         Args:
             repo_path (str): The path to the repository.
@@ -228,7 +278,7 @@ class Runner:
             # 将变更部分的json文件内容转换成markdown内容
             markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
             # 将markdown内容写入.md文件
-            file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
 
         # 如果没有找到对应的文件，就添加一个新的项
@@ -236,13 +286,27 @@ class Runner:
             self.add_new_item(file_handler,json_data)
 
         # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
-        git_add_result = self.change_detector.add_unstaged_mds()
+        git_add_result = self.change_detector.add_unstaged_files()
         
         if len(git_add_result) > 0:
-            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区') 
+            logger.info(f'已添加 {[file for file in git_add_result]} 到暂存区')
+        
+        # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
+         
 
 
     def update_existing_item(self, file_dict, file_handler, changes_in_pyfile):
+        """
+        Update existing projects.
+
+        Args:
+            file_dict (dict): A dictionary containing file structure information.
+            file_handler (FileHandler): The file handler object.
+            changes_in_pyfile (dict): A dictionary containing information about the objects that have changed in the file.
+
+        Returns:
+            dict: The updated file structure information dictionary.
+        """
         new_obj, del_obj = self.get_new_objects(file_handler)
 
         # 处理被删除的对象
@@ -306,7 +370,19 @@ class Runner:
     
 
     def update_object(self, file_dict, file_handler, obj_name, obj_referencer_list):
-        if obj_name in file_dict: # file_dict保存的是原先的旧的对象信息
+        """
+        Generate documentation content and update corresponding field information of the object.
+
+        Args:
+            file_dict (dict): A dictionary containing old object information.
+            file_handler: The file handler.
+            obj_name (str): The object name.
+            obj_referencer_list (list): The list of object referencers.
+
+        Returns:
+            None
+        """
+        if obj_name in file_dict:
             obj = file_dict[obj_name]
             response_message = self.chat_engine.generate_doc(obj, file_handler, obj_referencer_list)
             obj["md_content"] = response_message.content
@@ -315,15 +391,17 @@ class Runner:
 
     def get_new_objects(self, file_handler):
         """
-        函数通过比较当前版本和上一个版本的.py文件，获取新增和删除的对象
+        The function gets the added and deleted objects by comparing the current version and the previous version of the .py file.
 
         Args:
-            file_handler (FileHandler): 文件处理器对象。
+            file_handler (FileHandler): The file handler object.
+
         Returns:
-            tuple: 包含新增和删除对象的元组，格式为 (new_obj, del_obj)
-        输出示例：
-        new_obj: ['add_context_stack', '__init__']
-        del_obj: []
+            tuple: A tuple containing the added and deleted objects, in the format (new_obj, del_obj)
+
+        Output example:
+            new_obj: ['add_context_stack', '__init__']
+            del_obj: []
         """
         current_version, previous_version = file_handler.get_modified_file_versions()
         parse_current_py = file_handler.get_functions_and_classes(current_version)

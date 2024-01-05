@@ -25,15 +25,28 @@ class ProjectManager:
         return '\n'.join(structure)
     
     def find_all_referencer(self, variable_name, file_path, line_number, column_number):
+        """
+        Find all references of a variable in a given file.
+
+        Args:
+            variable_name (str): The name of the variable to search for.
+            file_path (str): The path of the file to search in.
+            line_number (int): The line number where the variable is located.
+            column_number (int): The column number where the variable is located.
+
+        Returns:
+            list: A list of tuples containing the file path, line number, and column number of each reference.
+        
+        """
         script = jedi.Script(path=os.path.join(self.repo_path, file_path))
         references = script.get_references(line=line_number, column=column_number)
 
         try:
-            # 过滤出变量名为 variable_name 的引用，并返回它们的位置
+            # Filter out references with variable_name and return their positions
             variable_references = [ref for ref in references if ref.name == variable_name]
             return [(os.path.relpath(ref.module_path, self.repo_path), ref.line, ref.column) for ref in variable_references if not (ref.line == line_number and ref.column == column_number)]
         except Exception as e:
-            # 打印错误信息和相关参数
+            # Print error message and related parameters
             print(f"Error occurred: {e}")
             print(f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}")
             return []

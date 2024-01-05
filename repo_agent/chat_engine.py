@@ -4,9 +4,9 @@ from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from .config import language_mapping
-from .project_manager import ProjectManager
-from .prompt import SYS_PROMPT, USR_PROMPT
+from config import language_mapping
+from project_manager import ProjectManager
+from prompt import SYS_PROMPT, USR_PROMPT
 import inspect
 
 
@@ -18,7 +18,7 @@ def get_import_statements():
 
 class ChatEngine:
     """
-    文档生成器，用于生成函数或类的文档
+    ChatEngine is used to generate the doc of functions or classes.
     """
     def __init__(self, CONFIG):
         self.config = CONFIG
@@ -53,13 +53,11 @@ class ChatEngine:
                         code_from_referencer[file_path].append(min_obj['code_content'])
             return code_from_referencer
                 
-        # 从code_info中获取代码信息
         code_type = code_info["type"]
         code_name = code_info["name"]
         code_content = code_info["code_content"]
         have_return = code_info["have_return"]
 
-        # 初始化一个项目管理器
         project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
         project_structure = project_manager.get_project_structure()
         file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
@@ -70,7 +68,7 @@ class ChatEngine:
         # language
         language = self.config["language"]
         if language not in language_mapping:
-            raise KeyError(f"Language code {language} is not supported! Supported languages are: {json.dumps(language_mapping)}")
+            raise KeyError(f"Language code {language} is not given! Supported languages are: {json.dumps(language_mapping)}")
         
         language = language_mapping[language]
         
@@ -106,7 +104,8 @@ class ChatEngine:
             print("The code is too long, using gpt-3.5-turbo-16k to process it.")
             model = "gpt-3.5-turbo-16k"
         
-        for attempt in range(max_attempts):
+        attempt = 0
+        while attempt < max_attempts:
             try:
                 # 获取基本配置
                 client = OpenAI(
@@ -132,15 +131,16 @@ class ChatEngine:
             
             except APIConnectionError as e:
                 print(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
-                # 等待7秒后重试
+                # Retry after 7 seconds
                 time.sleep(7)
-                if attempt + 1 == max_attempts:
+                attempt += 1
+                if attempt == max_attempts:
                     raise
 
             except BadRequestError as e:
                 if 'context_length_exceeded' in str(e):
                     print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}")
-                    # 设置referenced为False，并移除referencer_content
+                    # Set referenced to False and remove referencer_content
                     referenced = False
                     referencer_content = ""
                     reference_letter = ""
@@ -158,15 +158,17 @@ class ChatEngine:
                         referencer_content=referencer_content,
                         language=language
                     )
-                    continue  # 重新尝试请求
+                    attempt += 1
+                    continue  # Try to request again
                 else:
                     print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
 
             except Exception as e:
                 print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
-                # 等待10秒后重试
+                # Retry after 10 seconds
                 time.sleep(10)
-                if attempt + 1 == max_attempts:
+                attempt += 1
+                if attempt == max_attempts:
                     raise
 
 
