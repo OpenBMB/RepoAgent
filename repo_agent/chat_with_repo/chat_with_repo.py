@@ -45,19 +45,46 @@ class DocumentIndexer:
         self.leaf_nodes = get_leaf_nodes(self.nodes)
         self.nodes_by_id = {node.node_id: node for node in self.nodes}
 
-    def create_index(self):
-        # Create and persist index
+
+    def save_storedb(self):
+        # save the index to chromadb
+        db = chromadb.PersistentClient(path="./chroma_db")
+        chroma_collection = db.get_or_create_collection("quickstart")
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        storage_context.docstore.add_documents(self.nodes)
+
         self.automerging_index = VectorStoreIndex(
-            self.leaf_nodes, storage_context=self.storage_context, service_context=self.service_context
+           self.leaf_nodes, storage_context=storage_context, service_context=self.service_context
         )
-        self.automerging_index.storage_context.persist(persist_dir="./merging_index")
+        
+    def load_storedb(self):    
+        # load the index from chromadb
+        db2 = chromadb.PersistentClient(path="./chroma_db")
+        chroma_collection = db2.get_or_create_collection("quickstart")
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        self.automerging_index = VectorStoreIndex.from_vector_store(
+            vector_store,
+            service_context=self.service_context,
+        )
+
+
 
 class ChatbotResponder:
     def __init__(self, automerging_engine):
         self.automerging_engine = automerging_engine
 
+    def format_chat_prompt(self,message, chat_history, instruction):
+        prompt = f"System:{instruction}"
+        for turn in chat_history:
+            user_message, bot_message = turn
+            prompt = f"{prompt}\nUser: {user_message}\nAssistant: {bot_message}"
+        prompt = f"{prompt}\nUser: {message}\nAssistant:"
+        return prompt
+
     def respond(self, message, chat_history, instruction):
-        prompt = message + instruction
+        prompt = self.format_chat_prompt(message, chat_history, instruction)
         chat_history = chat_history + [[message, ""]]
         auto_merging_response = self.automerging_engine.query(prompt)
         bot_message = str(auto_merging_response)
@@ -73,7 +100,8 @@ if __name__ == "__main__":
     indexer = DocumentIndexer("../../Markdown_Docs/", [".md", ".py"])
     document = indexer.load_documents()
     indexer.parse_documents(document)
-    indexer.create_index()
+    indexer.save_storedb()
+    indexer.load_storedb()
     automerging_index = indexer.automerging_index
     automerging_retriever = automerging_index.as_retriever(similarity_top_k=12)
     retriever = AutoMergingRetriever(
