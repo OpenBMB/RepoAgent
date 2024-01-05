@@ -17,7 +17,7 @@ Please generate a detailed explanation document for this object based on the cod
 Please write out the function of this {code_type_tell} in bold plain text, followed by a detailed analysis in plain text (including all details), in language {language} to serve as the documentation for this part of the code.
 The standard format is as follows:
 
-**{code_name} Function**: The function of this {code_type_tell} is XXX
+**{code_name}**: The function of this {code_type_tell} is XXX
 (Detailed code analysis and description...)
 **Note**: Points to note about the use of the code
 {have_return_tell}
