@@ -11,6 +11,7 @@ from loguru import logger
 import jedi
 
 from config import CONFIG
+from file_handler import FileHandler
 
 
 @unique
@@ -36,6 +37,17 @@ class DocItemType(Enum):
     _sub_function = auto() #function内的定义的subfunction
     _global_var = auto()
 
+    def to_str(self):
+        if self == DocItemType._class:
+            return "ClassDef"
+        elif self == DocItemType._function:
+            return "FunctionDef"
+        elif self == DocItemType._class_function:
+            return "FunctionDef"
+        elif self == DocItemType._sub_function:
+            return "FunctionDef"
+        assert False, f"{self.name}"
+
     def print_self(self):
         color = Fore.WHITE
         if self == DocItemType._dir:
@@ -58,7 +70,8 @@ class DocItem():
     available_type: SubTreeAvailable = SubTreeAvailable.uncheck
     obj_name: str = ""
 
-    document: str = ""
+    md_content: str = ""
+
 
     content: Dict[Any,Any] = field(default_factory=dict) #原本存储的信息
 
@@ -177,7 +190,53 @@ def find_all_referencer(repo_path, variable_name, file_path, line_number, column
 @dataclass
 class MetaInfo():
     repo_path: str = ""
+    document_version: int = -1 #随时间变化，-1代表没完成，0代表初次生成，越大代表越新
     target_repo_hierarchical_tree: DocItem = field(default_factory="Docitem") #整个repo的文件结构
+
+    @staticmethod
+    def init_from_project_path(project_abs_path: str) -> MetaInfo:
+        """从一个仓库path中初始化metainfo"""
+        project_abs_path = CONFIG['repo_path']
+        file_handler = FileHandler(project_abs_path, None)
+        repo_structure = file_handler.generate_overall_structure()
+        metainfo = MetaInfo.from_project_hierarchy_json(repo_structure)
+        metainfo.repo_path = project_abs_path
+        return metainfo
+    
+    @staticmethod
+    def from_checkpoint_path(checkpoint_dir_path: str) -> MetaInfo:
+        """从已有的metainfo dir里面读取metainfo
+        """
+        project_hierarchy_json_path = os.path.join(checkpoint_dir_path, ".project_hierarchy.json")
+        
+        with open(project_hierarchy_json_path,'r', encoding="utf-8") as reader:
+            project_hierarchy_json = json.load(reader)
+        metainfo = MetaInfo.from_project_hierarchy_json(project_hierarchy_json)        
+        
+        with open(os.path.join(checkpoint_dir_path, "meta-info.json"),'r', encoding="utf-8") as reader:
+            meta_data = json.load(reader)
+            metainfo.repo_path = meta_data["repo_path"]
+            metainfo.document_version = meta_data["doc_version"]
+
+        logger.info(f"loading meta-info from {checkpoint_dir_path}, document-version={metainfo.document_version}")
+        return metainfo   
+
+    def checkpoint(self, target_dir_path: str):
+        logger.info(f"will save MetaInfo at {target_dir_path}")
+        if not os.path.exists(target_dir_path):
+            os.makedirs(target_dir_path)
+        now_hierarchy_json = self.to_hierarchy_json()
+        with open(os.path.join(target_dir_path, ".project_hierarchy.json"), "w") as writer:
+            json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
+        
+        with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
+            meta = {
+                "repo_path": self.repo_path,
+                "doc_version": self.document_version,
+            }
+            json.dump(meta, writer, indent=2, ensure_ascii=False)
+        
+
 
     def get_all_files(self) -> List[DocItem]:
         """获取所有的file节点"""
@@ -301,7 +360,7 @@ class MetaInfo():
 
 
     @staticmethod
-    def from_project_hierarchy_json(repo_path: str):
+    def from_project_hierarchy_path(repo_path: str) -> MetaInfo:
         """project_hierarchy_json全是压平的文件，递归的文件目录都在最终的key里面, 把他转换到我们的数据结构
         """
         project_hierarchy_json_path = os.path.join(repo_path, ".project_hierarchy.json")
@@ -311,9 +370,37 @@ class MetaInfo():
         
         with open(project_hierarchy_json_path,'r', encoding="utf-8") as reader:
             project_hierarchy_json = json.load(reader)
-        
+        return MetaInfo.from_project_hierarchy_json(project_hierarchy_json)
+    
+    def to_hierarchy_json(self):
+        hierachy_json = {}
+        file_item_list = self.get_all_files()
+        for file_item in file_item_list:
+            file_hierarchy_content = {}
+            
+            def walk_file(now_obj: DocItem):
+                nonlocal file_hierarchy_content
+                file_hierarchy_content[now_obj.obj_name] = now_obj.content
+                file_hierarchy_content[now_obj.obj_name]["name"] = now_obj.obj_name
+                file_hierarchy_content[now_obj.obj_name]["type"] = now_obj.item_type.to_str()
+                file_hierarchy_content[now_obj.obj_name]["md_content"] = now_obj.md_content
+                
+                file_hierarchy_content[now_obj.obj_name]["parent"] = None
+                if now_obj.father.item_type != DocItemType._file:
+                    file_hierarchy_content[now_obj.obj_name]["parent"] = now_obj.father.obj_name
+
+                for _, child in now_obj.children.items():
+                    walk_file(child)
+
+            for _,child in file_item.children.items():
+                walk_file(child)
+            hierachy_json[file_item.get_full_name()] = file_hierarchy_content
+        return hierachy_json
+
+    @staticmethod
+    def from_project_hierarchy_json(project_hierarchy_json) -> MetaInfo:
         target_meta_info = MetaInfo(
-            repo_path=repo_path,
+            # repo_path=repo_path,
             target_repo_hierarchical_tree=DocItem( #根节点
                 
                 item_type=DocItemType._repo,
@@ -334,6 +421,7 @@ class MetaInfo():
                 if recursive_file_path[pos] not in now_structure.children.keys():
                     now_structure.children[recursive_file_path[pos]] = DocItem(
                         item_type=DocItemType._dir,
+                        md_content="",
                         obj_name=recursive_file_path[pos],
                     )
                     now_structure.children[recursive_file_path[pos]].father = now_structure
@@ -363,6 +451,7 @@ class MetaInfo():
                 item_reflection[key] = DocItem(
                                         obj_name=key,
                                         content = value,
+                                        md_content=value["md_content"],
                                     )
                 if value["parent"] != None:
                     item_reflection[value["parent"]].children[key] = item_reflection[key]

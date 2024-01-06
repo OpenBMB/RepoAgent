@@ -6,6 +6,7 @@ from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from doc_meta_info import MetaInfo, DocItem, DocItemType
 import yaml
+from tqdm import tqdm
 import subprocess
 from loguru import logger
 from config import CONFIG
@@ -17,29 +18,11 @@ class Runner:
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
 
-        self.ensure_project_hierarchy()
-        self.meta_info = MetaInfo.from_project_hierarchy_json(CONFIG['repo_path'])
-        # self.meta_info.target_repo_hierarchical_tree.print_recursive()
-        # topology_list = self.meta_info.get_topology()
-
-    def ensure_project_hierarchy(self):
-        # 如果没有生成全局的project_hierarchy，先生成一次
-        if not os.path.exists(self.project_manager.project_hierarchy):
-            """
-            The function is to generate an initial global structure information for the entire project.
-            """
-            # Initialize a File_handler
-            file_handler = FileHandler(self.project_manager.repo_path, None)
-            repo_structure = file_handler.generate_overall_structure()
-            # json_output = file_handler.convert_structure_to_json(repo_structure)
-
-            json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-            # Save the JSON to a file
-            with open(json_file, 'w', encoding='utf-8') as f:
-                json.dump(repo_structure, f, indent=4, ensure_ascii=False)
-
-            # logger.info(f"JSON structure generated and saved to '{json_file}'.")
-            logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
+        if not os.path.exists(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])):
+            self.meta_info = MetaInfo.init_from_project_path(CONFIG['repo_path'])
+            self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
+        else:
+            self.meta_info = MetaInfo.from_checkpoint_path(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
 
 
     def get_all_pys(self, directory):
@@ -64,136 +47,50 @@ class Runner:
 
     def first_generate(self):
         """
-        Generate documentation for all Python files in the project based on the information in the global JSON structure.
+        生成所有文档,
+        如果生成结束，self.meta_info.document_version会变成0(之前是-1)
+        每生成一个obj的doc，会实时同步回文件系统里。如果中间报错了，下次会自动load，按照文件顺序接着生成。
+        **注意**：这个生成first_generate的过程中，目标仓库代码不能修改。也就是说，一个document的生成过程必须绑定代码为一个版本。
         """
-        logger.info("Starting to generate documentation.")
-        self.ensure_project_hierarchy()
-
-        topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
+        logger.info("Starting to generate documentation to version 0")
         ignore_list = CONFIG.get('ignore_list', [])
-
-        #TODO: 崩溃与恢复
-
-        for doc_item in topology_list:
-            rel_file_path = doc_item.get_full_name()
-
-            def need_to_generate(doc_item: DocItem) -> bool:
-                """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
-                if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
-                    return False
-                doc_item = doc_item.father
-                while doc_item:
-                    if doc_item.item_type == DocItemType._file:
-                        # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-                        if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
-                            return False
-                        return True
-                    doc_item = doc_item.father
-                return False
-            if need_to_generate(doc_item):
-                self.chat_engine.generate_doc(
-                    doc_item = doc_item,
-                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path),
-                )
-
-
-    def first_generate_(self):
-        """
-        Generate documentation for all Python files in the project based on the information in the global JSON structure.
-        """
-        logger.info("Starting to generate documentation.")
-        self.ensure_project_hierarchy()
-
-        # self.meta_info.target_repo_hierarchical_tree.print_recursive()
         topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
-        
-
+        already_generated = 0
         try:
+            for k, doc_item in enumerate(topology_list): #按照拓扑顺序遍历所有的可能obj
+                rel_file_path = doc_item.get_full_name()
 
-            with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
-                json_data = json.load(f)
+                def need_to_generate(doc_item: DocItem) -> bool:
+                    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
+                    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
+                        return False
+                    if doc_item.md_content != "":
+                        logger.info(f"文档已生成，跳过: {rel_file_path}")
+                        return False
+                    doc_item = doc_item.father
+                    while doc_item:
+                        if doc_item.item_type == DocItemType._file:
+                            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+                            if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                                return False
+                            return True
+                        doc_item = doc_item.father
+                    return False
+                if need_to_generate(doc_item): #如果不跳过，就生成对应的code
+                    logger.info(f" -- 正在生成{rel_file_path} 对象文档({k}/{len(topology_list)})...")
 
-            # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
-            ignore_list = CONFIG.get('ignore_list', [])
- 
-            # 检查是否存在last_processed_file.txt文件
-            if os.path.exists("last_processed_file.txt"):
-                with open("last_processed_file.txt",'r') as file:
-                    last_processed_file = file.read()
-                keys = list(json_data.keys())
-                start_index = keys.index(last_processed_file) if last_processed_file in keys else 0
-            else:
-                last_processed_file = None
-                start_index = 0
-
-            # 遍历json_data中的每个对象 或 从last_processed_file开始遍历
-            for rel_file_path, file_dict in list(json_data.items())[start_index:]:
-                
-                # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-                if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
-                    continue
-
-                # 判断当前文件是否为空，如果为空则跳过：
-                if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
-                    continue
-
-                # 对于每个单独文件里的每一个对象：获取其引用者列表
-                referencer_list = [] # 单独拿一个referencer_list出来存储引用者是为了避免JEDI并发处理报错
-                
-                for obj_name, obj_info in file_dict.items():
-                    referencer_obj = {
-                        "obj_name": obj_name,
-                        "obj_referencer_list": self.project_manager.find_all_referencer(
-                            variable_name=obj_name,
-                            file_path=rel_file_path,
-                            line_number=obj_info["code_start_line"],
-                            column_number=obj_info["name_column"]
-                        )
-                    }
-                    referencer_list.append(referencer_obj)
-
-                
-                # 在每一个file下面开一个线程池，线程是对一个文件中的多个obj进行文档生成
-                with ThreadPoolExecutor(max_workers=5) as executor: 
-
-                    futures = []
-                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
-
-                    # 遍历文件中的每个对象
-                    for index, ref_obj in enumerate(referencer_list):
-                        if ref_obj["obj_name"] in file_dict:
-                            # 并发提交文件中每个对象的文档生成任务到线程池，并将future和对应的obj存储为元组
-                            future = executor.submit(self.chat_engine.generate_doc, file_dict[ref_obj['obj_name']], file_handler, ref_obj["obj_referencer_list"])
-                            futures.append((future, ref_obj, index))
-
-                    # 收集响应结果
-                    for future, ref_obj, index in futures:
-                        logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
-                        response_message = future.result()  # 等待结果
-                        file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
-                    
-                    futures = []
-
-                # 在对文件的循环内，将json_data写回文件
-                with open(self.project_manager.project_hierarchy, 'w', encoding='utf-8') as f:
-                    json.dump(json_data, f, indent=4, ensure_ascii=False)
-
-                # 对于每个文件，转换json内容到markdown
-                markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
-                # 写入markdown内容到.md文件
-                file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-                logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
-            
-            # 删除last_processed_file.txt文件
-            if os.path.exists("last_processed_file.txt"):
-                os.remove("last_processed_file.txt")
-
-        except Exception as e:
-            logger.error(f"An error occurred while trying to generate documentation: {str(e)}")
-            with open("last_processed_file.txt",'w') as file:
-                file.write(rel_file_path)
-            
-            raise e
+                    response_message = self.chat_engine.generate_doc(
+                        doc_item = doc_item,
+                        file_handler = FileHandler(CONFIG['repo_path'], rel_file_path),
+                    )
+                    doc_item.md_content = response_message.content
+                    self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
+                    already_generated += 1
+            self.meta_info.document_version = 0
+            self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
+            logger.info(f"Generation Success: {len(topology_list)} doc generated")
+        except BaseException as e:
+            logger.info(f"Finding an error as {e}, {already_generated} docs are generated this time")
 
 
     def git_commit(self, commit_message):
@@ -212,11 +109,12 @@ class Runner:
         Returns:
             None
         """
-        logger.info("Starting to detect changes.")
-        # 首先检测是否存在全局的 project_hierarchy.json 结构信息
-        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-        if not os.path.exists(abs_project_hierarchy_path):
+
+        if self.meta_info.document_version == -1:
+            # 根据document version自动检测是否仍在最初生成的process里
             self.first_generate()
+
+        logger.info("Starting to detect changes.")
 
         changed_files = self.change_detector.get_staged_pys()
 
@@ -457,7 +355,7 @@ if __name__ == "__main__":
     runner = Runner()
     
     # runner.meta_info.target_repo_hierarchical_tree.print_recursive()
-    runner.first_generate()
+    runner.run()
 
     logger.info("文档任务完成。")
 

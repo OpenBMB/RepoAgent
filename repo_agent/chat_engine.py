@@ -76,7 +76,7 @@ class ChatEngine:
             prompt = ["""As you can see, the code calls the following objects, their code and docs are as following:"""]
             for k, refernce_item in enumerate(doc_item.reference_who):
                 prompt.append(
-                    f"obj: {refernce_item.get_full_name()}\nDocument: {refernce_item.document}\nRaw code:```\n{refernce_item.content['code_content']}\n```" + "="*10,
+                    f"obj: {refernce_item.get_full_name()}\nDocument: {refernce_item.md_content}\nRaw code:```\n{refernce_item.content['code_content']}\n```" + "="*10,
                 )
             return "\n".join(prompt)
 
@@ -87,7 +87,7 @@ class ChatEngine:
             prompt = ["""Also, the code has been referenced by the following objects, their code and docs are as following:"""]
             for k, referncer_item in enumerate(doc_item.who_reference_me):
                 prompt.append(
-                    f"obj: {referncer_item.get_full_name()}\nDocument: {referncer_item.document}\nRaw code:```\n{referncer_item.content['code_content']}\n```" + "="*10,
+                    f"obj: {referncer_item.get_full_name()}\nDocument: {referncer_item.md_content}\nRaw code:```\n{referncer_item.content['code_content']}\n```" + "="*10,
                 )
             return "\n".join(prompt)
 
