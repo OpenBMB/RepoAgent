@@ -5,7 +5,7 @@ class ProjectManager:
     def __init__(self, repo_path, project_hierarchy):
         self.repo_path = repo_path
         self.project = jedi.Project(self.repo_path)
-        self.project_hierarchy = os.path.join(self.repo_path, project_hierarchy)
+        self.project_hierarchy = os.path.join(self.repo_path, project_hierarchy, ".project_hierarchy.json")
 
     def get_project_structure(self):
         def walk_dir(root, prefix=""):

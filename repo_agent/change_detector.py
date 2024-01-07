@@ -36,7 +36,6 @@ class ChangeDetector:
         """
         repo = self.repo
         staged_files = {}
-
         # Detect Staged Changes
         # Please note! The logic of the GitPython library is different from git. Here, the R=True parameter is used to reverse the version comparison logic.
         # In the GitPython library, repo.index.diff('HEAD') compares the staging area (index) as the new state with the original HEAD commit (old state). This means that if there is a new file in the current staging area, it will be shown as non-existent in HEAD, i.e., "deleted".

@@ -74,10 +74,9 @@ class ChatEngine:
             if len(doc_item.reference_who) == 0:
                 return ""
             prompt = ["""As you can see, the code calls the following objects, their code and docs are as following:"""]
-            for k, refernce_item in enumerate(doc_item.reference_who):
-                prompt.append(
-                    f"obj: {refernce_item.get_full_name()}\nDocument: {refernce_item.md_content}\nRaw code:```\n{refernce_item.content['code_content']}\n```" + "="*10,
-                )
+            for k, reference_item in enumerate(doc_item.reference_who):
+                instance_prompt = f'''obj: {reference_item.get_full_name()}\nDocument: {reference_item.md_content[-1] if len(reference_item.md_content) > 0 else 'None'}\nRaw code:```\n{reference_item.content['code_content'] if 'code_content' in reference_item.content.keys() else ''}\n```''' + "="*10
+                prompt.append(instance_prompt)
             return "\n".join(prompt)
 
 
@@ -85,10 +84,9 @@ class ChatEngine:
             if len(doc_item.who_reference_me) == 0:
                 return ""
             prompt = ["""Also, the code has been referenced by the following objects, their code and docs are as following:"""]
-            for k, referncer_item in enumerate(doc_item.who_reference_me):
-                prompt.append(
-                    f"obj: {referncer_item.get_full_name()}\nDocument: {referncer_item.md_content}\nRaw code:```\n{referncer_item.content['code_content']}\n```" + "="*10,
-                )
+            for k, referencer_item in enumerate(doc_item.who_reference_me):
+                instance_prompt = f'''obj: {referencer_item.get_full_name()}\nDocument: {referencer_item.md_content[-1] if len(referencer_item.md_content) > 0 else 'None'}\nRaw code:```\n{referencer_item.content['code_content'] if 'code_content' in referencer_item.content.keys() else 'None'}\n```''' + "="*10
+                prompt.append(instance_prompt)
             return "\n".join(prompt)
 
 

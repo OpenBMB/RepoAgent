@@ -4,13 +4,29 @@ from change_detector import ChangeDetector
 from project_manager import ProjectManager
 from chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from doc_meta_info import MetaInfo, DocItem, DocItemType
+from doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
 import yaml
 from tqdm import tqdm
+from typing import List
 import subprocess
 from loguru import logger
 from config import CONFIG
 
+
+def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
+    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
+    rel_file_path = doc_item.get_full_name()
+    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
+        return False
+    doc_item = doc_item.father
+    while doc_item:
+        if doc_item.item_type == DocItemType._file:
+            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+            if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                return False
+            return True
+        doc_item = doc_item.father
+    return False
 
 class Runner:
     def __init__(self):
@@ -23,6 +39,7 @@ class Runner:
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
         else:
             self.meta_info = MetaInfo.from_checkpoint_path(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
+        self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
 
 
     def get_all_pys(self, directory):
@@ -45,6 +62,24 @@ class Runner:
         return python_files
     
 
+    def generate_doc_for_a_single_item(self, doc_item: DocItem, task_len: int, now_task_id: int):
+        """为一个对象生成文档
+        """
+        rel_file_path = doc_item.get_full_name()
+        if doc_item.item_status != DocItemStatus.doc_up_to_date:
+            logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...({now_task_id}/{task_len})")
+            file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+            response_message = self.chat_engine.generate_doc(
+                doc_item = doc_item,
+                file_handler = file_handler,
+            )
+            doc_item.md_content.append(response_message.content)
+            doc_item.item_status = DocItemStatus.doc_up_to_date
+            self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
+        else:
+            logger.info(f" 文档已生成，跳过：{doc_item.get_full_name()}")
+        
+
     def first_generate(self):
         """
         生成所有文档,
@@ -52,46 +87,49 @@ class Runner:
         每生成一个obj的doc，会实时同步回文件系统里。如果中间报错了，下次会自动load，按照文件顺序接着生成。
         **注意**：这个生成first_generate的过程中，目标仓库代码不能修改。也就是说，一个document的生成过程必须绑定代码为一个版本。
         """
-        logger.info("Starting to generate documentation to version 0")
+        logger.info("Starting to generate documentation")
         ignore_list = CONFIG.get('ignore_list', [])
         topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
+        topology_list = [item for item in topology_list if need_to_generate(item, ignore_list)]
         already_generated = 0
+
+        if not self.meta_info.in_generation_process:
+            self.meta_info.in_generation_process = True
+        
         try:
             for k, doc_item in enumerate(topology_list): #按照拓扑顺序遍历所有的可能obj
-                rel_file_path = doc_item.get_full_name()
+                self.generate_doc_for_a_single_item(doc_item,task_len=len(topology_list), now_task_id=k)
+                already_generated += 1
 
-                def need_to_generate(doc_item: DocItem) -> bool:
-                    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
-                    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
-                        return False
-                    if doc_item.md_content != "":
-                        logger.info(f"文档已生成，跳过: {rel_file_path}")
-                        return False
-                    doc_item = doc_item.father
-                    while doc_item:
-                        if doc_item.item_type == DocItemType._file:
-                            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-                            if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
-                                return False
-                            return True
-                        doc_item = doc_item.father
-                    return False
-                if need_to_generate(doc_item): #如果不跳过，就生成对应的code
-                    logger.info(f" -- 正在生成{rel_file_path} 对象文档({k}/{len(topology_list)})...")
-
-                    response_message = self.chat_engine.generate_doc(
-                        doc_item = doc_item,
-                        file_handler = FileHandler(CONFIG['repo_path'], rel_file_path),
-                    )
-                    doc_item.md_content = response_message.content
-                    self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
-                    already_generated += 1
-            self.meta_info.document_version = 0
+            self.meta_info.document_version = self.change_detector.repo.head.commit.hexsha
+            self.meta_info.in_generation_process = False
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
             logger.info(f"Generation Success: {len(topology_list)} doc generated")
-        except BaseException as e:
-            logger.info(f"Finding an error as {e}, {already_generated} docs are generated this time")
 
+        except BaseException as e:
+            logger.info(f"Finding an error as {e}, {already_generated} docs are generated at this time")
+
+    def markdown_refresh(self):
+        """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)
+        """
+        file_item_list = self.meta_info.get_all_files()
+        for file_item in tqdm(file_item_list):
+            def recursive_check(doc_item: DocItem) -> bool: #检查一个file内是否存在doc
+                if doc_item.md_content != []:
+                    return True
+                for _,child in doc_item.children.items():
+                    if recursive_check(child):
+                        return True
+                return False
+            if recursive_check(file_item) == False:
+                continue
+            rel_file_path = file_item.get_full_name()
+            file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+            # 对于每个文件，转换json内容到markdown
+            markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
+            # 写入markdown内容到.md文件
+            file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+        logger.info(f"markdown document has been refreshed at {CONFIG['Markdown_Docs_folder']}")
 
     def git_commit(self, commit_message):
         try:
@@ -110,36 +148,50 @@ class Runner:
             None
         """
 
-        if self.meta_info.document_version == -1:
+        if self.meta_info.document_version == "": 
             # 根据document version自动检测是否仍在最初生成的process里
             self.first_generate()
-
-        logger.info("Starting to detect changes.")
-
-        changed_files = self.change_detector.get_staged_pys()
-
-        if len(changed_files) == 0:
-            logger.info("没有检测到任何变更，不需要更新文档。")
+            self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']), flash_reference_relation=True)
             return
         
-        else:
-            logger.info(f"检测到暂存区中变更的文件：{changed_files}")
-        
 
-        repo_path = self.project_manager.repo_path
 
-        # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
+        if not self.meta_info.in_generation_process:
+            logger.info("Starting to detect changes.")
+
+            """采用新的办法
+            1.新建一个project-hierachy
+            2.和老的hierarchy做merge,处理以下情况：
+            - 创建一个新文件：需要生成对应的doc
+            - 文件、对象被删除：对应的doc也删除(按照目前的实现，文件重命名算是删除再添加)
+            - 引用关系变了：对应的obj-doc需要重新生成
+            
+            merge后的new_meta_info中：
+            1.新建的文件没有文档，因此metainfo merge后还是没有文档
+            2.被删除的文件和obj，本来就不在新的meta里面，相当于文档被自动删除了
+            3.只需要观察被修改的文件，以及引用关系需要被通知的文件去重新生成文档"""
+            new_meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"])
+            new_meta_info.load_doc_from_older_meta(self.meta_info)
+
+            self.meta_info = new_meta_info
+            self.meta_info.in_generation_process = True
+
+        # 处理任务队列
         ignore_list = CONFIG.get('ignore_list', [])
+        task_list = self.meta_info.load_task_list()
+        task_list = [item for item in task_list if need_to_generate(item, ignore_list)]
+        self.meta_info.print_task_list(task_list)
 
-        for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
-            # 如果当前文件在忽略列表，或者列表中某个文件夹路径下，则跳过
-            if any(file_path.startswith(ignore_item) for ignore_item in ignore_list):
-                continue
-            # 判断当前python文件内容是否为空，如果为空则跳过：
-            if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
-                continue
-            # 否则，根据文件路径处理变更的文件
-            self.process_file_changes(repo_path, file_path, is_new_file)
+        for k, item in enumerate(task_list):
+            self.generate_doc_for_a_single_item(item,task_len=len(task_list), now_task_id=k)
+        self.meta_info.in_generation_process = False
+        self.meta_info.document_version = self.change_detector.repo.head.commit.hexsha
+
+        self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']), flash_reference_relation=True)
+        logger.info(f"Doc has been forwarded to the latest version")
+
+        self.markdown_refresh()
+
         
 
     def add_new_item(self, file_handler, json_data):
