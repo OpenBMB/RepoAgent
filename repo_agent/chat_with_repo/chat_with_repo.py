@@ -50,12 +50,57 @@ class RepoAssistant:
             )
         )
 
+    def search_in_json_nested(self, file_path, search_text):
+        try:
+            with open(file_path, 'r',encoding='utf-8') as file:
+                data = json.load(file)
+
+                def recursive_search(data_item):
+                    if isinstance(data_item, dict):
+                        if 'name' in data_item and search_text.lower() in data_item['name'].lower():
+                            return data_item
+
+                        for key, value in data_item.items():
+                            if isinstance(value, (dict, list)):
+                                result = recursive_search(value)
+                                if result:
+                                    return result
+                    elif isinstance(data_item, list):
+                        for item in data_item:
+                            result = recursive_search(item)
+                            if result:
+                                return result
+
+                result = recursive_search(data)
+                if result:
+                    return result
+                else:
+                    return "No matching item found."
+
+        except FileNotFoundError:
+            return "File not found."
+        except json.JSONDecodeError:
+            return "Invalid JSON file."
+        except Exception as e:
+            return f"An error occurred: {e}"
+
+    def NerQuery(self,message):
+        # query = "Extract the most relevant class from the input text.input: " + message + "output:"
+        query = "Extract the most relevant class or function from the following input:\n" + message + "\nOutput:"
+        response = self.llm.complete(query)
+        return response
+    
+    def queryblock(self,message):
+        search_result = self.search_in_json_nested(self.db_path, message)
+        # father=""
+        if isinstance(search_result, dict):
+        #     father=search_result['parent']
+            search_result = search_result['code_content']
+        return str(search_result)
 
     def create_vector_store(self, md_contents):
-
         ids = [str(i) for i in range(len(md_contents))]
         self.chroma_collection.add(ids=ids, documents=md_contents)
-
 
 
     def rag(self, query, retrieved_documents):
@@ -90,14 +135,16 @@ class RepoAssistant:
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
         bot_message = str(response)
-        bot_message=bot_message +'\n'+ str(self.Tree(bot_message))
+        keyword=str(self.NerQuery(bot_message))
+        bot_message=bot_message +'\n'+ str(self.Tree(bot_message))+'\n'+'```python'+'\n'+self.queryblock(keyword)+'\n'+'```'
+        # bot_message=bot_message +'\n'+ str(self.Tree(bot_message))
         chat_history.append((message, bot_message))
         return "", chat_history
 
     def setup_gradio_interface(self):
         # Gradio UI setupwith gr.Blocks() as demo:
         with gr.Blocks() as demo:
-            chatbot = gr.Chatbot(height=240) #just to fit the notebook
+            chatbot = gr.Chatbot(height=540) #just to fit the notebook
             msg = gr.Textbox(label="Prompt")
             with gr.Accordion(label="Advanced options",open=False):
                 system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
