@@ -2,6 +2,8 @@ import os
 import gradio as gr
 import chromadb
 import openai
+import json
+import logging
 from llama_index import Document,VectorStoreIndex,ServiceContext,SimpleDirectoryReader,StorageContext,load_index_from_storage
 from llama_index.llms import OpenAI
 from llama_index.node_parser import HierarchicalNodeParser,get_leaf_nodes
@@ -11,18 +13,27 @@ from llama_index.embeddings import OpenAIEmbedding
 from llama_index.retrievers import AutoMergingRetriever
 from llama_index.query_engine import RetrieverQueryEngine
 from chromadb.utils import embedding_functions
-import json
+
 
 class RepoAssistant:
-    def __init__(self, api_key, api_base, db_path):
+    def __init__(self, api_key, api_base, db_path, log_file):
         # Initialize OpenAI, database, and load JSON data
-        # ...
+        # 设置日志记录器
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)  # 设置日志级别为DEBUG
+        # 创建一个文件处理程序，将日志写入文件
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler.setLevel(logging.DEBUG)  # 设置文件处理程序的日志级别为DEBUG
+        # 创建一个格式化器，定义日志记录的格式
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        # 将文件处理程序添加到日志记录器
+        self.logger.addHandler(file_handler)
         self.api_key = api_key
         self.api_base = api_base
         self.db_path = db_path
         self.init_chroma_collection()
-        self.llm=OpenAI(api_key = api_key,api_base = api_base,)
-
+        self.llm = OpenAI(api_key=api_key, api_base=api_base)
 
     def read_json_file(self, file_path):
         # ...
@@ -85,20 +96,21 @@ class RepoAssistant:
             return f"An error occurred: {e}"
 
     def NerQuery(self,message):
-        # query = "Extract the most relevant class from the input text.input: " + message + "output:"
+        #...
         query = "Extract the most relevant class or function from the following input:\n" + message + "\nOutput:"
         response = self.llm.complete(query)
+        self.logger.debug(f"Input: {message}, Output: {response}")
         return response
     
     def queryblock(self,message):
+        #...
         search_result = self.search_in_json_nested(self.db_path, message)
-        # father=""
         if isinstance(search_result, dict):
-        #     father=search_result['parent']
             search_result = search_result['code_content']
         return str(search_result)
 
     def create_vector_store(self, md_contents):
+        #...
         ids = [str(i) for i in range(len(md_contents))]
         self.chroma_collection.add(ids=ids, documents=md_contents)
 
@@ -132,6 +144,7 @@ class RepoAssistant:
         prompt = self.format_chat_prompt(message, chat_history, instruction)
         chat_history = chat_history + [[message, ""]]
         results = self.chroma_collection.query(query_texts=[prompt], n_results=5)
+        self.logger.debug(f"Results: {results}")
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
         bot_message = str(response)
@@ -158,11 +171,11 @@ class RepoAssistant:
         demo.queue().launch(share=True)    
 
 def main():
-    api_key=''
-    api_base='' 
+    api_key='sk-'
+    api_base='https://example.com' 
     db_path = "./project_hierachy.json"
-
-    assistant = RepoAssistant(api_key, api_base, db_path)
+    log_file= "./log.txt"
+    assistant = RepoAssistant(api_key, api_base, db_path,log_file)
     json_data = assistant.read_json_file(db_path)
     md_contents = assistant.extract_md_contents(json_data)
     assistant.create_vector_store(md_contents)
