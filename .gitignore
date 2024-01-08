@@ -3,6 +3,8 @@ config private.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+.DS_Store
+*/.DS_Store
 *.py[cod]
 *$py.class
 
@@ -162,5 +164,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# AI doc
-.project_hierarchy.json
