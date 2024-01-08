@@ -1,81 +1,80 @@
-
 import os
 import gradio as gr
 import chromadb
 import openai
-from llama_index import Document, VectorStoreIndex, ServiceContext, SimpleDirectoryReader, StorageContext, load_index_from_storage
+from llama_index import Document,VectorStoreIndex,ServiceContext,SimpleDirectoryReader,StorageContext,load_index_from_storage
 from llama_index.llms import OpenAI
-from llama_index.node_parser import HierarchicalNodeParser, get_leaf_nodes
+from llama_index.node_parser import HierarchicalNodeParser,get_leaf_nodes
 from llama_index.vector_stores import ChromaVectorStore
+from llama_index.storage.storage_context import StorageContext
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.retrievers import AutoMergingRetriever
 from llama_index.query_engine import RetrieverQueryEngine
+from chromadb.utils import embedding_functions
+import json
 
-# Class Definitions
-class DocumentIndexer:
-    def __init__(self, dir_path, required_exts):
-        self.dir_path = dir_path
-        self.required_exts = required_exts
-        self.documents = []
-        self.nodes = []
-        self.leaf_nodes = []
-        self.nodes_by_id = {}
-        self.embed_model = OpenAIEmbedding()
-        self.storage_context = StorageContext.from_defaults()
-        self.service_context = ServiceContext.from_defaults(embed_model=self.embed_model)
-        self.automerging_index = None
-
-    def load_documents(self):
-        # Load and parse documents
-        documents = SimpleDirectoryReader(
-            input_dir=self.dir_path,
-            required_exts=self.required_exts,
-            recursive=True,
-        ).load_data()
-        document = Document(text="\n\n".join([doc.text for doc in documents]))
-        self.documents = documents
-        return document
-
-    def parse_documents(self, document):
-        # Create node parser and get nodes
-        node_parser = HierarchicalNodeParser.from_defaults(
-            chunk_sizes=[2048, 512, 128]
-        )
-        self.nodes = node_parser.get_nodes_from_documents([document])
-        self.leaf_nodes = get_leaf_nodes(self.nodes)
-        self.nodes_by_id = {node.node_id: node for node in self.nodes}
+class RepoAssistant:
+    def __init__(self, api_key, api_base, db_path):
+        # Initialize OpenAI, database, and load JSON data
+        # ...
+        self.api_key = api_key
+        self.api_base = api_base
+        self.db_path = db_path
+        self.init_chroma_collection()
+        self.llm=OpenAI(api_key = api_key,api_base = api_base,)
 
 
-    def save_storedb(self):
-        # save the index to chromadb
-        db = chromadb.PersistentClient(path="./chroma_db")
-        chroma_collection = db.get_or_create_collection("quickstart")
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    def read_json_file(self, file_path):
+        # ...
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data
 
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        storage_context.docstore.add_documents(self.nodes)
-
-        self.automerging_index = VectorStoreIndex(
-           self.leaf_nodes, storage_context=storage_context, service_context=self.service_context
-        )
-        
-    def load_storedb(self):    
-        # load the index from chromadb
-        db2 = chromadb.PersistentClient(path="./chroma_db")
-        chroma_collection = db2.get_or_create_collection("quickstart")
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-        self.automerging_index = VectorStoreIndex.from_vector_store(
-            vector_store,
-            service_context=self.service_context,
+    def extract_md_contents(self, json_data):
+        # ...
+        md_contents = []
+        for file in json_data["files"]:
+            for obj in file["objects"]:
+                if "md_content" in obj:
+                    md_contents.append(obj["md_content"])
+        return md_contents
+    
+    def init_chroma_collection(self):
+        chroma_client = chromadb.Client()
+        self.chroma_collection = chroma_client.create_collection(
+            "test", 
+            embedding_function=embedding_functions.OpenAIEmbeddingFunction(
+                api_key=self.api_key,
+                api_base=self.api_base,
+                model_name="text-embedding-ada-002"
+            )
         )
 
 
+    def create_vector_store(self, md_contents):
 
-class ChatbotResponder:
-    def __init__(self, automerging_engine):
-        self.automerging_engine = automerging_engine
+        ids = [str(i) for i in range(len(md_contents))]
+        self.chroma_collection.add(ids=ids, documents=md_contents)
 
-    def format_chat_prompt(self,message, chat_history, instruction):
+
+
+    def rag(self, query, retrieved_documents):
+        # ...
+        information = "\n\n".join(retrieved_documents)
+        messages = f"You are a helpful expert repo research assistant. Your users are asking questions about information contained in repo . You will be shown the user's question, and the relevant information from the repo. Answer the user's question using only this information.\nQuestion: {query}. \nInformation: {information}"
+        response = self.llm.complete(messages)
+        content = response
+        return content
+
+    def Tree(self, query):
+        # ...
+        input_text = query
+        prompt = f"Please analyze the following text and generate a tree structure based on its hierarchy:\n\n{input_text}"
+        response = self.llm.complete(prompt)
+        return response
+
+    def format_chat_prompt(self, message, chat_history, instruction):
+        # ...
         prompt = f"System:{instruction}"
         for turn in chat_history:
             user_message, bot_message = turn
@@ -84,46 +83,43 @@ class ChatbotResponder:
         return prompt
 
     def respond(self, message, chat_history, instruction):
+        # ...
         prompt = self.format_chat_prompt(message, chat_history, instruction)
         chat_history = chat_history + [[message, ""]]
-        auto_merging_response = self.automerging_engine.query(prompt)
-        bot_message = str(auto_merging_response)
+        results = self.chroma_collection.query(query_texts=[prompt], n_results=5)
+        retrieved_documents = results['documents'][0]
+        response = self.rag(prompt,retrieved_documents)
+        bot_message = str(response)
+        bot_message=bot_message +'\n'+ str(self.Tree(bot_message))
         chat_history.append((message, bot_message))
         return "", chat_history
 
-# Main Execution Block
+    def setup_gradio_interface(self):
+        # Gradio UI setupwith gr.Blocks() as demo:
+        with gr.Blocks() as demo:
+            chatbot = gr.Chatbot(height=240) #just to fit the notebook
+            msg = gr.Textbox(label="Prompt")
+            with gr.Accordion(label="Advanced options",open=False):
+                system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
+            btn = gr.Button("Submit")
+            clear = gr.ClearButton(components=[msg, chatbot], value="Clear console")
+
+            btn.click(self.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot])
+            msg.submit(self.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot]) #Press enter to submit
+
+        gr.close_all()
+        demo.queue().launch(share=True)    
+
+def main():
+    api_key=''
+    api_base='' 
+    db_path = "./project_hierachy.json"
+
+    assistant = RepoAssistant(api_key, api_base, db_path)
+    json_data = assistant.read_json_file(db_path)
+    md_contents = assistant.extract_md_contents(json_data)
+    assistant.create_vector_store(md_contents)
+    assistant.setup_gradio_interface()
+
 if __name__ == "__main__":
-    openai.api_key = 'sk-'
-    openai.base_url = 'https://example.com'
-    
-    # Initialize DocumentIndexer and ChatbotResponder
-    indexer = DocumentIndexer("../../Markdown_Docs/", [".md", ".py"])
-    document = indexer.load_documents()
-    indexer.parse_documents(document)
-    indexer.save_storedb()
-    indexer.load_storedb()
-    automerging_index = indexer.automerging_index
-    automerging_retriever = automerging_index.as_retriever(similarity_top_k=12)
-    retriever = AutoMergingRetriever(
-        automerging_retriever, 
-        automerging_index.storage_context, 
-        verbose=True
-    )
-    auto_merging_engine = RetrieverQueryEngine.from_args(automerging_retriever)
-    responder = ChatbotResponder(auto_merging_engine)
-
-    # Gradio Interface Setup
-    with gr.Blocks() as demo:
-        chatbot = gr.Chatbot(height=240)
-        msg = gr.Textbox(label="Prompt")
-        with gr.Accordion(label="Advanced options", open=False):
-            system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
-        
-        btn = gr.Button("Submit")
-        clear = gr.ClearButton(components=[msg, chatbot], value="Clear console")
-
-        btn.click(responder.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot])
-        msg.submit(responder.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot])
-
-    gr.close_all()
-    demo.queue().launch(share=True)
+    main()
