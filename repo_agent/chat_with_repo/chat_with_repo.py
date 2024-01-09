@@ -213,8 +213,8 @@ class RepoAssistant:
         demo.queue().launch(share=True)
 
 def main():
-    api_key='sk-T8YX7xQccLyREzNo560eEf5fCfFb41DbB2C84814EbCdA7E8'
-    api_base='https://sailaoda.cn/v1/' 
+    api_key=""
+    api_base=""
     db_path = "./project_hierachy.json"
     log_file= "./log.txt"
     assistant = RepoAssistant(api_key, api_base, db_path,log_file)
