@@ -16,7 +16,7 @@ class Runner:
         self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
     
-    def generate_hierachy(self):
+    def generate_hierarchy(self):
         """
         The function is to generate an initial global structure information for the entire project.
         """
@@ -58,9 +58,9 @@ class Runner:
         """
         try:
             logger.info("Starting to generate documentation.")
-            # 检测是否存在全局的 project_hierarchy.json 结构信息
+            # 检测是否存在全局的 .project_hierarchy.json 结构信息
             if not os.path.exists(self.project_manager.project_hierarchy):
-                self.generate_hierachy()
+                self.generate_hierarchy()
                 logger.info(f"已生成项目全局结构信息，存储路径为: {self.project_manager.project_hierarchy}")
 
             with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
@@ -123,7 +123,13 @@ class Runner:
                     for future, ref_obj, index in futures:
                         logger.info(f" -- 正在生成 {file_handler.file_path}中的{ref_obj['obj_name']} 对象文档...")
                         response_message = future.result()  # 等待结果
-                        file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
+                        # 检查 response_message 是否是 None
+                        if response_message is not None:
+                            file_dict[ref_obj['obj_name']]["md_content"] = response_message.content
+                        else:
+                            # TODO: 查明处理response_message 是 None 的原因并处理对应的情况，例如跳过当前循环的剩余部分，或者给 file_dict[ref_obj['obj_name']]["md_content"] 赋一个默认值
+                            file_dict[ref_obj['obj_name']]["md_content"] = "Error occurred while generating documentation." 
+                            continue
                     
                     futures = []
 
@@ -168,7 +174,7 @@ class Runner:
         logger.info("Starting to detect changes.")
         # 首先检测是否存在全局的 project_hierarchy.json 结构信息
         abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
-        if not os.path.exists(abs_project_hierarchy_path):
+        if not os.path.exists(abs_project_hierarchy_path) or os.path.exists("last_processed_file.txt"):
             self.first_generate()
 
         changed_files = self.change_detector.get_staged_pys()

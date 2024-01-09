@@ -17,7 +17,10 @@ api_keys:
     - api_key: sk-XXXX
       base_url: https://example.com/v1/
       model: gpt-4
-
+  gpt-4-1106:    
+    - api_key: sk-XXXX
+      base_url: https://example.com/v1/
+      model: gpt-4-1106
   gpt-4-32k:
     - api_key: sk-XXXX
       base_url: https://example.com/v1/
