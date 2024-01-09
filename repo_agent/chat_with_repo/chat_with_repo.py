@@ -18,16 +18,12 @@ from chromadb.utils import embedding_functions
 class RepoAssistant:
     def __init__(self, api_key, api_base, db_path, log_file):
         # Initialize OpenAI, database, and load JSON data
-        # 设置日志记录器
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)  # 设置日志级别为DEBUG
-        # 创建一个文件处理程序，将日志写入文件
+        self.logger.setLevel(logging.DEBUG) 
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(logging.DEBUG)  # 设置文件处理程序的日志级别为DEBUG
-        # 创建一个格式化器，定义日志记录的格式
+        file_handler.setLevel(logging.DEBUG) 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
-        # 将文件处理程序添加到日志记录器
         self.logger.addHandler(file_handler)
         self.api_key = api_key
         self.api_base = api_base
@@ -36,13 +32,13 @@ class RepoAssistant:
         self.llm = OpenAI(api_key=api_key, api_base=api_base)
 
     def read_json_file(self, file_path):
-        # ...
+        #  read json file as database
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         return data
 
     def extract_md_contents(self, json_data):
-        # ...
+        # find json file summary md_content return a list
         md_contents = []
         for file in json_data["files"]:
             for obj in file["objects"]:
@@ -51,6 +47,7 @@ class RepoAssistant:
         return md_contents
     
     def init_chroma_collection(self):
+        # init chroma vectordb
         chroma_client = chromadb.Client()
         self.chroma_collection = chroma_client.create_collection(
             "test", 
@@ -60,8 +57,17 @@ class RepoAssistant:
                 model_name="text-embedding-ada-002"
             )
         )
+        self.chroma_collection = chroma_client.get_collection(
+            "test", 
+            embedding_function=embedding_functions.OpenAIEmbeddingFunction(
+                api_key=self.api_key,
+                api_base=self.api_base,
+                model_name="text-embedding-ada-002"
+            )
+        )
 
     def search_in_json_nested(self, file_path, search_text):
+        # retrieve code from json
         try:
             with open(file_path, 'r',encoding='utf-8') as file:
                 data = json.load(file)
@@ -96,27 +102,47 @@ class RepoAssistant:
             return f"An error occurred: {e}"
 
     def NerQuery(self,message):
-        #...
-        query = "Extract the most relevant class or function from the following input:\n" + message + "\nOutput:"
+        # summery main related function of class
+        query1 = """
+                The output must strictly be a pure function name or class name, without any additional characters.
+                For example:
+                Pure function names: calculateSum, processData
+                Pure class names: MyClass, DataProcessor
+                The output function name or class name should be only one.
+                """
+        query = "Extract the most relevant class or function from the following"+query1+"input:\n" + message + "\nOutput:"
         response = self.llm.complete(query)
         self.logger.debug(f"Input: {message}, Output: {response}")
         return response
     
     def queryblock(self,message):
-        #...
+        # return a code block for retrieval
         search_result = self.search_in_json_nested(self.db_path, message)
         if isinstance(search_result, dict):
             search_result = search_result['code_content']
         return str(search_result)
 
     def create_vector_store(self, md_contents):
-        #...
+        # deal with md_content put it into chroma and embedding it 
         ids = [str(i) for i in range(len(md_contents))]
-        self.chroma_collection.add(ids=ids, documents=md_contents)
+        embedding_function=embedding_functions.OpenAIEmbeddingFunction(
+                api_key=self.api_key,
+                api_base=self.api_base,
+                model_name="text-embedding-ada-002"
+            )
+        embeddings=embedding_function(md_contents)
+        self.chroma_collection.add(ids=ids, documents=md_contents,embeddings=embeddings)
+        added_docs_count = len(ids)
+        self.logger.info(f"Added {added_docs_count} documents to the chroma collection.")
+
+        metadata = self.chroma_collection.get_metadata() if hasattr(self.chroma_collection, 'get_metadata') else "No metadata method available"
+        self.logger.info(f"Chroma collection metadata: {metadata}")
+        metadata2= self.chroma_collection.get_embeddings() if hasattr(self.chroma_collection, 'get_embeddings') else "No metadata method available"
+        self.logger.info(f"Chroma collection embeddings: {metadata2}")
 
 
     def rag(self, query, retrieved_documents):
-        # ...
+        # rag 
         information = "\n\n".join(retrieved_documents)
         messages = f"You are a helpful expert repo research assistant. Your users are asking questions about information contained in repo . You will be shown the user's question, and the relevant information from the repo. Answer the user's question using only this information.\nQuestion: {query}. \nInformation: {information}"
         response = self.llm.complete(messages)
@@ -124,55 +150,71 @@ class RepoAssistant:
         return content
 
     def Tree(self, query):
-        # ...
+        # show a tree structure
         input_text = query
         prompt = f"Please analyze the following text and generate a tree structure based on its hierarchy:\n\n{input_text}"
         response = self.llm.complete(prompt)
         return response
 
-    def format_chat_prompt(self, message, chat_history, instruction):
-        # ...
+    def format_chat_prompt(self, message,instruction):
+        #  format prompt
         prompt = f"System:{instruction}"
-        for turn in chat_history:
-            user_message, bot_message = turn
-            prompt = f"{prompt}\nUser: {user_message}\nAssistant: {bot_message}"
         prompt = f"{prompt}\nUser: {message}\nAssistant:"
         return prompt
 
-    def respond(self, message, chat_history, instruction):
-        # ...
-        prompt = self.format_chat_prompt(message, chat_history, instruction)
-        chat_history = chat_history + [[message, ""]]
+    def respond(self, message, instruction):
+        # return answer
+        prompt = self.format_chat_prompt(message, instruction)
         results = self.chroma_collection.query(query_texts=[prompt], n_results=5)
         self.logger.debug(f"Results: {results}")
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
         bot_message = str(response)
         keyword=str(self.NerQuery(bot_message))
-        bot_message=bot_message +'\n'+ str(self.Tree(bot_message))+'\n'+'```python'+'\n'+self.queryblock(keyword)+'\n'+'```'
-        # bot_message=bot_message +'\n'+ str(self.Tree(bot_message))
-        chat_history.append((message, bot_message))
-        return "", chat_history
+        code='\n'+'```python'+'\n'+self.queryblock(keyword)+'\n'+'```'
+        bot_message=bot_message +'\n'+ str(self.Tree(bot_message))+code
+        return "", bot_message,results,keyword,code,message
+
+
+
+
 
     def setup_gradio_interface(self):
-        # Gradio UI setupwith gr.Blocks() as demo:
+        # Gradio UI setup with gr.Blocks() as demo
         with gr.Blocks() as demo:
-            chatbot = gr.Chatbot(height=540) #just to fit the notebook
-            msg = gr.Textbox(label="Prompt")
-            with gr.Accordion(label="Advanced options",open=False):
-                system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
-            btn = gr.Button("Submit")
-            clear = gr.ClearButton(components=[msg, chatbot], value="Clear console")
+            gr.Markdown(
+                """
+                # RepoChat Test
+                This is a test for retrieval repo 
+                """)
+            with gr.Row():
+                with gr.Column():
 
-            btn.click(self.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot])
-            msg.submit(self.respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot]) #Press enter to submit
+                    msg = gr.Textbox(label="Prompt")
+                    with gr.Accordion(label="Advanced options", open=False):
+                        system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
+                    gr.Markdown("### rag")
+                    output1 = gr.Markdown(label="RAG")
+                    btn = gr.Button("Submit")
+
+                with gr.Column():
+                    output2 = gr.Textbox(label="Embedding recall")
+                with gr.Column():
+                    gr.Markdown("### question")
+                    question = gr.Markdown(label="qa")
+                    output3 = gr.Textbox(label="key words")
+                    gr.Markdown("### code")
+                    code = gr.Markdown(label="code")
+
+            btn.click(self.respond, inputs=[msg, system], outputs=[msg, output1,output2,output3,code,question])
+            msg.submit(self.respond, inputs=[msg, system], outputs=[msg, output1,output2,output3,code,question])  # Press enter to submit
 
         gr.close_all()
-        demo.queue().launch(share=True)    
+        demo.queue().launch(share=True)
 
 def main():
-    api_key='sk-'
-    api_base='https://example.com' 
+    api_key=""
+    api_base=""
     db_path = "./project_hierachy.json"
     log_file= "./log.txt"
     assistant = RepoAssistant(api_key, api_base, db_path,log_file)
