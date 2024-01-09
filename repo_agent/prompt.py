@@ -15,6 +15,7 @@ The content of the code is as follows:
 Please generate a detailed explanation document for this object based on the code of the target object itself {combine_ref_situation}.
 
 Please write out the function of this {code_type_tell} in bold plain text, followed by a detailed analysis in plain text (including all details), in language {language} to serve as the documentation for this part of the code.
+
 The standard format is as follows:
 
 **{code_name}**: The function of this {code_type_tell} is XXX
