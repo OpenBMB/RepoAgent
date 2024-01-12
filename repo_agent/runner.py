@@ -411,11 +411,5 @@ class Runner:
         return new_obj, del_obj
 
 
-if __name__ == "__main__":
 
-    runner = Runner()
-    
-    runner.run()
-
-    logger.info("文档任务完成。")
 

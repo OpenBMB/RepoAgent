@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "repoagent"
+version = "0.0.5"
+description = "An Agent designed to offer an intelligent approach for generating project documentation."
+authors = [
+    "Qinyu Luo <qinyuluo123@gmail.com>"
+]
+maintainers = [
+    "Arno Edwards <Arno.Edwards@outlook.com>",
+]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/LOGIC-10/RepoAgent"
+packages = [
+    { include = "repo_agent" }
+]
+
+[tool.poetry.scripts]
+repoagent = "repo_agent.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+gitpython = "^3.1.41"
+openai = "^1.6.1"
+tiktoken = "^0.5.2"
+pyyaml = "^6.0.1"
+jedi = "^0.19.1"
+loguru = "^0.7.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
