@@ -1,7 +1,7 @@
 
 from llama_index.llms import OpenAI
 from logger import LoggerManager
-from jsonhandle import JsonFileProcessor
+from repo_agent.chat_with_repo.json_handle import JsonFileProcessor
 class TextAnalysisTool:
     def __init__(self, llm, logger, db_path):
         jsonsearch=JsonFileProcessor(db_path)
@@ -46,7 +46,7 @@ class TextAnalysisTool:
 if __name__ == "__main__":
     api_base = "https://api.openai.com/v1"
     api_key = "your_api_key"
-    logfile="your_logfile_path"
+    log_file = "your_logfile_path"
     llm = OpenAI(api_key=api_key, api_base=api_base)
     logger = LoggerManager(log_file)
     db_path = "your_database_path"

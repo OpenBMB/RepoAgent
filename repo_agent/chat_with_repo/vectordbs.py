@@ -14,7 +14,7 @@ class ChromaManager:
         chroma_client = chromadb.Client()
         self.chroma_collection = chroma_client.create_collection(
             "test",
-            embedding_function=embedding_functions.OpenAIEmbeddingFunction(
+            embedding_function = embedding_functions.OpenAIEmbeddingFunction(
                 api_key=self.api_key,
                 api_base=self.api_base,
                 model_name="text-embedding-ada-002"
@@ -22,10 +22,10 @@ class ChromaManager:
         )
         self.chroma_collection = chroma_client.get_collection(
             "test",
-            embedding_function=embedding_functions.OpenAIEmbeddingFunction(
-                api_key=self.api_key,
-                api_base=self.api_base,
-                model_name="text-embedding-ada-002"
+            embedding_function = embedding_functions.OpenAIEmbeddingFunction(
+                api_key = self.api_key,
+                api_base = self.api_base,
+                model_name = "text-embedding-ada-002"
             )
         )
 
@@ -42,5 +42,5 @@ class ChromaManager:
         self.chroma_collection.add(ids=ids, documents=md_contents, embeddings=embeddings)
 
 if __name__ == "__main__":
-    test=ChromaManager(api_key="", api_base="")
+    test = ChromaManager(api_key="", api_base="")
     

@@ -1,4 +1,4 @@
-from gradioui import GradioInterface
+from repo_agent.chat_with_repo.gradio_ui import GradioInterface
 import yaml
 from rag import RepoAssistant
 

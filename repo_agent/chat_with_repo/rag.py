@@ -1,4 +1,4 @@
-from jsonhandle import JsonFileProcessor
+from repo_agent.chat_with_repo.json_handle import JsonFileProcessor
 from vectordbs import ChromaManager
 from prompt import TextAnalysisTool
 from logger import LoggerManager
@@ -10,17 +10,17 @@ from llama_index.llms import OpenAI
 class RepoAssistant:
     def __init__(self, api_key, api_base, db_path, log_file):
         # Initialize OpenAI, database, and load JSON data
-        logger=LoggerManager(log_file)
-        self.logger=logger.get_logger()
+        logger = LoggerManager(log_file)
+        self.logger = logger.get_logger()
         self.api_key = api_key
         self.api_base = api_base
         self.db_path = db_path
-        self.md_contents=[]
+        self.md_contents = []
         self.llm = OpenAI(api_key=api_key, api_base=api_base)
-        textanslys=TextAnalysisTool(self.llm,logger,db_path)
+        textanslys = TextAnalysisTool(self.llm,logger,db_path)
         json_data = JsonFileProcessor(db_path)
-        chroma_data=ChromaManager(api_key, api_base)
-        self.textanslys=textanslys
+        chroma_data = ChromaManager(api_key, api_base)
+        self.textanslys = textanslys
         self.json_data = json_data
         self.chroma_data = chroma_data
 
@@ -35,7 +35,7 @@ class RepoAssistant:
         )
         query_gen_prompt = PromptTemplate(query_gen_prompt_str)
         fmt_prompt = query_gen_prompt.format(
-            num_queries=num_queries - 1, query=query_str
+            num_queries = num_queries - 1, query=query_str
         )
         response = self.llm.complete(fmt_prompt)
         queries = response.text.split("\n")
@@ -71,7 +71,7 @@ class RepoAssistant:
             result.append(self.chroma_data.chroma_collection.query(query_texts=[i], n_results=5))
         results=self.chroma_data.chroma_collection.query(query_texts=[prompt], n_results=5)
         self.logger.debug(f"Results: {results}")
-        chunkrecall=self.extract_and_format_documents(result)
+        chunkrecall = self.extract_and_format_documents(result)
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
         bot_message = str(response)
@@ -81,8 +81,8 @@ class RepoAssistant:
         return "", bot_message,chunkrecall,questions,code,message
     
 if __name__ == "__main__":
-    api_key =""
-    api_base =""
-    db_path =""
-    log_file =""
+    api_key = ""
+    api_base = ""
+    db_path = ""
+    log_file = ""
     assistant = RepoAssistant(api_key, api_base, db_path,log_file)
