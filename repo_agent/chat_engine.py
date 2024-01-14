@@ -1,13 +1,13 @@
 import os,json
 import re,sys
+import inspect
 from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from config import language_mapping
-from project_manager import ProjectManager
-from prompt import SYS_PROMPT, USR_PROMPT
-import inspect
+from repo_agent.config_manager import language_mapping
+from repo_agent.project_manager import ProjectManager
+from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 
 
 def get_import_statements():

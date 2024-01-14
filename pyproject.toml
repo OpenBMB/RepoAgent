@@ -26,6 +26,8 @@ tiktoken = "^0.5.2"
 pyyaml = "^6.0.1"
 jedi = "^0.19.1"
 loguru = "^0.7.2"
+click = "^8.1.7"
+tomlkit = "^0.12.3"
 
 [build-system]
 requires = ["poetry-core"]
