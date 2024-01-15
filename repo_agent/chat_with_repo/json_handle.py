@@ -6,7 +6,7 @@ class JsonFileProcessor:
 
     def read_json_file(self):
         # 读取 JSON 文件作为数据库
-        with open(self.file_path, 'r', encoding='utf-8') as file:
+        with open(self.file_path, 'r', encoding = 'utf-8') as file:
             data = json.load(file)
         return data
 
@@ -23,7 +23,7 @@ class JsonFileProcessor:
     def search_in_json_nested(self, file_path, search_text):
         # retrieve code from json
         try:
-            with open(file_path, 'r',encoding='utf-8') as file:
+            with open(file_path, 'r',encoding = 'utf-8') as file:
                 data = json.load(file)
 
                 def recursive_search(data_item):

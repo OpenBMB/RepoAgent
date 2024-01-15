@@ -18,29 +18,29 @@ class GradioInterface:
             }
         """
 
-        with gr.Blocks(css=css) as demo:
+        with gr.Blocks(css = css) as demo:
             gr.Markdown("""
                 # RepoChat Test
                 This is a test for retrieval repo 
             """)
             with gr.Row():
-                with gr.Column(scale=2):
-                    msg = gr.Textbox(label="Question Input")
+                with gr.Column(scale = 2):
+                    msg = gr.Textbox(label = "Question Input")
                     gr.Markdown("### question") 
-                    question = gr.Markdown(label="qa")
-                    with gr.Accordion(label="Advanced options", open=False):
-                        system = gr.Textbox(label="System message", lines=2, value="A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
-                    output1 = gr.Textbox(label="RAG")
+                    question = gr.Markdown(label = "qa")
+                    with gr.Accordion(label = "Advanced options", open = False):
+                        system = gr.Textbox(label = "System message", lines = 2, value = "A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
+                    output1 = gr.Textbox(label = "RAG")
 
                 with gr.Column(scale=1):
-                    output2 = gr.Textbox(label="Embedding recall")
+                    output2 = gr.Textbox(label = "Embedding recall")
                 with gr.Column(scale=1):
-                    output3 = gr.Textbox(label="key words")
-                    code = gr.Textbox(label="code")
+                    output3 = gr.Textbox(label = "key words")
+                    code = gr.Textbox(label = "code")
             
             btn = gr.Button("Submit")
-            btn.click(self.respond, inputs=[msg, system], outputs=[msg, output1, output2, output3, code, question])
-            msg.submit(self.respond, inputs=[msg, system], outputs=[msg, output1, output2, output3, code, question])  # Press enter to submit
+            btn.click(self.respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code, question])
+            msg.submit(self.respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code, question])  # Press enter to submit
 
         gr.close_all()
         demo.queue().launch(share=True)

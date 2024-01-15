@@ -17,12 +17,9 @@ class RepoAssistant:
         self.db_path = db_path
         self.md_contents = []
         self.llm = OpenAI(api_key=api_key, api_base=api_base)
-        textanslys = TextAnalysisTool(self.llm,logger,db_path)
-        json_data = JsonFileProcessor(db_path)
-        chroma_data = ChromaManager(api_key, api_base)
-        self.textanslys = textanslys
-        self.json_data = json_data
-        self.chroma_data = chroma_data
+        self.textanslys = TextAnalysisTool(self.llm,logger,db_path)
+        self.json_data = JsonFileProcessor(db_path)
+        self.chroma_data = ChromaManager(api_key, api_base)
 
     
     def generate_queries(self, query_str: str, num_queries: int = 4):
@@ -68,16 +65,16 @@ class RepoAssistant:
         promptq = self.generate_queries(prompt,3)
         result = []
         for i in promptq:
-            result.append(self.chroma_data.chroma_collection.query(query_texts=[i], n_results=5))
-        results=self.chroma_data.chroma_collection.query(query_texts=[prompt], n_results=5)
+            result.append(self.chroma_data.chroma_collection.query(query_texts = [i], n_results = 5))
+        results = self.chroma_data.chroma_collection.query(query_texts = [prompt], n_results = 5)
         self.logger.debug(f"Results: {results}")
         chunkrecall = self.extract_and_format_documents(result)
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
         bot_message = str(response)
-        keyword=str(self.textanslys.nerquery(bot_message))
+        keyword = str(self.textanslys.nerquery(bot_message))
         code='\n'+'```python'+'\n'+self.textanslys.queryblock(keyword)+'\n'+'```'
-        bot_message=bot_message +'\n'+ str(self.textanslys.tree(bot_message))
+        bot_message = bot_message +'\n'+ str(self.textanslys.tree(bot_message))
         return "", bot_message,chunkrecall,questions,code,message
     
 if __name__ == "__main__":

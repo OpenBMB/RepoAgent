@@ -4,8 +4,7 @@ from logger import LoggerManager
 from repo_agent.chat_with_repo.json_handle import JsonFileProcessor
 class TextAnalysisTool:
     def __init__(self, llm, logger, db_path):
-        jsonsearch=JsonFileProcessor(db_path)
-        self.jsonsearch=jsonsearch
+        self.jsonsearch = JsonFileProcessor(db_path)
         self.llm = llm
         self.logger = logger.get_logger()
         self.db_path = db_path
