@@ -1,0 +1,119 @@
+{
+    
+    "title": "RepoAgent所生成文GitBook",
+    "description": "RepoAgent根据项目repo所生成文档GitBook",
+    "generator": "site",
+    "author": "RepoAgent <x-agent.net>",
+    "language": "zh-hans",
+    "gitbook": "3.2.3",
+    "root": "./src",
+
+    "links": {
+        "sidebar": {
+            "XAgent": "https://x-agent.net",
+            "RepoAgent": "https://github.com/LOGIC-10/RepoAgent.git"
+        }
+    },
+
+    "pluginsConfig": {
+        "github-buttons": {
+            "buttons": [
+                {
+                "repo": "RepoAgent",
+                "user": "LOGIC-10",
+                "type": "star",
+                "count": true,
+                "size": "small"
+                }
+            ]
+        },
+		
+		"image-captions": {
+          "caption": "Image _PAGE_LEVEL_._PAGE_IMAGE_NUMBER_ - _CAPTION_"
+		},
+		"autotheme": {
+          "white": [9, 10, 11, 12, 13, 14, 15, 16],
+          "sepia": [6, 7, 8, 17, 18, 19],
+          "night": [20, 21, 22, 23, 0, 1, 2, 3, 4, 5]
+        },
+        "callouts": {
+            "showTypeInHeader": false
+        },
+        "theme-default": {
+            "showLevel": false
+        },
+        "disqus": {
+            "shortName": ""
+        },
+        "prism": {
+            "css": [
+                "prism-themes/themes/prism-atom-dark.css"
+            ]
+        },
+        "sharing": {
+            "douban": false,
+            "facebook": true,
+            "google": false,
+            "hatenaBookmark": false,
+            "instapaper": false,
+            "line": false,
+            "linkedin": false,
+            "messenger": false,
+            "pocket": false,
+            "qq": true,
+            "qzone": false,
+            "stumbleupon": false,
+            "twitter": true,
+            "viber": false,
+            "vk": false,
+            "weibo": true,
+            "whatsapp": false,
+            "all": [
+                "douban",
+                "facebook",
+                "google",
+                "instapaper",
+                "line",
+                "linkedin",
+                "messenger",
+                "pocket",
+                "qq",
+                "qzone",
+                "stumbleupon",
+                "twitter",
+                "viber",
+                "vk",
+                "weibo",
+                "whatsapp"
+            ]
+        },
+        "tbfed-pagefooter": {
+            "copyright": "https://x-agent.net，RepoAgent </a>发布",
+            "modify_label": "最后更新：",
+            "modify_format": "YYYY-MM-DD HH:mm:ss"
+        }
+    },
+        
+    "plugins": [
+        "theme-comscore",
+        "anchors",
+        "-lunr",
+        "-search",
+        "search-plus",
+        "disqus",
+        "-highlight",
+        "prism",
+        "prism-themes",
+        "github-buttons",
+        "splitter",
+        "-sharing",
+        "sharing-plus",
+        "tbfed-pagefooter",
+        "expandable-chapters-small",
+        "copy-code-button",
+        "callouts",
+		"image-captions",
+		"autotheme"
+    ]
+    
+}

@@ -153,8 +153,6 @@ class Runner:
             self.first_generate()
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']), flash_reference_relation=True)
             return
-        
-
 
         if not self.meta_info.in_generation_process:
             logger.info("Starting to detect changes.")
@@ -191,7 +189,6 @@ class Runner:
         logger.info(f"Doc has been forwarded to the latest version")
 
         self.markdown_refresh()
-
         
 
     def add_new_item(self, file_handler, json_data):

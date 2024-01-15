@@ -128,7 +128,7 @@ class ChatEngine:
         model = self.config["default_completion_kwargs"]["model"]
         
         # 检查tokens长度
-        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 3500:
+        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 7100:
             print("The code is too long, using gpt-3.5-turbo-16k to process it.")
             model = "gpt-3.5-turbo-16k"
         
@@ -150,9 +150,16 @@ class ChatEngine:
                     model=model,
                     messages=messages,
                     temperature=self.config["default_completion_kwargs"]["temperature"],
+                    max_tokens=1024
                 )
 
                 response_message = response.choices[0].message
+
+                # 如果 response_message 是 None，则继续下一次循环
+                if response_message is None:
+                    attempt += 1
+                    continue
+
                 print(f"\nAnswer:\n{response_message.content}\n")
 
                 return response_message
@@ -164,6 +171,8 @@ class ChatEngine:
                 attempt += 1
                 if attempt == max_attempts:
                     raise
+                else:
+                    continue # Try to request again
 
             except BadRequestError as e:
                 if 'context_length_exceeded' in str(e):
@@ -192,7 +201,7 @@ class ChatEngine:
                     print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
 
             except Exception as e:
-                print(f"An error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
+                print(f"An unknown error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")
                 # Retry after 10 seconds
                 time.sleep(10)
                 attempt += 1

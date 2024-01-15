@@ -61,6 +61,8 @@ class FileHandler:
                 have_return = False
             
             code_info['have_return'] = have_return
+            # # 使用 json.dumps 来转义字符串，并去掉首尾的引号
+            # code_info['code_content'] = json.dumps(code_content)[1:-1]
             code_info['code_content'] = code_content
             code_info['name_column'] = name_column
                 
@@ -210,6 +212,7 @@ class FileHandler:
                 file_objects[name] = code_info
 
         return file_objects
+    
 
     def generate_overall_structure(self) -> dict:
         """
@@ -222,7 +225,11 @@ class FileHandler:
         gitignore_checker = GitignoreChecker(directory=self.repo_path,
                                             gitignore_path=os.path.join(self.repo_path, '.gitignore'))
         for not_ignored_files in gitignore_checker.check_files_and_folders():
-            repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
+            try:
+                repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
+            except Exception as e:
+                print(f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}")
+                continue
         return repo_structure
     
 
