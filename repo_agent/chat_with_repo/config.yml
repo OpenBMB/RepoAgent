@@ -1,0 +1,4 @@
+api_key: ""
+api_base: ""
+db_path: './project_hierachy.json'
+log_file: './log.txt'
