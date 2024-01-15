@@ -7,6 +7,7 @@ import time
 from config import language_mapping
 from project_manager import ProjectManager
 from prompt import SYS_PROMPT, USR_PROMPT
+from doc_meta_info import DocItem
 import inspect
 
 
@@ -29,29 +30,33 @@ class ChatEngine:
         num_tokens = len(encoding.encode(string))
         return num_tokens
 
-    def generate_doc(self, code_info, file_handler, referencer = []):
+    def generate_doc(self, doc_item: DocItem, file_handler):
+        code_info = doc_item.content
+        referenced = len(doc_item.who_reference_me) > 0
 
         #print("len(referencer):\n",len(referencer))
 
-        def get_code_from_json(json_file, referencer):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+        # def get_code_from_json(json_file, referencer):
+        #     '''根据给出的referencer，找出其源码
+        #     '''
+        #     with open(json_file, 'r', encoding='utf-8') as f:
+        #         data = json.load(f)
 
-            code_from_referencer = {}
-            for ref in referencer:
-                file_path, line_number, _ = ref
-                if file_path in data:
-                    objects = data[file_path]
-                    min_obj = None
-                    for obj_name, obj in objects.items():
-                        if obj['code_start_line'] <= line_number <= obj['code_end_line']:
-                            if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
-                                min_obj = obj
-                    if min_obj is not None:
-                        if file_path not in code_from_referencer:
-                            code_from_referencer[file_path] = []
-                        code_from_referencer[file_path].append(min_obj['code_content'])
-            return code_from_referencer
+        #     code_from_referencer = {}
+        #     for ref in referencer:
+        #         file_path, line_number, _ = ref
+        #         if file_path in data:
+        #             objects = data[file_path]
+        #             min_obj = None
+        #             for obj_name, obj in objects.items():
+        #                 if obj['code_start_line'] <= line_number <= obj['code_end_line']:
+        #                     if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
+        #                         min_obj = obj
+        #             if min_obj is not None:
+        #                 if file_path not in code_from_referencer:
+        #                     code_from_referencer[file_path] = []
+        #                 code_from_referencer[file_path].append(min_obj['code_content'])
+        #     return code_from_referencer
                 
         code_type = code_info["type"]
         code_name = code_info["name"]
@@ -60,10 +65,30 @@ class ChatEngine:
 
         project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
         project_structure = project_manager.get_project_structure()
-        file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
-        code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
-        referenced = True if len(code_from_referencer) > 0 else False
-        referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
+        # file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
+        # code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
+        # referenced = True if len(code_from_referencer) > 0 else False
+        # referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
+
+        def get_referenced_prompt(doc_item: DocItem) -> str:
+            if len(doc_item.reference_who) == 0:
+                return ""
+            prompt = ["""As you can see, the code calls the following objects, their code and docs are as following:"""]
+            for k, reference_item in enumerate(doc_item.reference_who):
+                instance_prompt = f'''obj: {reference_item.get_full_name()}\nDocument: {reference_item.md_content[-1] if len(reference_item.md_content) > 0 else 'None'}\nRaw code:```\n{reference_item.content['code_content'] if 'code_content' in reference_item.content.keys() else ''}\n```''' + "="*10
+                prompt.append(instance_prompt)
+            return "\n".join(prompt)
+
+
+        def get_referencer_prompt(doc_item: DocItem):
+            if len(doc_item.who_reference_me) == 0:
+                return ""
+            prompt = ["""Also, the code has been referenced by the following objects, their code and docs are as following:"""]
+            for k, referencer_item in enumerate(doc_item.who_reference_me):
+                instance_prompt = f'''obj: {referencer_item.get_full_name()}\nDocument: {referencer_item.md_content[-1] if len(referencer_item.md_content) > 0 else 'None'}\nRaw code:```\n{referencer_item.content['code_content'] if 'code_content' in referencer_item.content.keys() else 'None'}\n```''' + "="*10
+                prompt.append(instance_prompt)
+            return "\n".join(prompt)
+
 
         # language
         language = self.config["language"]
@@ -73,12 +98,15 @@ class ChatEngine:
         language = language_mapping[language]
         
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
-        have_return_tell = "**Output Example**: (Mock up a possible appearance of the code's return value.)" if have_return else ""
-        reference_letter = "This object is called in the following files, the file paths and corresponding calling parts of the code are as follows:" if referenced else ""
+        have_return_tell = "**Output Example**: Mock up a possible appearance of the code's return value." if have_return else ""
+        # reference_letter = "This object is called in the following files, the file paths and corresponding calling parts of the code are as follows:" if referenced else ""
         combine_ref_situation = "and combine it with its calling situation in the project," if referenced else ""
         
+        referencer_content = get_referencer_prompt(doc_item)
+        reference_letter = get_referenced_prompt(doc_item)
+        file_path = doc_item.get_full_name()
+
         sys_prompt = SYS_PROMPT.format(
-            reference_letter=reference_letter, 
             combine_ref_situation=combine_ref_situation, 
             file_path=file_path, 
             project_structure=project_structure, 
@@ -87,12 +115,12 @@ class ChatEngine:
             code_content=code_content, 
             have_return_tell=have_return_tell, 
             referenced=referenced, 
+            referenced_letter=reference_letter, 
             referencer_content=referencer_content,
             language=language
             )
-        
         usr_prompt = USR_PROMPT.format(language=language)
-        
+        # import pdb; pdb.set_trace()
         # print("\nsys_prompt:\n",sys_prompt)
         # print("\nusr_prompt:\n",str(usr_prompt))
 

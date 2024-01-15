@@ -11,7 +11,7 @@ class FileHandler:
     def __init__(self, repo_path, file_path):
         self.file_path = file_path # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierarchy = os.path.join(repo_path, CONFIG['project_hierarchy'])
+        self.project_hierarchy = os.path.join(repo_path, CONFIG['project_hierarchy'], ".project_hierarchy.json")
 
     def read_file(self):
         """
@@ -44,7 +44,7 @@ class FileHandler:
         code_info = {}
         code_info['type'] = code_type
         code_info['name'] = code_name
-        code_info['md_content'] = ""
+        code_info['md_content'] = []
         code_info['code_start_line'] = start_line
         code_info['code_end_line'] = end_line
         code_info['parent'] = parent
@@ -275,7 +275,7 @@ class FileHandler:
                 markdown += "***\n"
             current_parent = obj["name"]
             markdown += f"{'#' * level} {obj['type']} {obj['name']}\n"
-            markdown += f"{obj['md_content']}\n"
+            markdown += f"{obj['md_content'][-1] if len(obj['md_content']) >0 else ''}\n"
         markdown += "***\n"
 
         return markdown
