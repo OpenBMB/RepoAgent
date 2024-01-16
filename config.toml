@@ -1,6 +1,6 @@
 [project]
-repo_path = ""
-project_hierarchy_path = ".project_hierarchy_path.json"
+target_repo_path = ""
+hierarchy_path = ".project_hierarchy_path.json"
 markdown_docs_path = "markdown_docs"
 ignore_list = ["ignore_file1.py", "ignore_file2.py", "ignore_directory"]
 language = "zh"

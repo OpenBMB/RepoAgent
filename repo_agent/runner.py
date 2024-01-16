@@ -6,14 +6,14 @@ from repo_agent.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 from loguru import logger
-from repo_agent.config_manager import CONFIG
+from repo_agent.settings import setting
 
 
 class Runner:
     def __init__(self):
-        self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
-        self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
-        self.chat_engine = ChatEngine(CONFIG=CONFIG)
+        self.project_manager = ProjectManager(repo_path=setting.project.target_repo_path, project_hierarchy=setting.project.hierarchy_path) 
+        self.change_detector = ChangeDetector(repo_path=setting.project.target_repo_path)
+        self.chat_engine = ChatEngine()
     
     def generate_hierarchy(self):
         """
@@ -24,7 +24,7 @@ class Runner:
         repo_structure = file_handler.generate_overall_structure()
         # json_output = file_handler.convert_structure_to_json(repo_structure)
 
-        json_file = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        json_file = os.path.join(setting.project.target_repo_path, setting.project.hierarchy_path)
         # Save the JSON to a file
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(repo_structure, f, indent=4, ensure_ascii=False)
@@ -86,7 +86,7 @@ class Runner:
                     continue
 
                 # 判断当前文件是否为空，如果为空则跳过：
-                if os.path.getsize(os.path.join(CONFIG['repo_path'],rel_file_path)) == 0:
+                if os.path.getsize(os.path.join(setting.project.target_repo_pathproject,rel_file_path)) == 0:
                     continue
 
                 # 对于每个单独文件里的每一个对象：获取其引用者列表
@@ -109,7 +109,7 @@ class Runner:
                 with ThreadPoolExecutor(max_workers=5) as executor: 
 
                     futures = []
-                    file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+                    file_handler = FileHandler(setting.project.target_repo_pathproject, rel_file_path)
 
                     # 遍历文件中的每个对象
                     for index, ref_obj in enumerate(referencer_list):
@@ -139,7 +139,7 @@ class Runner:
                 # 对于每个文件，转换json内容到markdown
                 markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
                 # 写入markdown内容到.md文件
-                file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+                file_handler.write_file(os.path.join(setting.project.markdown_docs_path, file_handler.file_path.replace('.py', '.md')), markdown)
                 logger.info(f"\n已生成 {file_handler.file_path} 的Markdown文档。\n")
             
             # 删除last_processed_file.txt文件
@@ -172,7 +172,7 @@ class Runner:
         """
         logger.info("Starting to detect changes.")
         # 首先检测是否存在全局的 project_hierarchy.json 结构信息
-        abs_project_hierarchy_path = os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])
+        abs_project_hierarchy_path = os.path.join(setting.project.target_repo_path, setting.project.hierarchy_path)
         if not os.path.exists(abs_project_hierarchy_path) or os.path.exists("last_processed_file.txt"):
             self.first_generate()
 
@@ -188,12 +188,9 @@ class Runner:
 
         repo_path = self.project_manager.repo_path
 
-        # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
-        ignore_list = CONFIG.get('ignore_list', [])
-
         for file_path, is_new_file in changed_files.items(): # 这里的file_path是相对路径
             # 如果当前文件在忽略列表，或者列表中某个文件夹路径下，则跳过
-            if any(file_path.startswith(ignore_item) for ignore_item in ignore_list):
+            if any(file_path.startswith(ignore_item) for ignore_item in setting.project.ignore_list):
                 continue
             # 判断当前python文件内容是否为空，如果为空则跳过：
             if os.path.getsize(os.path.join(repo_path, file_path)) == 0:
@@ -231,7 +228,7 @@ class Runner:
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
         # 将markdown内容写入.md文件
-        file_handler.write_file(os.path.join(self.project_manager.repo_path, CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+        file_handler.write_file(os.path.join(self.project_manager.repo_path, setting.project.markdown_docs_path, file_handler.file_path.replace('.py', '.md')), markdown)
         logger.info(f"已生成新增文件 {file_handler.file_path} 的Markdown文档。")
 
 
@@ -272,7 +269,7 @@ class Runner:
             # 将变更部分的json文件内容转换成markdown内容
             markdown = file_handler.convert_to_markdown_file(file_path=file_handler.file_path)
             # 将markdown内容写入.md文件
-            file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            file_handler.write_file(os.path.join(setting.project.markdown_docs_path, file_handler.file_path.replace('.py', '.md')), markdown)
             logger.info(f"已更新{file_handler.file_path}文件的Markdown文档。")
 
         # 如果没有找到对应的文件，就添加一个新的项

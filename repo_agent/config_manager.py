@@ -1,35 +1,3 @@
-import yaml
-
-CONFIG = yaml.load(open("config.yml", "r"), Loader=yaml.FullLoader)
-
-language_mapping = {
-    "en": "English",
-    "es": "Spanish",
-    "fr": "French",
-    "de": "German",
-    "zh": "Chinese",
-    "ja": "Japanese",
-    "ru": "Russian",
-    "it": "Italian",
-    "ko": "Korean",
-    "nl": "Dutch",
-    "pt": "Portuguese",
-    "ar": "Arabic",
-    "tr": "Turkish",
-    "sv": "Swedish",
-    "da": "Danish",
-    "fi": "Finnish",
-    "no": "Norwegian",
-    "pl": "Polish",
-    "cs": "Czech",
-    "hu": "Hungarian",
-    "el": "Greek",
-    "he": "Hebrew",
-    "th": "Thai",
-    "hi": "Hindi",
-    "bn": "Bengali",
-}
-
 # repo_agent/config_manager.py
 import sys
 from tomlkit.toml_file import TOMLFile, TOMLDocument
@@ -38,22 +6,28 @@ from loguru import logger
 _config_file_path = "config.toml"
 
 
-def read_config(file_path: str = _config_file_path) -> TOMLDocument:
+def read_config(file_path: str = _config_file_path, section: str = None) -> TOMLDocument:
     """
-    Reads the TOML configuration file.
+    Reads the TOML configuration file. If a section is specified, only that section is returned.
 
     Args:
         file_path (str): The file path to the TOML configuration file.
+        section (str, optional): The specific section to read from the TOML file.
 
     Returns:
-        TOMLDocument: The configuration data from the TOML file.
+        TOMLDocument or dict: The configuration data from the TOML file, or a specific section if provided.
 
     Raises:
         SystemExit: If the file is not found.
     """
     try:
         toml_file = TOMLFile(file_path)
-        return toml_file.read()
+        config = toml_file.read()
+
+        if section:
+            return config.get(section)
+
+        return config
     except FileNotFoundError:
         logger.error("Configuration file not found.")
         sys.exit(1)
@@ -106,5 +80,3 @@ def update_config_section(config: dict, section: str, updates: dict) -> None:
             config_section[key] = value
     config[section] = config_section
 
-
-config = read_config()

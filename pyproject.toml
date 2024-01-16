@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "repoagent"
-version = "0.0.5"
+version = "0.0.6"
 description = "An Agent designed to offer an intelligent approach for generating project documentation."
 authors = [
     "Qinyu Luo <qinyuluo123@gmail.com>"
@@ -28,6 +28,10 @@ jedi = "^0.19.1"
 loguru = "^0.7.2"
 click = "^8.1.7"
 tomlkit = "^0.12.3"
+pydantic-settings = "^2.1.0"
+pytest = "^7.4.4"
+python-iso639 = "^2024.1.2"
+tenacity = "^8.2.3"
 
 [build-system]
 requires = ["poetry-core"]
