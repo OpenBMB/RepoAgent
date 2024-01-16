@@ -5,7 +5,7 @@ from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from repo_agent.config_manager import language_mapping
+from repo_agent.settings import setting
 from repo_agent.project_manager import ProjectManager
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 
@@ -20,9 +20,7 @@ class ChatEngine:
     """
     ChatEngine is used to generate the doc of functions or classes.
     """
-    def __init__(self, CONFIG):
-        self.config = CONFIG
-
+    
     def num_tokens_from_string(self, string: str, encoding_name = "cl100k_base") -> int:
         """Returns the number of tokens in a text string."""
         encoding = tiktoken.get_encoding(encoding_name)
@@ -64,13 +62,6 @@ class ChatEngine:
         code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
         referenced = True if len(code_from_referencer) > 0 else False
         referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
-
-        # language
-        language = self.config["language"]
-        if language not in language_mapping:
-            raise KeyError(f"Language code {language} is not given! Supported languages are: {json.dumps(language_mapping)}")
-        
-        language = language_mapping[language]
         
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
         have_return_tell = "**Output Example**: (Mock up a possible appearance of the code's return value.)" if have_return else ""
@@ -88,16 +79,16 @@ class ChatEngine:
             have_return_tell=have_return_tell, 
             referenced=referenced, 
             referencer_content=referencer_content,
-            language=language
+            language=setting.project.language
             )
         
-        usr_prompt = USR_PROMPT.format(language=language)
+        usr_prompt = USR_PROMPT.format(language=setting.project.language)
         
         # print("\nsys_prompt:\n",sys_prompt)
         # print("\nusr_prompt:\n",str(usr_prompt))
 
         max_attempts = 5  # 设置最大尝试次数
-        model = self.config["default_completion_kwargs"]["model"]
+        model = setting.chat_completion_kwargs.model
         
         # 检查tokens长度
         if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 7100:
@@ -109,9 +100,9 @@ class ChatEngine:
             try:
                 # 获取基本配置
                 client = OpenAI(
-                    api_key=self.config["api_keys"][model][0]["api_key"],
-                    base_url=self.config["api_keys"][model][0]["base_url"],
-                    timeout=self.config["default_completion_kwargs"]["request_timeout"]
+                    api_key=setting.chat_completion_kwargs.api_key,
+                    base_url=setting.chat_completion_kwargs.base_url,
+                    timeout=setting.chat_completion_kwargs.request_timeout
                 )
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]
@@ -121,7 +112,7 @@ class ChatEngine:
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    temperature=self.config["default_completion_kwargs"]["temperature"],
+                    temperature=setting.chat_completion_kwargs.temperature,
                     max_tokens=1024
                 )
 
@@ -132,7 +123,7 @@ class ChatEngine:
                     attempt += 1
                     continue
 
-                print(f"\nAnswer:\n{response_message.content}\n")
+                # print(f"\nAnswer:\n{response_message.content}\n")
 
                 return response_message
             
@@ -165,7 +156,7 @@ class ChatEngine:
                         have_return_tell=have_return_tell, 
                         referenced=referenced, 
                         referencer_content=referencer_content,
-                        language=language
+                        language=setting.project.language
                     )
                     attempt += 1
                     continue  # Try to request again

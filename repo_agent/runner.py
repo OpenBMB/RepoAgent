@@ -3,7 +3,7 @@ from repo_agent.file_handler import FileHandler
 from repo_agent.change_detector import ChangeDetector
 from repo_agent.project_manager import ProjectManager
 from repo_agent.chat_engine import ChatEngine
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 import subprocess
 from loguru import logger
 from repo_agent.settings import setting
@@ -65,8 +65,6 @@ class Runner:
             with open(self.project_manager.project_hierarchy, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
 
-            # 从配置文件中读取忽略列表，如果没有或者为空，则设为一个空列表
-            ignore_list = CONFIG.get('ignore_list', [])
  
             # 检查是否存在last_processed_file.txt文件
             if os.path.exists("last_processed_file.txt"):
@@ -82,11 +80,11 @@ class Runner:
             for rel_file_path, file_dict in list(json_data.items())[start_index:]:
                 
                 # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-                if any(rel_file_path.startswith(ignore_item) for ignore_item in ignore_list):
+                if any(rel_file_path.startswith(ignore_item) for ignore_item in setting.project.ignore_list):
                     continue
 
                 # 判断当前文件是否为空，如果为空则跳过：
-                if os.path.getsize(os.path.join(setting.project.target_repo_pathproject,rel_file_path)) == 0:
+                if os.path.getsize(os.path.join(setting.project.target_repo_path,rel_file_path)) == 0:
                     continue
 
                 # 对于每个单独文件里的每一个对象：获取其引用者列表
@@ -109,7 +107,7 @@ class Runner:
                 with ThreadPoolExecutor(max_workers=5) as executor: 
 
                     futures = []
-                    file_handler = FileHandler(setting.project.target_repo_pathproject, rel_file_path)
+                    file_handler = FileHandler(setting.project.target_repo_path, rel_file_path)
 
                     # 遍历文件中的每个对象
                     for index, ref_obj in enumerate(referencer_list):

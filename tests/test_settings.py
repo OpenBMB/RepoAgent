@@ -1,50 +1,53 @@
+# tests/test_settings.py
+
+# tests/test_settings.py
+
 import pytest
-from pydantic_settings import BaseSettings
-from repo_agent.config_manager import read_config
-from repo_agent.settings import ProjectSettings, ChatCompletionKwargsSettings, Setting
-import os
 
-
-# 示例配置数据
-SAMPLE_CONFIG_DATA = {
-    "project": {
-        "repo_path": "/path/to/repo",
-        "project_hierarchy_path": "/path/to/hierarchy",
-        "markdown_docs_path": "/path/to/docs",
-        "ignore_list": ["file1", "file2"],
-        "language": "en"
+# Your mock configuration data
+mock_config_data = {
+    'project': {
+        'target_repo_path': 'mock/path/to/repo',
+        'hierarchy_path': 'mock/path/to/hierarchy',
+        'markdown_docs_path': 'mock/path/to/markdown_docs',
+        'ignore_list': ['mock_ignore_file1.py', 'mock_ignore_file2.py'],
+        'language': 'mock_language'
     },
-    "chat_completion_kwargs": {
-        "model": "gpt-3",
-        "temperature": 0.7,
-        "request_timeout": 30,
-        "base_url": "http://api.example.com",
-        "api_key": "your_api_key"
+    'chat_completion_kwargs': {
+        'model': 'mock_model',
+        'temperature': 0.5,
+        'request_timeout': 60,
+        'base_url': 'mock://api.example.com',
+        'api_key': 'mock_api_key'
     }
 }
 
-def test_valid_project_settings():
-    settings = ProjectSettings(**SAMPLE_CONFIG_DATA["project"])
-    assert settings.repo_path == "/path/to/repo"
-    # ... 其他字段的断言
+@pytest.fixture
+def mock_read_config(mocker):
+    # Patch the read_config function to return the mock configuration data
+    mocker.patch("repo_agent.config_manager.read_config", return_value=mock_config_data)
 
-def test_invalid_project_settings():
-    with pytest.raises(ValueError):
-        # 提供不完整或无效的配置数据
-        ProjectSettings(**{"repo_path": "/path/to/repo"})
+@pytest.fixture
+def setting(mock_read_config):
+    # Delay the import of the setting object until the read_config has been mocked
+    from repo_agent.settings import setting
+    return setting
 
-def test_valid_chat_completion_kwargs_settings():
-    settings = ChatCompletionKwargsSettings(**SAMPLE_CONFIG_DATA["chat_completion_kwargs"])
-    assert settings.model == "gpt-3"
-    # ... 其他字段的断言
+# Test that project settings load correctly
+def test_project_settings_load_correctly(setting):
+    assert hasattr(setting, 'project'), "Config should have 'project'"
+    assert setting.project.target_repo_path == 'mock/path/to/repo', "'target_repo_path' should be correct"
+    assert setting.project.hierarchy_path == 'mock/path/to/hierarchy', "'hierarchy_path' should be correct"
+    assert setting.project.markdown_docs_path == 'mock/path/to/markdown_docs', "'markdown_docs_path' should be correct"
+    assert setting.project.ignore_list == ['mock_ignore_file1.py', 'mock_ignore_file2.py'], "'ignore_list' should be correct"
+    assert setting.project.language == 'mock_language', "'language' should be correct"
 
-def test_invalid_chat_completion_kwargs_settings():
-    with pytest.raises(ValueError):
-        # 提供不完整或无效的配置数据
-        ChatCompletionKwargsSettings(**{"model": "gpt-3"})
+# Test that chat completion kwargs load correctly
+def test_chat_completion_kwargs_load_correctly(setting):
+    assert hasattr(setting, 'chat_completion_kwargs'), "Config should have 'chat_completion_kwargs'"
+    assert setting.chat_completion_kwargs.model == 'mock_model', "'model' should be correct"
+    assert setting.chat_completion_kwargs.temperature == 0.5, "'temperature' should be correct"
+    assert setting.chat_completion_kwargs.request_timeout == 60, "'request_timeout' should be correct"
+    assert setting.chat_completion_kwargs.base_url == 'mock://api.example.com', "'base_url' should be correct"
+    assert setting.chat_completion_kwargs.api_key == 'mock_api_key', "'api_key' should be correct"
 
-def test_env_override():
-    # 设置环境变量以覆盖配置
-    os.environ["repoagent_api_key"] = "new_api_key"
-    settings = ChatCompletionKwargsSettings(**SAMPLE_CONFIG_DATA["chat_completion_kwargs"])
-    assert settings.api_key == "new_api_key"

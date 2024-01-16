@@ -3,6 +3,7 @@ import os
 from repo_agent.change_detector import ChangeDetector
 from git import Repo
 
+
 class TestChangeDetector(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -23,7 +24,7 @@ class TestChangeDetector(unittest.TestCase):
         # 创建一些测试文件
         with open(os.path.join(cls.test_repo_path, 'test_file.py'), 'w') as f:
             f.write('print("Hello, Python")')
-        
+
         with open(os.path.join(cls.test_repo_path, 'test_file.md'), 'w') as f:
             f.write('# Hello, Markdown')
 
@@ -47,7 +48,6 @@ class TestChangeDetector(unittest.TestCase):
 
         print(f"\ntest_get_staged_pys: Staged Python files: {staged_files}")
 
-
     def test_get_unstaged_mds(self):
         # 修改一个 Markdown 文件但不暂存
         md_file = os.path.join(self.test_repo_path, 'test_file.md')
@@ -62,7 +62,6 @@ class TestChangeDetector(unittest.TestCase):
         self.assertIn('test_file.md', [os.path.basename(path) for path in unstaged_files])
 
         print(f"\ntest_get_unstaged_mds: Unstaged Markdown files: {unstaged_files}")
-
 
     def test_add_unstaged_mds(self):
         # 确保有一个未暂存的 Markdown 文件
@@ -79,14 +78,15 @@ class TestChangeDetector(unittest.TestCase):
         self.assertEqual(len(unstaged_files_after_add), 0)
 
         remaining_unstaged_files = len(unstaged_files_after_add)
-        print(f"\ntest_add_unstaged_mds: Number of remaining unstaged Markdown files after add: {remaining_unstaged_files}")
-
+        print(
+            f"\ntest_add_unstaged_mds: Number of remaining unstaged Markdown files after add: {remaining_unstaged_files}")
 
     @classmethod
     def tearDownClass(cls):
         # 清理测试仓库
         cls.repo.close()
         os.system('rm -rf ' + cls.test_repo_path)
+
 
 if __name__ == '__main__':
     unittest.main()

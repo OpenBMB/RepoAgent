@@ -6,7 +6,7 @@ import git
 import re, os
 from repo_agent.file_handler import FileHandler
 import subprocess
-from repo_agent.config_manager import CONFIG
+from repo_agent.settings import setting
 
 
 class ChangeDetector:
@@ -165,7 +165,6 @@ class ChangeDetector:
         staged_files = [item.a_path for item in self.repo.index.diff("HEAD")]
         print(f"staged_files:{staged_files}")
 
-        project_hierarchy = CONFIG['project_hierarchy']
         # diffs是所有未暂存更改文件的列表。这些更改文件是相对于工作区（working directory）的，也就是说，它们是自上次提交（commit）以来在工作区发生的更改，但还没有被添加到暂存区（staging area）
         # 比如原本存在的md文件现在由于代码的变更发生了更新，就会标记为未暂存diff
         diffs = self.repo.index.diff(None)
@@ -186,13 +185,13 @@ class ChangeDetector:
             # 判断这个文件的类型：
             if rel_untracked_file.endswith('.md'):
                 # 把rel_untracked_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
-                rel_untracked_file = os.path.relpath(rel_untracked_file, CONFIG['Markdown_Docs_folder'])
+                rel_untracked_file = os.path.relpath(rel_untracked_file, setting.project.markdown_docs_path)
                 corresponding_py_file = os.path.splitext(rel_untracked_file)[0] + '.py'
                 print(f"corresponding_py_file in untracked_files:{corresponding_py_file}")
                 if corresponding_py_file in staged_files:
                     # 如果是，那么就把这个md文件也加入到unstaged_files中
-                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), CONFIG['Markdown_Docs_folder'], rel_untracked_file))
-            elif rel_untracked_file == project_hierarchy:
+                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), setting.project.markdown_docs_path, rel_untracked_file))
+            elif rel_untracked_file == setting.project.hierarchy_path:
                 to_be_staged_files.append(rel_untracked_file) 
 
         # 处理已追踪但是未暂存的内容
@@ -206,14 +205,14 @@ class ChangeDetector:
             print(f"rel_unstaged_file:{rel_unstaged_file}")
             # 如果它是md文件
             if unstaged_file.endswith('.md'):
-                # 把rel_unstaged_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
-                rel_unstaged_file = os.path.relpath(rel_unstaged_file, CONFIG['Markdown_Docs_folder'])
+                # 把rel_unstaged_file从 setting.project.markdown_docs_path 中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
+                rel_unstaged_file = os.path.relpath(rel_unstaged_file, setting.project.markdown_docs_path)
                 corresponding_py_file = os.path.splitext(rel_unstaged_file)[0] + '.py'
                 print(f"corresponding_py_file:{corresponding_py_file}")
                 if corresponding_py_file in staged_files:
                     # 如果是，那么就把这个md文件也加入到unstaged_files中
-                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), CONFIG['Markdown_Docs_folder'], rel_unstaged_file))
-            elif unstaged_file == project_hierarchy:
+                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), setting.project.markdown_docs_path, rel_unstaged_file))
+            elif unstaged_file == setting.project.hierarchy_path:
                 to_be_staged_files.append(unstaged_file) 
 
         return to_be_staged_files

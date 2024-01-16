@@ -7,7 +7,12 @@ from repo_agent.config_manager import (
 from importlib import metadata
 from repo_agent.runner import Runner
 from loguru import logger
-from tenacity import retry, stop_after_attempt, retry_if_exception_type, stop_after_attempt
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    retry_if_exception_type,
+    stop_after_attempt,
+)
 from iso639 import Language, LanguageNotFoundError
 
 
@@ -18,19 +23,25 @@ except metadata.PackageNotFoundError:
     version_number = "0.0.0"
 
 
-@retry(retry=retry_if_exception_type(LanguageNotFoundError),
-        stop=stop_after_attempt(3), 
-       retry_error_callback=lambda _: click.echo("Failed to find the language after several attempts."))
+@retry(
+    retry=retry_if_exception_type(LanguageNotFoundError),
+    stop=stop_after_attempt(3),
+    retry_error_callback=lambda _: click.echo(
+        "Failed to find the language after several attempts."
+    ),
+)
 def language_prompt(default_language):
     language_code = click.prompt(
-            "Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English')",        
-            default=default_language
+        "Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English')",
+        default=default_language,
     )
     try:
         language_name = Language.match(language_code).name
         return language_name
     except LanguageNotFoundError:
-        click.echo("Invalid language input. Please enter a valid ISO 639 code or language name.")
+        click.echo(
+            "Invalid language input. Please enter a valid ISO 639 code or language name."
+        )
         raise
 
 
@@ -56,9 +67,7 @@ def configure():
         ),
         "hierarchy_path": click.prompt(
             "Enter the project hierarchy file name",
-            default=config.get(
-                "hierarchy_path", ".project_hierarchy_path.json"
-            ),
+            default=config.get("hierarchy_path", ".project_hierarchy_path.json"),
         ),
         "markdown_docs_path": click.prompt(
             "Enter the Markdown documents folder name",
@@ -70,9 +79,7 @@ def configure():
                 "ignore_list", "ignore_file1.py ignore_file2.py ignore_directory"
             ),
         ).split(),
-        "language": language_prompt(
-        default_language=config.get("language", "zh")
-        )
+        "language": language_prompt(default_language=config.get("language", "zh")),
     }
 
     # Chat completion kwargs configuration

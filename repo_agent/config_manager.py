@@ -28,13 +28,14 @@ def read_config(file_path: str = _config_file_path, section: str = None) -> TOML
             return config.get(section)
 
         return config
-    except FileNotFoundError:
-        logger.error("Configuration file not found.")
-        sys.exit(1)
+    except FileNotFoundError as e:
+        # logger.error("Configuration file not found.")
+        # sys.exit(1)
+        raise e
 
 
 def write_config(
-    update_config: TOMLDocument, file_path: str = _config_file_path
+    update_config: TOMLDocument | dict, file_path: str = _config_file_path
 ) -> None:
     """
     Updates specific sections of the configuration in the TOML file.
@@ -62,7 +63,7 @@ def write_config(
         sys.exit(1)
 
 
-def update_config_section(config: dict, section: str, updates: dict) -> None:
+def update_config_section(config: TOMLDocument | dict, section: str, updates: dict) -> None:
     """
     Update a specific section of the configuration in memory.
 

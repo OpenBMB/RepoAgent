@@ -1,39 +1,12 @@
 [project]
 target_repo_path = ""
-hierarchy_path = ".project_hierarchy_path.json"
+hierarchy_path = ".project_hierarchy.json"
 markdown_docs_path = "markdown_docs"
-ignore_list = ["ignore_file1.py", "ignore_file2.py", "ignore_directory"]
-language = "zh"
-
-[language_mapping]
-en = "English"
-es = "Spanish"
-fr = "French"
-de = "German"
-zh = "Chinese"
-ja = "Japanese"
-ru = "Russian"
-it = "Italian"
-ko = "Korean"
-nl = "Dutch"
-pt = "Portuguese"
-ar = "Arabic"
-tr = "Turkish"
-sv = "Swedish"
-da = "Danish"
-fi = "Finnish"
-no = "Norwegian"
-pl = "Polish"
-cs = "Czech"
-hu = "Hungarian"
-el = "Greek"
-he = "Hebrew"
-th = "Thai"
-hi = "Hindi"
-bn = "Bengali"
+ignore_list = []
+language = "Chinese"
 
 [chat_completion_kwargs]
 model = "gpt-3.5-turbo"
 temperature = 0.2
 request_timeout = 60
-base_url = "https://api.openai.com/v1"
+base_url = "https://api.openai.com"

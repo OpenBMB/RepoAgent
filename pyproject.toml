@@ -29,9 +29,21 @@ loguru = "^0.7.2"
 click = "^8.1.7"
 tomlkit = "^0.12.3"
 pydantic-settings = "^2.1.0"
-pytest = "^7.4.4"
 python-iso639 = "^2024.1.2"
 tenacity = "^8.2.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.4"
+pytest-mock = "^3.12.0"
+
+[[tool.poetry.source]]
+name = "Tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "default"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]
