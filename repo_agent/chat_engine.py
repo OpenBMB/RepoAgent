@@ -115,7 +115,7 @@ class ChatEngine:
             code_content=code_content, 
             have_return_tell=have_return_tell, 
             referenced=referenced, 
-            referenced_letter=reference_letter, 
+            reference_letter=reference_letter, 
             referencer_content=referencer_content,
             language=language
             )

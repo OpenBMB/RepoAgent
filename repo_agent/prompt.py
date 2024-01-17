@@ -9,7 +9,7 @@ Now you need to generate a document for a {code_type_tell}, whose name is "{code
 The content of the code is as follows:
 {code_content}
 
-{referenced_letter}
+{reference_letter}
 {referencer_content}
 
 Please generate a detailed explanation document for this object based on the code of the target object itself {combine_ref_situation}.
