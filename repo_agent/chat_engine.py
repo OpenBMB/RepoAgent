@@ -114,7 +114,7 @@ class ChatEngine:
             code_name=code_name, 
             code_content=code_content, 
             have_return_tell=have_return_tell, 
-            referenced=referenced, 
+            # referenced=referenced, 
             reference_letter=reference_letter, 
             referencer_content=referencer_content,
             language=language
@@ -126,9 +126,11 @@ class ChatEngine:
 
         max_attempts = 5  # 设置最大尝试次数
         model = self.config["default_completion_kwargs"]["model"]
-        
+        code_max_length = 8192 - 1024 - 1
+        if model == "gpt-3.5-turbo":
+            code_max_length = 4096 - 1024 -1
         # 检查tokens长度
-        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= 7100:
+        if self.num_tokens_from_string(sys_prompt) + self.num_tokens_from_string(usr_prompt) >= code_max_length:
             print("The code is too long, using gpt-3.5-turbo-16k to process it.")
             model = "gpt-3.5-turbo-16k"
         
@@ -143,7 +145,7 @@ class ChatEngine:
                 )
 
                 messages = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": usr_prompt}]
-
+                # print(f"tokens of system-prompt={self.num_tokens_from_string(sys_prompt)}, user-prompt={self.num_tokens_from_string(usr_prompt)}")
                 # print(f"message:\n{messages}\n")
 
                 response = client.chat.completions.create(
@@ -175,15 +177,15 @@ class ChatEngine:
                     continue # Try to request again
 
             except BadRequestError as e:
+                # import pdb; pdb.set_trace()
                 if 'context_length_exceeded' in str(e):
-                    print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}")
+                    print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}(don't provide reference/referenced_letter)")
                     # Set referenced to False and remove referencer_content
                     referenced = False
                     referencer_content = ""
                     reference_letter = ""
                     combine_ref_situation = ""
                     sys_prompt = SYS_PROMPT.format(
-                        reference_letter=reference_letter, 
                         combine_ref_situation=combine_ref_situation, 
                         file_path=file_path, 
                         project_structure=project_structure, 
@@ -191,7 +193,8 @@ class ChatEngine:
                         code_name=code_name, 
                         code_content=code_content, 
                         have_return_tell=have_return_tell, 
-                        referenced=referenced, 
+                        # referenced=referenced, 
+                        reference_letter=reference_letter, 
                         referencer_content=referencer_content,
                         language=language
                     )
