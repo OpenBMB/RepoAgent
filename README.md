@@ -138,12 +138,12 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 
 - [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
 - [x] Implement Black commit
-- [ ] **Bi-direct reference**  Construct Bi-directional reference topology
-- [ ] **chat with repo** Chat with the repository by giving code and document at the same time 
+- [x] **Bi-direct reference**  Construct Bi-directional reference topology
+- [x] **chat with repo** Chat with the repository by giving code and document at the same time 
 - [ ] Generate README.md automatically combining with the global documentation
-- [ ] **Multi-language support** Support more languages like Java, C or C++, etc.
+- [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qianwen, etc.
-- [ ] Automatically generate better visualizations such as Gitbook
+- [x] Automatically generate better visualizations such as Gitbook
 
 # 🇺🇳 Supported Language
 Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
