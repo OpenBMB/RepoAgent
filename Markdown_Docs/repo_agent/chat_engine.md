@@ -1,150 +1,159 @@
-# FunctionDef get_import_statements
-**get_import_statements函数**: 这个函数的功能是获取源代码中的导入语句。
-这个函数通过 inspect 模块的 getsourcelines 方法获取的当前模块的源代码。源代码被获取为一个列表，每一行代码都是列表的一个元素。然后，这个函数在源代码中寻找以 'import' 或 'from' 开始的行， 即导入语句。它通过列表推导来实现这个功能，将找到的导入语句添加到列表 'import_lines' 中。最后，这个列表将作为函数的返回值返回。
+# FunctionDef get_import_statements:
+**get_import_statements**: The function of this function is to retrieve the import statements from the source code.
 
-get_import_statements() 不接受任何参数，并返回一个包含源代码中所有导入语句的字符串列表。导入语句的顺序与它们在源代码中的顺序相同。
+**parameters**: This function does not take any parameters.
 
-这个函数是用来获取模块的依赖信息的，它可以在模块的动态分析，代码复用，和代码维护等任务中发挥作用。
+**Code Description**: The `get_import_statements` function uses the `inspect.getsourcelines` function to retrieve the source code lines of the current module. It then filters the source lines to find the lines that start with either 'import' or 'from'. These lines are considered import statements. The function returns a list of import lines.
 
-**注意**：请注意，由于这个函数返回的是源代码的导入语句，如果源代码中没有导入语句，那么这个函数将返回一个空列表。
+**Note**: This function assumes that it is being called from within the module for which the import statements need to be retrieved.
 
-**输出示例**： ['import os', 'import sys', 'from datetime import datetime']
+**Output Example**: If the source code contains the following import statements:
+```
+import sys
+from os import path
+```
+The function will return the following list:
+```
+['import sys', 'from os import path']
+```
 ***
-# ClassDef ChatEngine
-**ChatEngine类的功能**: 此类的主要功能是文档生成器，用于生成函数或类的文档。
+# ClassDef ChatEngine:
+**ChatEngine**: The function of this Class is to generate the documentation for functions or classes.
 
-ChatEngine类是一个用来生成代码文档的工具。它使用OpenAI的GPT系列模型来处理代码内容和相关的项目信息，从而生成具有相应上下文的代码文档。
+**attributes**: This Class has one attribute:
+- `config`: It stores the configuration settings.
 
-构造函数 `__init__` 接受一个配置参数 CONFIG，实例化时用来设置类中使用的配置信息。
+**Code Description**: The `ChatEngine` Class has the following methods:
 
-`num_tokens_from_string` 方法是一个辅助函数，使用特定的编码名称（默认为"cl100k_base"）来计算给定字符串的令牌数。这个方法是像GPT-3这样的API调用准备阶段中的辅助步骤，以确保传递的文本不会超过模型的令牌限制。
+1. `__init__(self, CONFIG)`: This method is the constructor of the `ChatEngine` Class. It initializes the `config` attribute with the provided `CONFIG` parameter.
 
-`generate_doc` 方法是此类的主要方法，负责从给定的代码信息中生成文档。它首先初始化一个项目管理器，与文件处理器一起工作，获取项目的结构和相关代码的引用信息。接下来，它从JSON文件中提取代码信息，并通过引用以及函数和类的定义创建文档内容。
+2. `num_tokens_from_string(self, string: str, encoding_name = "cl100k_base") -> int`: This method takes a text string as input and returns the number of tokens in the string. It uses the `tiktoken` library to encode the string and then calculates the length of the encoded tokens.
 
-在此过程中，这个方法需要处理代码类型、代码名称、代码内容和是否有返回值等多个参数。此外，它还需确定来自系统提示(SYS_PROMPT)的内容，包括类或函数的类型、名称、对应代码内容以及在项目中的应用情况。
+3. `generate_doc(self, doc_item: DocItem, file_handler)`: This method generates the documentation for a given `doc_item` object. It takes the `doc_item` and `file_handler` as parameters. It extracts the necessary information from the `doc_item` object, such as the code type, name, content, and whether it has a return value. It also checks if the code has been referenced by other objects or if it references other objects. It then constructs a system prompt and a user prompt based on the extracted information. The system prompt includes the project structure, code type, code name, code content, and whether it has a return value. The user prompt includes the desired language for the documentation. The method then uses the OpenAI GPT-3.5 Turbo model to generate the documentation based on the prompts. It makes use of the OpenAI API to send the prompts and receive the generated documentation. The generated documentation is returned as the output.
 
-方法会检查代码信息是否存在引用，并根据当前文件处理器所在的目录判断引用的系统提示(Sys_prompts)对象来自哪个语言目录（英文或中文）。接着它使用OpenAI客户端向GPT模型发送系统提示和用户提示，并从返回的数据中提取相关的文档内容。
+**Note**: The code makes use of the `ProjectManager` class from the `project_manager` module to get the project structure. It also uses the `tiktoken` library to encode the text string and calculate the number of tokens. The documentation generation process involves sending prompts to the OpenAI GPT-3.5 Turbo model using the OpenAI API.
 
-该方法具有错误处理机制，如果遇到API连接错误，它会进行重试，并在重试次数达到最大值后抛出异常。
+**Output Example**: Mock up a possible appearance of the code's return value.
+## FunctionDef __init__(self, CONFIG):
+**__init__**: The function of this Function is to initialize an instance of the ChatEngine class.
 
-**注意**:
-1. 使用该类时需要保证提供正确的配置信息，它关系到模型API密钥的正确设置。
-2. `generate_doc` 方法需要兼容的 JSON 结构文件，其中包含了项目的代码引用。
-3. API调用时，需要对模型令牌限制有一定了解，以确保代码片段的长度不会超过限制。
-4. 错误处理为重试机制，但在最大尝试次数后将会抛出异常，使用者需要准备好相应的异常处理策略。
-5. 需要根据代码内容和项目中的代码调用情况，智能选择使用GPT-4或GPT-3.5-turbo-16k模型。
+**parameters**: 
+- CONFIG: A configuration object that contains the settings for the chat engine.
 
-**输出示例**: 假设来自GPT模型的响应是一个完整的代码文档字符串，它会包括代码的描述、使用方法、参数信息、返回值描述等，具体取决于系统提示和用户提示以及模型的生成情况。
-## FunctionDef __init__
-**__init__ 函数**: 这个函数的主要作用是初始化类的实例对象
-（详细的代码分析和描述）
+**Code Description**: 
+The `__init__` function is the constructor method of the ChatEngine class. It is called when a new instance of the class is created. The function takes a single parameter `CONFIG`, which is an object that contains the configuration settings for the chat engine.
 
-在这个给定的 `__init__` 函数中，其作用是初始化 `ChatEngine` 类的一个实例。
+Inside the function, the `CONFIG` object is assigned to the `config` attribute of the instance using the `self` keyword. This allows the configuration settings to be accessed by other methods within the class.
 
-当一个 `ChatEngine`类的实例创建时，`__init__` 函数会被自动调用。该函数接受一个参数 `CONFIG`，该参数应当是一个包含配置信息的对象。
+**Note**: 
+- The `__init__` function is automatically called when a new instance of the ChatEngine class is created.
+- The `CONFIG` parameter should be an object that contains the necessary configuration settings for the chat engine.
+## FunctionDef num_tokens_from_string(self, string, encoding_name):
+**num_tokens_from_string**: The function of this Function is to return the number of tokens in a text string.
+**parameters**: 
+- string: A string representing the text for which the number of tokens needs to be calculated.
+- encoding_name (optional): A string representing the name of the encoding to be used. The default value is "cl100k_base".
 
-在函数内部，`self.config = CONFIG` 这一行代码的功能是把 `CONFIG` 参数保存进 `self.config` 变量。这个变量是实例级别的，可以在其中存储该实例的配置数据，其他类方法也能访问到 `self.config`，使得 `CONFIG` 的数据在类内的所有方法中都能共享。
+**Code Description**: 
+The `num_tokens_from_string` function takes a text string and an optional encoding name as input parameters. It uses the `tiktoken.get_encoding` function to retrieve the encoding based on the provided encoding name. The function then encodes the input string using the retrieved encoding and calculates the number of tokens in the encoded string using the `len` function. Finally, it returns the number of tokens as an integer.
 
-**注意**: 请确保传递给 `__init__` 的 `CONFIG` 参数含有适当的配置信息，以确保 `ChatEngine` 类能够正常工作。
-## FunctionDef num_tokens_from_string
-**num_tokens_from_string函数**：此函数的功能是**返回文本字符串中的令牌数量**。
+**Note**: 
+- The encoding name parameter is optional and has a default value of "cl100k_base". If no encoding name is provided, the function will use the default encoding.
+- The `tiktoken.get_encoding` function is assumed to be defined elsewhere in the codebase.
 
-此函数`num_tokens_from_string`接收两个参数：`string`和`encoding_name`。`string`是一个字符串参数，代表需要进行令牌统计的文本。`encoding_name`是一个可选参数，默认值为`"cl100k_base"`，用于指定令牌编码方式。
+**Output Example**: 
+If the input string is "Hello, world!", and the encoding name is "cl100k_base", the function will return the number of tokens in the encoded string, which could be 3.
+## FunctionDef generate_doc(self, doc_item, file_handler):
+**generate_doc**: The function of this Function is to generate a detailed explanation document for a given object based on its code content and combine it with its calling situation in the project.
 
-函数执行的流程如下：
+**parameters**: 
+- `doc_item` (DocItem): The DocItem object representing the target object for which the documentation needs to be generated.
+- `file_handler`: The FileHandler object used to handle the file operations.
 
-1. 首先调用`get_encoding`方法从`tiktoken`模块中获取指定名称的编码器（`encoding`）。
-2. 使用获取到的编码器的`encode`方法对输入的字符串`string`进行编码。
-3. `encode`方法返回一个编码后的令牌列表，函数通过`len`函数计算此列表的长度，即文本字符串的令牌数量。
-4. 函数最终返回这个令牌数量。
+**Code Description**: 
+The `generate_doc` function takes in a `doc_item` object and a `file_handler` object as parameters. It first extracts the necessary information from the `doc_item` object, such as the code type, code name, code content, and whether the code has a return value. It also checks if the `doc_item` object has any references or is referenced by other objects.
 
-**注意**：在使用此函数时，需要确保`encoding_name`参数对应的编码器存在于`tiktoken`模块中，否则可能会抛出异常。此外，对于不同的语言和编码方案，令牌的划分方式可能不同，因此统计出的令牌数量也会有所差异。
+Next, it retrieves the project structure using the `ProjectManager` class and prepares the necessary prompts for the OpenAI GPT-3 chat-based language model. It constructs a system prompt that includes information about the code type, code name, code content, whether it has a return value, and the project structure. It also includes prompts for the references and referencers of the `doc_item` object.
 
-**输出示例**：如果有`string`为"Hello, world!"的输入，且使用默认的编码器"cl100k_base"，函数可能会返回如下整数值作为结果：
+The function then makes a request to the OpenAI API using the configured language model. It sends the system prompt and a user prompt to generate a response. The response contains the generated documentation for the `doc_item` object.
 
-```python
-7
+**Note**: 
+- The function uses the OpenAI GPT-3 chat-based language model to generate the documentation.
+- The function handles potential errors, such as connection errors and exceeding the model's maximum context length.
+- The function limits the code length to ensure it fits within the model's maximum token limit.
+
+**Output Example**: 
+Mock up a possible appearance of the code's return value.
+### FunctionDef get_referenced_prompt(doc_item):
+**get_referenced_prompt**: The function of this Function is to generate a prompt that displays the objects called by the code.
+
+**parameters**: 
+- doc_item: A DocItem object that contains information about the code item.
+
+**Code Description**: 
+The `get_referenced_prompt` function takes a `DocItem` object as input and returns a string prompt that displays the objects called by the code. 
+
+The function first checks if the `doc_item` has any referenced objects. If there are no referenced objects, an empty string is returned.
+
+If there are referenced objects, the function creates a list called `prompt` to store the prompt lines. The initial line of the prompt is a general description of the code calling the objects.
+
+Then, the function iterates over each referenced object in the `doc_item.reference_who` list. For each referenced object, it generates a prompt line that includes the object's name, document, and raw code. The object's name is obtained using the `get_full_name` method of the `reference_item` object. The document is extracted from the `md_content` attribute of the `reference_item` object, and if it is empty, the prompt displays "None". The raw code is obtained from the `code_content` key in the `content` attribute of the `reference_item` object, and if it is not present, an empty string is displayed.
+
+Each prompt line is then appended to the `prompt` list, followed by a line of equal signs as a separator.
+
+Finally, the function joins all the prompt lines in the `prompt` list with newline characters and returns the resulting string.
+
+**Note**: 
+- This function assumes that the `doc_item` object has a `reference_who` attribute that is a list of `DocItem` objects representing the referenced objects.
+- The prompt generated by this function is intended to provide information about the objects called by the code, including their names, documents, and raw code.
+
+**Output Example**: 
+As you can see, the code calls the following objects, their code and docs are as following:
+obj: repo_agent/chat_engine.py/get_import_statements
+Document: None
+Raw code:
 ```
-
-假设该编码器将空白和常见标点符号视为令牌边界，"Hello, world!"可能被划分为7个令牌："Hello", ",", " ", "world", "!", 和两个隐式的令牌（例如文本开始和结束）。
-
-请注意，上述输出示例的具体数值取决于所使用的编码器如何划分令牌。在实际使用时，返回的数值可能有所不同。
-## FunctionDef generate_doc
-**generate_doc 函数**: 该函数的作用是根据提供的代码信息和文件处理器生成与代码对象相关的文档，并且可以根据项目中的引用情况和给定模板，通过调用外部API（如OpenAI），生成详细的代码文档。
-
-该函数首先定义了一个 `get_code_from_json` 内部函数，用于通过解析JSON文件来找到代码对象的引用情况。内部函数接收JSON文件路径和引用列表作为输入，读取JSON文件内容，并遍历代码对象的引用，如果引用与文件中记录的代码对象行号匹配，则将这些代码对象的内容收集起来返回。
-
-接下来在 `generate_doc` 函数中，利用传入的 `code_info` 字典，获取到代码对象的类型、名称、内容，以及是否有返回值等信息。此外，它还会初始化一个项目管理器来获取项目结构和引用情况，并确定代码对象在哪些文件中被引用。
-
-函数还包含判断代码对象的语言环境，并依此选择正确的模板填充内容，如对象调用的文件路径和代码段落。通过这些信息，它使用提供的 `sys_prompt` 和 `usr_prompt` 与外部API交云对话，以生成最终的文档。
-
-在与API交互过程中，函数会尝试最多5次请求，考虑到请求令牌（token）长度限制及可能的API连接错误。如果请求的输入太长，函数会选择使用不同的模型版本来处理。如果请求在5次尝试后仍然失败，会抛出异常。
-
-**注意**：
-- 该函数依赖于外部API（例如OpenAI），所以需要确保API可以正常访问，并且配置了有效的API密钥。
-- JSON文件应该按照特定的格式来组织代码对象信息。
-- `get_code_from_json` 函数严重依赖JSON文件的结构和内容，如果JSON格式不符，函数可能无法正确执行。
-- 请求API的过程中要考虑到API的限制，例如token数量限制，可能需要根据实际情况调整代码或者模型选择。
-- 函数通过具有重试机制来处理API连接错误，但如果所有尝试都失败了，它将抛出异常。
-
-**输出示例**：假设的函数输出可能是一段拼接好的，包含代码对象文档详细信息的长字符串，其中包括了引用文件的路径，对应的代码引用情况，项目结构描述，代码对象的类型和名称等信息，以及API生成的可能补全内容。这段字符串可以直接用于在用户界面中展示给最终用户，或者进一步处理生成格式化的文档。
-### FunctionDef get_code_from_json
-**get_code_from_json函数**: 该函数的功能是从JSON文件中按照给定的参考列表(references)提取代码片段。
-
-详细代码分析：
-
-1. 函数接受两个参数：`json_file`（一个包含代码数据的JSON文件的路径）和`references`（一个包含参考信息的列表，每个参考信息包含文件路径、行号和一个占位符）。
-
-2. 函数首先打开`json_file`文件，并使用`json.load(f)`读取其内容到变量`data`中。这里假定`json_file`是有效路径并且其内容格式正确。
-
-3. 接下来，创建一个空字典`code_from_references`，用于存放最终的代码片段结果。
-
-4. 函数遍历`references`中每个参考信息，解包为`file_path`（文件路径）、`line_number`（行号）、和一个占位符（未使用）。
-
-5. 对于每个参考信息，再遍历`data["files"]`中的每个文件对象。如果文件对象中的`file_path`与参考信息中的`file_path`相匹配，则进行下一步处理。
-
-6. 在找到匹配的文件对象后，遍历该文件对象中的`objects`列表。对象中每个项表示一个代码对象，包含起始行号`code_start_line`、结束行号`code_end_line`、和代码内容`code_content`。
-
-7. 对于这些代码对象，函数检查他们的行号范围是否包括参考信息的`line_number`。如果是，则从这些范围内包含`line_number`的代码对象中找到行号范围最小的那个代码对象作为匹配对象`min_obj`。
-
-8. 如果发现了有效的匹配对象`min_obj`，则将其`code_content`添加到`code_from_references`字典中对应的`file_path`键值下。
-
-9. 最终函数返回`code_from_references`字典，其中包含了按文件路径组织的所有匹配的代码内容列表。
-
-**注意**：
-- 确保`json_file`路径有效并且JSON文件格式正确。
-- `references`列表的每个元组应包含有效的文件路径和行号。
-- 此函数不会处理不在`data["files"]`中找到的文件路径。
-- 如果行号不在任何代码对象的范围内，则相应的文件路径下不会添加任何代码内容。
-  
-**输出示例**：
-假设`references`列表包含了以下参考信息：
-```python
-[("example.py", 10, None)]
+def get_import_statements():
+    source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
+    import_lines = [line for line in source_lines if line.strip().startswith('import') or line.strip().startswith('from')]
+    return import_lines
 ```
-且`json_file`文件中的数据如下所示：
-```json
-{
-    "files": [
-        {
-            "file_path": "example.py",
-            "objects": [
-                {
-                    "code_start_line": 1,
-                    "code_end_line": 20,
-                    "code_content": "def example_function():\n    # Example code here"
-                }
-            ]
-        }
-    ]
-}
+==========
+### FunctionDef get_referencer_prompt(doc_item):
+**get_referencer_prompt**: The function of this Function is to generate a prompt that displays the objects that reference the given `doc_item`.
+
+**parameters**: 
+- `doc_item` (type: DocItem): The `DocItem` object for which the referencers are to be displayed.
+
+**Code Description**: 
+The `get_referencer_prompt` function first checks if the `doc_item` has any objects that reference it. If there are no referencers, an empty string is returned.
+
+If there are referencers, a prompt is generated to display the objects that reference the `doc_item`. The prompt starts with a header message indicating that the code has been referenced by the following objects.
+
+Then, for each referencer, the function generates a prompt containing the following information:
+- Object name (`obj`): The full name of the referencer object.
+- Document (`Document`): The last line of the Markdown content of the referencer object, if available. Otherwise, it displays "None".
+- Raw code: The code content of the referencer object, enclosed in triple backticks. If the code content is not available, it displays "None".
+- Divider: A line of equal signs (`=`) to separate each referencer prompt.
+
+The function appends each referencer prompt to a list of prompts. Finally, it joins all the prompts with newline characters and returns the generated prompt.
+
+**Note**: 
+- The `doc_item` is an object of the `DocItem` class, which contains information about a specific code item, such as its name, type, content, and references.
+- The generated prompt provides information about the objects that reference the `doc_item`, including their names, documentation, and code content.
+- If the referencer object does not have any Markdown content or code content, it is indicated as "None" in the prompt.
+- The prompt uses triple backticks to enclose the raw code content for better readability.
+
+**Output Example**: 
+Also, the code has been referenced by the following objects, their code and docs are as following:
+obj: repo_agent/chat_engine.py/get_import_statements
+Document: None
+Raw code:
 ```
-那么函数的返回值将会是：
-```python
-{
-    "example.py": [
-        "def example_function():\n    # Example code here"
-    ]
-}
+def get_import_statements():
+    source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
+    import_lines = [line for line in source_lines if line.strip().startswith('import') or line.strip().startswith('from')]
+    return import_lines
 ```
+==========
 ***

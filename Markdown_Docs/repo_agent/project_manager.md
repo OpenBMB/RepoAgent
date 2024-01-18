@@ -1,121 +1,191 @@
-# ClassDef ProjectManager
-**ProjectManager类功能**：ProjectManager类的主要任务是管理和分析给定地址的项目。
+# ClassDef ProjectManager:
+**ProjectManager**: The function of this Class is to manage the project hierarchy and provide functionality to retrieve the project structure and find all references of a variable in a given file.
 
-在详细分析代码之前，我们首先需要理解一些重要函数：
+**attributes**: 
+- repo_path (str): The path of the repository.
+- project (jedi.Project): The Jedi project associated with the repository.
+- project_hierarchy (str): The path of the project hierarchy file.
 
-- `__init__`： 这是初始化函数，调用时会传入`repo_path`和`project_hierarchy`两个参数。`repo_path`代表项目的路径，`project_hierarchy`表示项目的层次结构。函数中会创建一个jedi项目并将其储存在类的变量`self.project`中，同时还会将项目的层次结构存储在`self.project_hierarchy`中。
+**Code Description**: 
+The `ProjectManager` class is responsible for managing the project hierarchy and providing methods to retrieve the project structure and find all references of a variable in a given file.
 
-- `get_project_structure`： 返回项目的结构。首先定义一个空列表`structure`用来保存项目的结构，然后对项目的路径调用`walk_dir`函数。この関数は、与えられた两个参数和储存在生成的项目对象中的`structure`列表来保存项目的树形结构。
+The `__init__` method initializes the `ProjectManager` object by setting the `repo_path` attribute to the provided repository path, creating a Jedi project associated with the repository, and setting the `project_hierarchy` attribute to the path of the project hierarchy file.
 
-- `Find_All_References`： 这个方法接受一个变量名，文件路径，行号和列号作为参数，返回变量的所有引用位置。首先，获取jedi脚本然后调用`get_references`来获取所有引用，然后过滤出这些引用中名字与输入的变量名字一样的引用，最后返回他们的位置（相对路径，行号，列号）。
+The `get_project_structure` method is used to retrieve the project structure. It defines a nested function `walk_dir` that recursively traverses the repository directory and appends the directory and file names to the `structure` list. The method then calls `walk_dir` with the repository path as the root directory and returns the project structure as a string.
 
-**注意**：使用此类时，确保Jedi库已经安装并正常工作，否则类初始化和`Find_All_References`函数将无法正常工作。
+The `find_all_referencer` method is used to find all references of a variable in a given file. It takes the variable name, file path, line number, and column number as arguments. It creates a Jedi script object with the file path and uses the `get_references` method to retrieve all references of the variable at the specified location. The method filters out the references with the same variable name and returns a list of tuples containing the file path, line number, and column number of each reference.
 
-**输出示例**： 
+**Note**: 
+- This class requires the `jedi` library to be installed.
+- The `get_project_structure` method only includes directories and Python files in the project structure.
+- The `find_all_referencer` method assumes that the provided file path is relative to the repository path.
 
-```python
-pm = ProjectManager("path/to/repo", "project/structure")
-print(pm.get_project_structure()) # 输出：\npath\nto\n...\nrepo.py
-print(pm.Find_All_References("variable", "file/path", 1, 1)) # 输出：[(relpath, 1, 1)]
+**Output Example**: 
+- `get_project_structure`:
+  ```
+  RepoAgent
+    assets
+      images
+    display
+      book_template
+      book_tools
+        generate_repoagent_books.py
+        generate_summary_from_book.py
+      books
+      scripts
+    examples
+      init.py
+    repo_agent
+      __init__.py
+      __pycache__
+      change_detector.py
+      chat_engine.py
+      config.py
+      doc_meta_info.py
+      file_handler.py
+      project_manager.py
+      prompt.py
+      runner.py
+      utils
+        __pycache__
+        gitignore_checker.py
+    setup.py
+    tests
+      __init__.py
+      test_change_detector.py
+  ```
+
+- `find_all_referencer`:
+  ```
+  [
+    ('repo_agent/chat_engine.py', 10, 5),
+    ('repo_agent/chat_engine.py', 15, 10),
+    ('repo_agent/chat_engine.py', 20, 15)
+  ]
+  ```
+## FunctionDef __init__(self, repo_path, project_hierarchy):
+**__init__**: The function of this Function is to initialize a ProjectManager object.
+
+**parameters**: 
+- repo_path: The path to the repository.
+- project_hierarchy: The path to the project hierarchy file.
+
+**Code Description**: 
+The `__init__` function is the constructor of the ProjectManager class. It takes in two parameters: `repo_path` and `project_hierarchy`. 
+
+Inside the function, the `repo_path` parameter is assigned to the `repo_path` attribute of the ProjectManager object. 
+
+Then, a new jedi.Project object is created using the `repo_path` as the argument, and assigned to the `project` attribute of the ProjectManager object. The jedi.Project object is used to interact with the project's Python code.
+
+The `project_hierarchy` parameter is joined with the `repo_path` and the ".project_hierarchy.json" file extension to create the path to the project hierarchy file. This path is assigned to the `project_hierarchy` attribute of the ProjectManager object.
+
+**Note**: 
+- The `jedi` module is assumed to be imported before using this function.
+- The `repo_path` and `project_hierarchy` attributes are assumed to be defined outside of the `__init__` function and are not shown in the provided code.
+
+Raw code:
 ```
-## FunctionDef __init__
-**__init__函数**：这个函数的作用是初始化ProjectManager类的实例
-
-在代码中，`__init__`函数是一个特殊的方法，用于在Python中的类实例化时自动调用，目的是初始化新创建的对象的状态。
-
-以下是该函数的详细分析：
-
-- `self.repo_path`属性用于存储传递给`__init__`函数的`repo_path`参数的值，这个值代表了代码仓库的路径。
-- `self.project`属性利用`jedi.Project`初始化，并传递了`self.repo_path`作为参数。`jedi`是一个Python库，常用于代码的自动补全和静态分析。`self.project`会存储一个`jedi.Project`实例，该实例代表了给定路径上的项目，并可用于此后的代码分析和操作。
-- `self.project_hierarchy`属性是通过`os.path.join`的方法来构建的，它将`repo_path`和`project_hierarchy`这两个参数合并，形成一个系统路径。这个属性用于表示项目的层次结构，通常可能包括源代码文件、资产、测试和其他项目目录。
-
-**注意**：
-- 使用这段代码时，需要保证`jedi`库已经被安装在当前环境中，否则将无法创建`jedi.Project`实例。
-- `repo_path`参数应该是一个有效的文件路径字符串，指向了希望进行管理的项目的根目录。
-- `project_hierarchy`参数也应该是一个文件路径字符串，它会指定项目的一个特定子目录或文件组织结构。这个参数与`repo_path`一起使用，以确定项目的完整层级结构。
-- 这段代码的执行依赖于Python的标准库`os`模块，因此在使用前无需安装额外的依赖项，但需要确保正确地导入了`os`模块。
-- 由于这是一个初始化方法，它将在创建类的新实例时自动调用，通常不需要手动调用此函数。
-
-以上便是对`__init__`函数的详细说明文档，旨在帮助开发人员和初学者理解函数的功能和具体用法。
-## FunctionDef get_project_structure
-**get_project_structure 函数**: 该函数的功能是获取一个项目文件夹结构的层次化表示。
-
-该函数位于 `project_manager.py` 文件中。它的目的在于返回一个项目目录中的所有Python文件（`.py` 文件）及目录的层次化列表，形式为字符串。这个功能对于理解和探索项目的结构很有用。
-
-当 `get_project_structure` 方法被调用时，它定义并使用了一个内部嵌套函数 `walk_dir` 来递归遍历给定根目录—由 `self.repo_path` 指定。这个内部函数接收两个参数：`root` 和 `prefix`。`root` 参数表示当前遍历的文件夹路径，而 `prefix` 参数用于构建每个项目元素前的缩进，以展示层次结构。
-
-该递归函数首先将目录本身（去掉了它的路径部分）追加到 `structure` 列表中。之后，它将 `prefix` 参数加长，为每一级的内容前添加适当的缩进，使结构更清晰。
-
-遍历过程中，`walk_dir` 会忽略任何以点（`.`）开头的隐藏文件和目录。它会检查每个子路径，如果这个子路径是一个目录，函数会递归地调用它自己；如果是一个以 `.py` 结尾的文件，它会添加到结构列表中。
-
-`structure` 列表在 `get_project_structure` 函数的最后被转换成一个由换行符（`\n`）连接的字符串，并返回。这样，每个项都会在最终的输出字符串中单独占一行，形成易于阅读的结构。
-
-**注意**: 需要注意的是，该函数只关注 Python 源文件（`.py`），并且会跳过隐藏文件（通常以点 `.` 开头的文件或目录）。若要获取其他类型的文件或包括隐藏文件，需对代码逻辑进行相应的调整。
-
-**输出示例**:
+    def __init__(self, repo_path, project_hierarchy):
+        self.repo_path = repo_path
+        self.project = jedi.Project(self.repo_path)
+        self.project_hierarchy = os.path.join(self.repo_path, project_hierarchy, ".project_hierarchy.json")
 ```
-project_manager.py
-  __init__.py
-  config.py
-  file_handler.py
-  runner.py
-  Prompts
-    Usr_prompts
-      English
-        usr_prompt.py
-    Sys_prompts
-      English
-        obj_doc_with_reference.py
-      Chinese
+## FunctionDef get_project_structure(self):
+**get_project_structure**: The function of this Function is to retrieve the hierarchical structure of a project.
+
+**parameters**: This Function does not take any parameters.
+
+**Code Description**: This Function uses a recursive approach to traverse the project directory and retrieve the hierarchical structure. It starts by calling the `walk_dir` function with the root directory path. The `walk_dir` function takes two parameters: `root` and `prefix`. 
+
+Inside the `walk_dir` function, the base name of the current directory is appended to the `structure` list with the provided `prefix`. Then, a new prefix is created by adding two spaces to the current prefix. 
+
+Next, the function iterates over the sorted list of names in the current directory. If a name starts with a dot, indicating a hidden file or directory, it is ignored. If the name corresponds to a directory, the `walk_dir` function is recursively called with the path of the subdirectory and the new prefix. If the name corresponds to a Python file (ends with '.py'), it is appended to the `structure` list with the new prefix.
+
+After traversing the entire project directory, the `structure` list is joined with newline characters and returned as a string.
+
+**Note**: This Function ignores hidden files and directories (those starting with a dot) and only includes Python files in the project structure.
+
+**Output Example**:
 ```
-这个例子展示了一种可能的项目结构字符串输出，其中每一级目录都增加了两个空格缩进来区分层级，而且每个目录项都位于文件项之前，并且都是排序的。
-### FunctionDef walk_dir
-**walk_dir函数**：该函数的功能是递归遍历给定根目录下的文件结构，并将遍历的结果以层级格式记录在列表`structure`中。
+RepoAgent
+  assets
+    images
+  display
+    book_template
+    book_tools
+      generate_repoagent_books.py
+      generate_summary_from_book.py
+    books
+    scripts
+  examples
+    init.py
+  repo_agent
+    __init__.py
+    __pycache__
+    change_detector.py
+    chat_engine.py
+    config.py
+    doc_meta_info.py
+    file_handler.py
+    project_manager.py
+    prompt.py
+    runner.py
+    utils
+      __pycache__
+      gitignore_checker.py
+  setup.py
+  tests
+    __init__.py
+    test_change_detector.py
+```
+### FunctionDef walk_dir(root, prefix):
+**walk_dir**: The function of this Function is to recursively traverse a directory and append the structure of the directory to a list.
 
-该函数采用了递归方式进行目录遍历。给定一个根目录`root`和一个前缀字符串`prefix`（默认为空字符串），该函数将遍历根目录下的所有文件和子目录，并将它们的名称添加到全局列表`structure`中。
+**parameters**: 
+- root: The root directory to start the traversal from.
+- prefix: The prefix to be added to each directory or file name in the structure.
 
-具体的步骤分析如下：
+**Code Description**: 
+The `walk_dir` function takes in a `root` directory and an optional `prefix` parameter. It appends the structure of the directory to a list called `structure`. 
 
-1. 首先，函数将当前遍历到的目录名称添加到`structure`列表中，该目录名称是通过`os.path.basename(root)`获取的，并且前面会添加前缀`prefix`以显示层级关系。
-   
-2. 更新前缀`new_prefix`，在当前的`prefix`后添加两个空格，用于显示下一层级的缩进。
+The function starts by appending the basename of the `root` directory to the `structure` list, with the `prefix` added in front. 
 
-3. 使用`sorted(os.listdir(root))`获取当前目录下所有文件和子目录的名称，并按字母顺序排序。
+Then, a new prefix is created by adding two spaces to the current `prefix`. This new prefix will be used for the subdirectories and files within the `root` directory.
 
-4. 对于每个名称，函数检查是否以点（`.`）开头，即隐藏文件或目录，如果是，则忽略。
+Next, the function iterates over the sorted list of names in the `root` directory using the `os.listdir` function. For each name, it performs the following checks:
 
-5. 对于非隐藏的名称，函数会构建其完整路径`path`，使用`os.path.join(root, name)`。
+1. If the name starts with a dot (indicating a hidden file or directory), it is ignored and the loop moves on to the next name.
+2. If the name corresponds to a subdirectory, the `walk_dir` function is called recursively with the subdirectory path as the new `root` and the new prefix as the `prefix`.
+3. If the name corresponds to a file and ends with the ".py" extension, it is appended to the `structure` list with the new prefix added in front.
 
-6. 接下来，判断`path`是目录还是文件：
-    - 如果`path`是一个目录，函数会递归地调用`walk_dir`，并传入新的路径和更新后的前缀`new_prefix`。
-    - 如果`path`是一个`.py`结尾的文件，则将文件名称添加到`structure`列表中，并且前面添加相应的缩进。
+This process continues until all directories and files within the `root` directory have been traversed.
 
-依据上述步骤，函数会构建出一棵表示文件结构的树，其中子目录和文件会因为缩进被清晰地呈现层级关系。
+**Note**: 
+- The `walk_dir` function relies on the `os` module, so make sure to import it before using this function.
+- The `structure` list is assumed to be defined outside of the `walk_dir` function and is not shown in the provided code.
+## FunctionDef find_all_referencer(self, variable_name, file_path, line_number, column_number):
+**find_all_referencer**: The function of this Function is to find all references of a given variable in a specified file.
 
-**注意**：
+**parameters**: 
+- variable_name (str): The name of the variable to search for.
+- file_path (str): The path of the file to search in.
+- line_number (int): The line number where the variable is located.
+- column_number (int): The column number where the variable is located.
 
-- 全局列表`structure`需要在调用`walk_dir`函数前被初始化，该函数依赖此列表来记录文件结构。
-  
-- 函数中没有返回值，它直接修改了外部的`structure`列表。
+**Code Description**: 
+This function takes in the name of a variable, the path of a file, and the line and column numbers where the variable is located. It uses the Jedi library to analyze the Python code in the specified file and find all references to the variable. 
 
-- 这个函数只关注`.py`文件，忽略了其它类型的文件。
+First, it creates a Jedi Script object using the file path provided. Then, it calls the `get_references` method of the Script object, passing in the line and column numbers. This returns a list of references to the variable in the file.
 
-- 为了更好地使用这个函数，您可能需要事先清空或初始化`structure`列表，以避免旧数据干扰新的目录结构记录。
+Next, the function filters out the references that have the same variable name as the one provided. It creates a new list, `variable_references`, by iterating over the references and only keeping the ones with matching variable names. 
 
-- 这个函数没有处理潜在的异常，例如`os.listdir`和`os.path.isdir`在文件访问权限受限时可能会抛出异常。在实际使用中，可能需要添加异常处理代码。
+Finally, the function returns a list of tuples, where each tuple contains the file path, line number, and column number of a reference to the variable. It uses the `os.path.relpath` function to get the relative path of each reference's module, relative to the repository path. It also excludes the reference that matches the original line and column numbers, as it is the location of the variable declaration.
 
-使用该函数可以帮助开发者了解目录中的文件层级结构特别是Python源文件的分布情况，这对于项目管理和文件导航是非常有用的。
-## FunctionDef Find_All_References
-**Find_All_References函数**: 此函数的功能是找到特定变量在给定文件中的所有引用。
+**Note**: 
+- This function requires the Jedi library to be installed.
+- The `self.repo_path` attribute is assumed to be the path to the repository where the file is located.
 
-在详细的代码分析中，首先，我们在指定的文件路径上创建了一个Jedi脚本。然后，使用该脚本的get_references方法来获取在提供的行号和列号处的所有参考。
-
-然后，我们尝试过滤出变量名为 variable_name的引用，并返回它们的位置。位置以相对于存储库路径的文件路径，行号和列号的形式返回。所以，这个函数可以帮助我们找到给定变量在代码中所有出现的位置。
-
-如果在过程中产生任何异常，我们将捕获这个异常，并打印出错的信息以及导致错误的参数。如果出错，函数将返回一个空列表。
-
-在使用这段代码时，主要需要注意的是提供正确的参数。变量名应该是要查找的变量名，文件路径应该是您想在其上找到引用的文件路径，行号和列号是指定要查找其引用的变量的位置。需要注意的是，行号和列号都是从1开始的。
-
-**输出示例**：
-在一个正确的场景中，这个函数的返回值可能看起来像这样：[(‘/path/to/file’, 12, 5), (‘/path/to/another/file’, 30, 1)]，其中每个元组（“文件的相对路径”，行号，列号）表示变量引用的位置。如果在执行过程中出现错误，函数将返回一个空列表[]。
+**Output Example**: 
+If the variable name is "my_variable" and there are two references to it in the file "example.py" at line 10, column 5 and line 15, column 8, the function would return the following list:
+[("example.py", 10, 5), ("example.py", 15, 8)]
 ***

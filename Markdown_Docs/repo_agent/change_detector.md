@@ -1,159 +1,216 @@
-# ClassDef ChangeDetector
-**ChangeDetector 功能**: `ChangeDetector` 是一个用来监测代码库中的 Python 文件变更的类。它可以获取到当前代码库中已经暂存和未暂存的变更，并能解析差异内容，识别出这些差异属于哪些函数或类的修改。
+# ClassDef ChangeDetector:
+**ChangeDetector**: The function of this Class is to detect changes in a repository and extract information about the modified files and their content.
 
-**初始化函数 `__init__`**: 它接收一个位置参数 `repo_path`，类型是字符串，表示代码库的路径。在初始化过程中，它会根据 `repo_path` 创建一个 git 仓库对象，并将其保存为类实例的 `repo` 属性。
+**Attributes**:
+- repo_path (str): The path to the repository.
+- repo (git.Repo): The Git repository object.
 
-**方法 `get_staged_pys`**: 该函数无需接收额外参数，用于获取仓库中已经暂存的 python 文件变更。这个函数只会追踪 Git 中已经暂存的 Python 文件变更，即执行了 `git add` 的文件。此函数返回的是一个字典，键是文件路径，值是一个布尔值，表示这个文件是否是新建的。
+**Code Description**:
+The `ChangeDetector` class provides methods to detect changes in a repository and extract information about the modified files and their content. It utilizes the GitPython library to interact with the Git repository.
 
-**方法 `get_changed_pys`**: 该函数无需接收额外参数，用于根据仓库实例，获取仓库中变更的 python 文件。方法会追踪到 Git 中以下状态的 Python 文件：1. 未暂存的变更，这包括新添加的文件和已修改的文件。这些文件的变更已经发生，但还没有被添加到 Git 的暂存区。 2. 未跟踪的文件，这些是新创建的文件，还没有被 Git 跟踪。这些文件不在 Git 的暂存区，也不在 Git 的版本控制系统中。返回的字典结构与 `get_staged_pys` 相同。
+The `__init__` method initializes a `ChangeDetector` object by setting the `repo_path` attribute and creating a `git.Repo` object for the repository.
 
-**方法 `get_file_diff`**: 该函数接收两个参数，一个是 `file_path`，表示文件路径，一个是 `is_new_file`，表示文件是否新建。函数的作用是获取某个文件的变更内容。对于新文件，使用 git diff --staged 获取差异。此函数以列表形式返回差异内容。
+The `get_staged_pys` method retrieves the added Python files in the repository that have been staged. It uses the GitPython library to compare the staging area (index) with the original HEAD commit to identify the newly added files. The method returns a dictionary where the keys are the file paths and the values are booleans indicating whether the file is newly created or not.
 
-**方法 `parse_diffs`**: 该函数接收一个列表类型的 `diffs` 参数，包含文件差异内容。函数将解析差异内容，提取出添加和删除的对象信息，对象可以是类或者函数。返回的是一个字典，包含添加和删除行信息，格式为 `{'added': [(行号，变更内容)], 'removed': [(行号，变更内容)]}`。
+The `get_file_diff` method retrieves the changes made to a specific file. For new files, it adds them to the staging area and uses the `git diff --staged` command to get the differences. For non-new files, it uses the `git diff HEAD` command to get the differences. The method returns a list of changes made to the file.
 
-**方法 `identify_changes_in_structure`**: 这个函数接收两个参数，一个是 `changed_lines`，包含了添加和删除行的信息，另一个是 `structures`，包含函数或类结构的列表。函数的作用是识别发生更改的函数与类的结构。返回的是一个字典，包含了发生更改的结构的信息。
+The `parse_diffs` method parses the difference content obtained from the `get_file_diff` method. It extracts the added and deleted object information, such as classes or functions, from the differences. The method returns a dictionary containing the added and deleted line information.
 
-**注意**：此代码用到了第三方库 `git`, `subprocess` 和 `re` ，使用前需要安装相应库。
+The `identify_changes_in_structure` method identifies the structures (functions or classes) where changes have occurred. It traverses all changed lines and checks whether each line is within the start and end lines of a structure. If a line is within a structure, the structure is considered to have changed, and its name and the name of the parent structure are added to the corresponding set in the result dictionary. The method returns a dictionary containing the structures where changes have occurred.
 
-**输出示例**:
-```python
-cd = ChangeDetector('/path/to/repo')
-print(cd.get_staged_pys())
-# 输出可能会是这样：{'path/to/file1.py': False, 'path/to/file2.py': True}
-```
-## FunctionDef __init__
-**__init__ 函数**: 这个函数的功能是初始化一个 ChangeDetector 对象。
+The `get_to_be_staged_files` method retrieves all unstaged files in the repository that meet certain conditions. It checks if a file, when its extension is changed to `.md`, corresponds to a file that is already staged. It also checks if the file's path is the same as the 'project_hierarchy' field in the CONFIG. The method returns a list of the paths of these files.
 
-这个 `__init__` 方法是 `ChangeDetector` 类的构造函数，负责初始化新创建的 `ChangeDetector` 实例对象。此方法接收一个参数：
+The `add_unstaged_files` method adds the unstaged files that meet the conditions to the staging area. It uses the `git add` command to add the files.
 
-- `repo_path` (`str`): 这是一个字符串参数，表示版本控制仓库（如 Git 仓库）的文件系统路径。
+**Note**: The `identify_changes_in_structure` method has a TODO comment indicating that there may be issues with the current implementation. It suggests building a mapping to associate changed line numbers with their function or class names before processing the changed lines.
 
-函数体内部，该方法执行了以下步骤：
-
-1. 使用 `repo_path` 参数来创建一个 `git.Repo` 实例，并将这个实例赋值给实例变量 `self.repo`。这个 `git.Repo` 实例代表了指定路径下的 Git 仓库，`self.repo` 将用于后续的版本控制操作，例如检测变更、提交更新等。
-
-值得注意的是，这个方法不返回任何值，它的目的纯粹是对 `ChangeDetector` 实例进行初始化工作。
-
-**注意**:
-
-- 用户在创建 `ChangeDetector` 实例时，需要提供有效的仓库路径，否则在试图创建 `git.Repo` 实例时可能会遇到异常（例如路径无效或并非一个 Git 仓库）。
-- 使用该类前，需要确保 `gitpython` 库已经安装，因为 `git.Repo` 类是 `gitpython` 库的一部分。
-- 应当进行错误处理，以防 `repo_path` 不正确或其他 I/O 异常发生时能够适当反应。
-## FunctionDef get_staged_pys
-**get_staged_pys 函数**: 该函数的功能是获取仓库中已经暂存的python文件的变更。
-
-详细的代码分析和描述如下：
-
-该函数是在操作 Git 仓库时使用的，主要是为了追踪已经暂存的 Python 文件变更。所谓暂存的文件，指的是已经执行了 `git add` 命令的文件。
-
-函数首先定义了一个名为 `staged_files` 的空字典，用于存储暂存的 Python 文件的变更信息。
-
-然后，函数通过 `repo.index.diff('HEAD')` 获取仓库中的所有已暂存的文件变更信息，并将其赋值给变量 `diffs`。
-
-接下来，这个函数遍历 `diffs` 中的每一个 `diff`。然后检查 `diff` 的 `change_type` 是否为 'A' 或 'M' 和 `diff.a_path` 是否以 '.py' 结束。如果条件满足，就表明这个文件是一个 Python 文件，并且是新添加的或者是已经修改的。
-
-如果是新添加的文件，`diff.change_type == 'A'` 将为真，否则为假。`is_new_file` 用于记录这个信息。然后将文件的路径和是否为新文件的信息添加到 `staged_files` 字典中。
-
-在遍历完所有的 `diff` 之后，`staged_files` 字典就被填满了所有的暂存的 Python 文件和它们是否是新添加的信息。最后，函数返回这个字典。
-
-**注意**: 这个函数主要用于操作 Git 仓库，如果你不了解 Git 的相关操作，可能会对这个函数的作用有些疑惑。
-
-**输出例子**: 这个函数可能会返回类似以下的值：{'path/to/file1.py': False, 'path/to/file2.py': True}，其中键是文件的路径，值是一个布尔值，表示这个文件是否是新添加的。例如,'path/to/file1.py' 是一个已经修改的文件，而 'path/to/file2.py' 是一个新添加的文件。
-## FunctionDef get_changed_pys
-**get_changed_pys 函数**: 该函数的功能是获取仓库中变更的 Python 文件。
-
-这个函数属于某个类（可能是一个与版本控制相关的类），用于检测Git代码仓库中的变更，特别是针对那些未被暂存或未跟踪的Python文件。函数执行的基本流程分为两部分：
-
-1. 检测未暂存的变更（包括文件的新增和修改）：
-   - 函数首先获取当前仓库实例`self.repo`。
-   - 然后它生成当前索引与工作目录间的差异（未暂存的变更）以及当前索引与最后一次提交（HEAD）间的差异。
-   - 遍历所有的差异项，并检查每一项的变更类型。如果变更类型为'A'（表示新增文件）或者'M'（表示文件已修改），并且变更的文件路径以`.py`结尾，代表它是一个Python文件，将被记录到变更文件字典`changed_files`中。
-   - 对于新增的文件（以'A'标记），将在字典中为对应的文件路径设置值`True`表示这是一个新文件；对于已修改但非新增的文件，设置值为`False`。
-
-2. 检测未跟踪的文件（即新创建还未被Git跟踪的文件）：
-   - 获取所有未跟踪的文件列表，仅考虑那些以`.py`结尾的Python文件。
-   - 在这些未跟踪文件中，进一步筛选出那些还未记录在`changed_files`字典中的文件。这是因为一个文件可能同时在未跟踪文件列表和未暂存变更之中出现。
-   - 将筛选出的未跟踪文件加入`changed_files`字典，并将它们标记为新文件（值设置为`True`）。
-
-最后，函数返回一个字典`changed_files`，其键为文件路径，值为布尔值，指示相应的文件是否是新建的。
-
-**注意**:
-- 使用此函数之前，需要确保`self.repo`是一个有效的Git仓库实例。
-- 函数仅检测以".py"结尾的Python文件。
-- 函数输出假设在Git仓库中有一定的变更，否则输出将为空字典。
-
-**输出示例**:
-以下是一个模拟输出示例，其中包含了变更的python文件的情况：
+**Output Example**:
 ```
 {
-    'src/module_one.py': False,   # 表示文件被修改但不是新建
-    'src/module_two.py': True     # 表示文件是新创建的
+    'added': [
+        (86, '    '),
+        (87, '    def to_json_new(self, comments = True):'),
+        (88, '        data = {'),
+        (89, '            "name": self.node_name,'),
+        ...
+        (95, '')
+    ],
+    'removed': []
 }
 ```
-## FunctionDef get_file_diff
-**get_file_diff函数的功能**：这个函数用于获取特定文件的变更内容。对于新文件，它使用命令'git diff --staged'获取差异信息。
 
-**详细的代码分析和描述**：
+This is an example output of the `parse_diffs` method. It shows the added lines and their line numbers. In this example, the PipelineEngine and AI_give_params are added objects, and there are no removed objects. However, it is important to note that the addition here does not necessarily mean that an object is newly added. The Git diff representation may show modifications as deletions and additions. To determine if an object is newly added, the `get_added_objs()` method should be used.
+## FunctionDef __init__(self, repo_path):
+**__init__**: Initializes a ChangeDetector object.
 
-这个函数需要两个参数：
-1. file_path (str)：此参数代表需要获取差异的文件路径。
-2. is_new_file (bool)：此参数指示目标文件是否为新文件。
+**Parameters**:
+- repo_path (str): The path to the repository.
 
-首先，函数从self对象（当前实例）获取了存储库实例（repo）。然后根据is_new_file（是否是新文件）的值，执行了不同的操作。
+**Code Description**:
+The `__init__` method is the constructor of the ChangeDetector class. It takes the `repo_path` parameter, which is the path to the repository, and initializes the `repo_path` attribute of the ChangeDetector object with the provided value.
 
-如果文件是新文件，则首先将新文件添加到git的暂存区。这里的add_command生成一条git命令，用于将文件添加到暂存区。当add_command被正确运行后，这个新文件就被添加到了暂存区。
+The method also initializes the `repo` attribute by creating a git.Repo object using the `repo_path`.
 
-然后，函数使用'git diff --staged'获取暂存区的diff。这将获取到所有暂存（添加但未提交）的更改。这个命令会将暂存区的文件和HEAD（最后一次commit的状态）进行比较，并返回所有更改的列表。
+**Note**: The `repo_path` should be a valid path to the repository.
 
-如果文件不是新文件，就直接使用'git diff HEAD'获取差异。这个命令会将工作区的文件和HEAD进行比较，返回所有更改的列表。
+**Returns**:
+None
 
-函数最后返回了这个差异列表。
+**Example**:
+```python
+change_detector = ChangeDetector('/path/to/repository')
+```
+## FunctionDef get_staged_pys(self):
+**get_staged_pys**: The function of this Function is to retrieve the added Python files in the repository that have been staged.
 
-**注意事项**：
+**parameters**: This Function does not take any parameters.
 
-1. 确保文件路径正确，否则无法添加到git的暂存区。
-2. 这个函数假设目标文件已经在git存储库中。
+**Code Description**: This Function first initializes a variable `repo` with the repository object. Then, it creates an empty dictionary `staged_files` to store the changed Python files. 
 
-**输出示例**：This function will return a list containing changes line by line. For example:
-'["+def new_function(): pass", "-def old_function(): pass"]'
+Next, it uses the `diff` method of the `index` object to get the staged changes in the repository. The `diffs` variable will contain a list of `Diff` objects representing the changes.
 
-这将代表一个函数从“old_function”更改成了“new_function”。其中，"+"前缀表示新增的内容，而"-"前缀表示被删除的内容。
-## FunctionDef parse_diffs
-**parse_diffs 函数**: 这个函数的功能是解析差异内容，并提取出添加和删除的对象信息。这里的“对象”可以是类或者函数。
+The Function iterates over each `diff` object in the `diffs` list. It checks if the change type is either "A" (added) or "M" (modified) and if the file path ends with ".py" (indicating a Python file). If both conditions are met, it determines whether the file is newly created by checking if the change type is "A". It then adds the file path as a key to the `staged_files` dictionary and sets the value to `True` if the file is newly created, or `False` if it is modified.
 
-详细的代码分析和描述如下：
+Finally, the Function returns the `staged_files` dictionary.
 
-该函数首先初始化一个包含"added"和"removed"两个空列表的字典，用来记录添加的行和移除的行的信息。另基于当前行和更改行的数字定义两个变量。
+**Note**: This Function specifically tracks the changes of Python files in Git that have been staged, meaning the files that have been added using `git add`.
 
-在对输入的差异内容（diffs）执行循环过程中，首先使用正则表达式匹配行号信息（例如 "@@ -43,33 +43,40 @@"），如果匹配到了行号信息，就更新当前行号和更改行号的变量。
+**Output Example**: 
+```
+{
+    "path/to/file1.py": True,
+    "path/to/file2.py": False,
+    "path/to/file3.py": True
+}
+```
+## FunctionDef get_file_diff(self, file_path, is_new_file):
+**get_file_diff**: The function of this Function is to retrieve the changes made to a specific file. For new files, it uses the "git diff --staged" command to get the differences between the staged area and the working directory. For non-new files, it uses the "git diff HEAD" command to get the differences between the current commit and the working directory.
 
-如果差异行内容以 '+' 开头(也就是说这一行是新增的)，并且不以 '+++' 开头，那么该行就会被视作是添加的行，并记录到changed_line的'added'列表中，然后更改行号加一。
+**parameters**: 
+- file_path (str): The relative path of the file.
+- is_new_file (bool): Indicates whether the file is a new file.
 
-类似地，如果差异行内容以 '-' 开头（也就是说这一行是被删除的），并且不以 '---' 开头，那么该行就会被视为是移除的，并将其记录到changed_line的'removed'列表中，然后当前行号增加一。
+**Code Description**: 
+The function first assigns the repository object to the "repo" variable. 
 
-对于没有变化的行，当前行号和更改行号都需要增加一。
+If the file is a new file (is_new_file is True), the function performs the following steps:
+1. It constructs a command to add the file to the staging area using the "git -C" command and the file path.
+2. It runs the add command using the "subprocess.run" function, passing the command as a string and setting the "shell" and "check" parameters to True.
+3. It retrieves the diff from the staging area using the "git diff --staged" command and the file path. The output is a string containing the differences between the staged area and the working directory.
+4. It splits the diff string into a list of lines using the "splitlines" method.
 
-最后返回changed_lines。
+If the file is not a new file, the function performs the following steps:
+1. It retrieves the diff from the current commit (HEAD) using the "git diff HEAD" command and the file path. The output is a string containing the differences between the current commit and the working directory.
+2. It splits the diff string into a list of lines using the "splitlines" method.
 
-**注意**: 在使用这段代码时需要明确的一点是，这里的“添加”的含义并不仅仅是新加入的对象。在git diff中，对某一行的修改在diff中是以删除和添加的方式表示的，即使修改后的对象与原来相同，也被视为一个添加操作。所以对于修改的内容，也会表示为这个对象经过了添加操作。如果你需要明确知道某个对象是否被新添加的话，你需要使用get_added_objs()函数。
+Finally, the function returns the list of changes made to the file.
 
-**输出示例**: 输出可以是类似这样的形式： {'added': [(86, '    '), (87, '    def to_json_new(self, comments = True):'), (88, '        data = {'), (89, '            "name": self.node_name,')...(95, '')], 'removed': []}，在这个示例中，'added'列表包含了添加行的行号和内容，而'removed'列表为空，表示没有移除的行。
-## FunctionDef identify_changes_in_structure
-**identify_changes_in_structure 函数**: 这个函数的作用是识别在代码结构（函数或类）中发生的改变。
+**Note**: 
+- The function assumes that the repository object is already initialized and assigned to the "repo" variable.
+- The function uses the "subprocess.run" function to execute shell commands, so it requires the "subprocess" module to be imported.
+- The function relies on the "git" command being available in the system's PATH.
 
-这个函数接收两个参数：changed_lines 和 structures。它会遍历所有的改变行（changed_lines），对于每一行，检查这一行是否在某个结构（函数或类）的起始行和结束行之间。如果是，那么这个结构就被认为是发生了改变，把它的名称和父级结构的名称添加到结果字典 changes_in_structures 的相应集合里。这个集合取决于这一行是被添加的还是被删除的。
+**Output Example**: 
+If the file has the following changes:
+- Line 1: Original content
+- Line 2: Modified content
+- Line 3: Deleted content
 
-首先，我们初始化一个空的字典，并为其两个键 'added' 和 'removed' 设置初始值为空集合。
+The function would return the following list:
+['- Line 1: Original content', '+ Line 2: Modified content', '- Line 3: Deleted content']
+## FunctionDef parse_diffs(self, diffs):
+**parse_diffs**: The function of this Function is to parse the difference content and extract the added and deleted object information, where the object can be a class or a function. It returns a dictionary containing the added and deleted line information.
 
-然后，我们对每一种更改类型（在这里是 'added' 或 'removed'）进行遍历，并获取对应更改类型的所有更改行和它们的内容。
+**parameters**: 
+- diffs (list): A list containing the difference content obtained from the get_file_diff() function inside the class.
 
-对于每一行，我们将其行号和内容进行遍历，并检查这一行是否在结构的开始行和结束行之间。如果是，我们就把这个结构的名称和父级结构的名称添加到结果字典的对应集合中。
+**Code Description**:
+The function starts by initializing variables `changed_lines`, `line_number_current`, and `line_number_change`. The `changed_lines` variable is a dictionary with keys "added" and "removed" and empty lists as values. The `line_number_current` and `line_number_change` variables are used to keep track of the current line numbers.
 
-最后，这个函数返回结果字典，其中包含了所有发生更改的结构。
+The function then iterates over each line in the `diffs` list. It checks if the line contains line number information using regular expression matching. If a match is found, the current line number and changed line number are updated accordingly.
 
-**注意**: 
-- changed_lines 的数据结构应该是一个字典，键为更改类型（'added'或'removed'），值为一个元组列表，每个元组包含一个行号和变更内容。
-- structures 的数据结构应该是一个列表，每一个元素都是一个元组，包含了结构类型、名称、起始行号、结束行号和父级结构的名称。
+Next, it checks if the line starts with "+" and does not start with "+++". If it does, it appends a tuple `(line_number_change, line[1:])` to the "added" list in the `changed_lines` dictionary. The `line_number_change` is incremented by 1.
 
-**输出示例**: {'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
+Similarly, if the line starts with "-" and does not start with "---", it appends a tuple `(line_number_current, line[1:])` to the "removed" list in the `changed_lines` dictionary. The `line_number_current` is incremented by 1.
+
+For lines that do not have any changes, both `line_number_current` and `line_number_change` are incremented by 1.
+
+Finally, the function returns the `changed_lines` dictionary containing the added and removed line information.
+
+**Note**: 
+- The function assumes that the `diffs` list contains valid difference content obtained from the `get_file_diff()` function.
+- The function does not differentiate between newly added objects and modified objects. To determine if an object is newly added, the `get_added_objs()` function should be used.
+
+**Output Example**: 
+{'added': [(86, '    '), (87, '    def to_json_new(self, comments = True):'), (88, '        data = {'), (89, '            "name": self.node_name,')...(95, '')], 'removed': []}
+## FunctionDef identify_changes_in_structure(self, changed_lines, structures):
+**identify_changes_in_structure**: The function of this Function is to identify the structure (function or class) where changes have occurred in the code. It traverses all the changed lines and checks whether each line falls within the start and end line of a structure. If a line is within a structure, that structure is considered to have changed, and its name and the name of the parent structure are added to the corresponding set in the result dictionary.
+
+**parameters**: 
+- changed_lines (dict): A dictionary containing the line numbers where changes have occurred. It has two keys: 'added' and 'removed'. The value for each key is a list of tuples, where each tuple contains the line number and the change content.
+- structures (list): A list of function or class structures obtained from the 'get_functions_and_classes' function. Each structure is represented as a tuple containing the structure type, name, start line number, end line number, and parent structure name.
+
+**Code Description**:
+The function starts by initializing an empty dictionary called 'changes_in_structures' with two keys: 'added' and 'removed', each associated with an empty set. This dictionary will store the structures where changes have occurred.
+
+Next, the function iterates over the 'changed_lines' dictionary, which contains the line numbers where changes have occurred. For each line number, it iterates over the 'structures' list and checks if the line falls within the start and end line of a structure. If it does, the name of the structure and the name of its parent structure (if any) are added to the corresponding set in the 'changes_in_structures' dictionary, based on whether the line was added or removed.
+
+Finally, the function returns the 'changes_in_structures' dictionary, which contains the structures where changes have occurred, categorized by the change type ('added' or 'removed').
+
+**Note**: 
+- The function assumes that the 'changed_lines' and 'structures' parameters are correctly formatted as described in the function's docstring.
+- The function does not handle cases where a line falls within multiple structures.
+
+**Output Example**:
+{'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
+## FunctionDef get_to_be_staged_files(self):
+**get_to_be_staged_files**: The function of this Function is to retrieve all unstaged files in the repository that meet certain conditions. It returns a list of the paths of these files.
+
+**parameters**: This Function does not take any parameters.
+
+**Code Description**: This Function first initializes an empty list called `to_be_staged_files` to store the paths of the files that meet the conditions. It then retrieves the paths of the already staged files and stores them in the `staged_files` list.
+
+Next, it retrieves the `project_hierarchy` value from the CONFIG dictionary. The `project_hierarchy` represents the path of the project hierarchy in the repository.
+
+The Function then retrieves all the differences between the repository index and the HEAD commit using the `diff` method of the `index` object. These differences are stored in the `diffs` list.
+
+It also retrieves the paths of all the untracked files in the repository using the `untracked_files` attribute. These paths are stored in the `untracked_files` list.
+
+The Function then iterates over each untracked file in the `untracked_files` list. It constructs the absolute path of the untracked file by joining the `repo_path` and the untracked file path. It also constructs the relative path of the untracked file by using the `relpath` method with the `repo_path` as the base path. 
+
+If the relative path of the untracked file ends with '.md', it further processes the file. It removes the `Markdown_Docs_folder` path from the relative path and constructs the corresponding Python file path by replacing the '.md' extension with '.py'. If this corresponding Python file path is present in the `staged_files` list, it adds the absolute path of the untracked file to the `to_be_staged_files` list.
+
+If the relative path of the untracked file is equal to the `project_hierarchy` value, it adds the relative path to the `to_be_staged_files` list.
+
+Next, the Function iterates over each unstaged file in the `unstaged_files` list. It constructs the absolute path of the unstaged file and the relative path of the unstaged file in a similar manner as before.
+
+If the unstaged file ends with '.md', it removes the `Markdown_Docs_folder` path from the relative path and constructs the corresponding Python file path. If this corresponding Python file path is present in the `staged_files` list, it adds the absolute path of the unstaged file to the `to_be_staged_files` list.
+
+If the relative path of the unstaged file is equal to the `project_hierarchy` value, it adds the relative path to the `to_be_staged_files` list.
+
+Finally, the Function returns the `to_be_staged_files` list.
+
+**Note**: This Function retrieves the paths of the unstaged files in the repository that meet specific conditions. It checks if the file, when its extension is changed to '.md', corresponds to a file that is already staged. It also checks if the file's path is the same as the `project_hierarchy` field in the CONFIG dictionary.
+
+**Output Example**: 
+```
+['/path/to/repo/README.md', '/path/to/repo/docs/file.md']
+```
+## FunctionDef add_unstaged_files(self):
+**add_unstaged_files**: The function of this Function is to add unstaged files that meet certain conditions to the staging area.
+
+**parameters**: This Function does not take any parameters.
+
+**Code Description**: 
+This Function first calls the `get_to_be_staged_files()` method to get a list of unstaged files that meet certain conditions. Then, it iterates over each file path in the list and constructs a command to add the file to the staging area using the `git add` command. The command is executed using the `subprocess.run()` method with the `shell=True` and `check=True` parameters, which ensures that the command is executed in a shell and raises an exception if the command fails. Finally, the Function returns the list of unstaged files that were added to the staging area.
+
+**Note**: 
+- This Function assumes that the `get_to_be_staged_files()` method is implemented and returns a list of file paths.
+- The `git` command is executed using the `subprocess.run()` method, so make sure that the `git` command is available in the system environment.
+
+**Output Example**: 
+If there are two unstaged files that meet the conditions, the Function will add them to the staging area and return the list of file paths:
+```
+['path/to/file1.py', 'path/to/file2.py']
+```
 ***
