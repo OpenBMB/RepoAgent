@@ -61,7 +61,7 @@ default_completion_kwargs:
   request_timeout: 60
 
 repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy.json # 全局结构信息json文件的路径
+project_hierarchy: .project_hierarchy # 全局结构信息文件夹的路径
 Markdown_Docs_folder: Markdown_Docs # 目标存储库根目录中用于存储文档的文件夹
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # 通过在ignore_list中给出相对路径来忽略一些您不想为其生成文档的py文件或文件夹
 

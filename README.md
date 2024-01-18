@@ -67,7 +67,7 @@ default_completion_kwargs:
   request_timeout: 60
 
 repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy.json # The paths of the global structure information json file
+project_hierarchy: .project_hierarchy # Please NOTE that this is a folder where you can store your project hierarchy and share it with your team members.
 Markdown_Docs_folder: Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore some py files or folders that you don't want to generate documentation for by giving relative paths in ignore_list.
 
