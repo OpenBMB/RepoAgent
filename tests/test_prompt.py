@@ -3,13 +3,27 @@ from unittest.mock import patch, MagicMock
 from ..repo_agent.chat_with_repo.prompt import TextAnalysisTool  # Adjust the import according to your project structure
 
 class TestTextAnalysisTool(unittest.TestCase):
-
     def setUp(self):
+        # Mocks for OpenAI and JsonFileProcessor
         self.mock_llm = MagicMock()
-        self.mock_logger_manager = MagicMock()
         self.mock_json_processor = MagicMock()
-        self.text_analysis_tool = TextAnalysisTool(self.mock_llm, self.mock_logger_manager, "test.json")
 
+        # Patching the classes
+        self.openai_patch = patch('your_module.OpenAI', return_value=self.mock_llm)
+        self.json_processor_patch = patch('your_module.JsonFileProcessor', return_value=self.mock_json_processor)
+
+        # Start the patches
+        self.openai_patch.start()
+        self.json_processor_patch.start()
+
+        # Initialize TextAnalysisTool with mocked dependencies
+        self.text_analysis_tool = TextAnalysisTool(self.mock_llm, "db_path")
+
+    def tearDown(self):
+        # Stop the patches
+        self.openai_patch.stop()
+        self.json_processor_patch.stop()
+  
     def test_keyword(self):
         self.mock_llm.complete.return_value = "keyword1, keyword2, keyword3"
         keywords = self.text_analysis_tool.keyword("test query")

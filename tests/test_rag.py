@@ -5,18 +5,32 @@ from ..repo_agent.chat_with_repo.rag import RepoAssistant  # Adjust the import a
 class TestRepoAssistant(unittest.TestCase):
 
     def setUp(self):
+        # Mocks for external dependencies
         self.mock_openai = MagicMock()
-        self.mock_json_processor = MagicMock()
-        self.mock_chroma_manager = MagicMock()
         self.mock_text_analysis_tool = MagicMock()
-        self.mock_logger_manager = MagicMock()
+        self.mock_json_file_processor = MagicMock()
+        self.mock_chroma_manager = MagicMock()
 
-        with patch('repo_agent.chat_with_repo.json_handle.JsonFileProcessor', self.mock_json_processor), \
-             patch('vectordbs.ChromaManager', self.mock_chroma_manager), \
-             patch('prompt.TextAnalysisTool', self.mock_text_analysis_tool), \
-             patch('logger.LoggerManager', self.mock_logger_manager), \
-             patch('llama_index.llms.OpenAI', self.mock_openai):
-            self.assistant = RepoAssistant("api_key", "api_base", "db_path", "log_file")
+        # Patch the external classes
+        self.openai_patch = patch('your_module.OpenAI', return_value=self.mock_openai)
+        self.text_analysis_tool_patch = patch('your_module.TextAnalysisTool', return_value=self.mock_text_analysis_tool)
+        self.json_file_processor_patch = patch('your_module.JsonFileProcessor', return_value=self.mock_json_file_processor)
+        self.chroma_manager_patch = patch('your_module.ChromaManager', return_value=self.mock_chroma_manager)
+
+        # Start the patches
+        self.openai_patch.start()
+        self.text_analysis_tool_patch.start()
+        self.json_file_processor_patch.start()
+        self.chroma_manager_patch.start()
+
+        # Initialize RepoAssistant with mocked dependencies
+        self.assistant = RepoAssistant("api_key", "api_base", "db_path")
+    def tearDown(self):
+        # Stop the patches
+        self.openai_patch.stop()
+        self.text_analysis_tool_patch.stop()
+        self.json_file_processor_patch.stop()
+        self.chroma_manager_patch.stop()
 
     def test_generate_queries(self):
         # Test generate_queries method

@@ -1,23 +1,21 @@
-from repo_agent.chat_with_repo.json_handle import JsonFileProcessor
+from json_handle import JsonFileProcessor
 from vectordbs import ChromaManager
 from prompt import TextAnalysisTool
-from logger import LoggerManager
+from loguru import logger
 from llama_index import PromptTemplate 
 from llama_index.llms import OpenAI
 
-
+logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 
 class RepoAssistant:
-    def __init__(self, api_key, api_base, db_path, log_file):
+    def __init__(self, api_key, api_base, db_path):
         # Initialize OpenAI, database, and load JSON data
-        logger = LoggerManager(log_file)
-        self.logger = logger.get_logger()
         self.api_key = api_key
         self.api_base = api_base
         self.db_path = db_path
         self.md_contents = []
         self.llm = OpenAI(api_key=api_key, api_base=api_base)
-        self.textanslys = TextAnalysisTool(self.llm,logger,db_path)
+        self.textanslys = TextAnalysisTool(self.llm,db_path)
         self.json_data = JsonFileProcessor(db_path)
         self.chroma_data = ChromaManager(api_key, api_base)
 
@@ -61,13 +59,13 @@ class RepoAssistant:
         # return answer
         prompt = self.textanslys.format_chat_prompt(message, instruction)
         questions = self.textanslys.keyword(prompt)
-        self.logger.debug(f"Questions: {questions}")
+        logger.debug(f"Questions: {questions}")
         promptq = self.generate_queries(prompt,3)
         result = []
         for i in promptq:
             result.append(self.chroma_data.chroma_collection.query(query_texts = [i], n_results = 5))
         results = self.chroma_data.chroma_collection.query(query_texts = [prompt], n_results = 5)
-        self.logger.debug(f"Results: {results}")
+        logger.debug(f"Results: {results}")
         chunkrecall = self.extract_and_format_documents(result)
         retrieved_documents = results['documents'][0]
         response = self.rag(prompt,retrieved_documents)
