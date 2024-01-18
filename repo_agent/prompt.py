@@ -19,6 +19,8 @@ Please write out the function of this {code_type_tell} in bold plain text, follo
 The standard format is as follows:
 
 **{code_name}**: The function of this {code_type_tell} is XXX
+**{parameters_or_attribute}**: The {parameters_or_attribute} of this {code_type_tell}.
+**Code Description**: The description of this {code_type_tell}.
 (Detailed code analysis and description...)
 **Note**: Points to note about the use of the code
 {have_return_tell}

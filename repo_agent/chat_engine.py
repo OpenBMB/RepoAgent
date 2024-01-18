@@ -9,6 +9,7 @@ from project_manager import ProjectManager
 from prompt import SYS_PROMPT, USR_PROMPT
 from doc_meta_info import DocItem
 import inspect
+from loguru import logger
 
 
 def get_import_statements():
@@ -98,6 +99,7 @@ class ChatEngine:
         language = language_mapping[language]
         
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
+        parameters_or_attribute = "attributes" if code_type == "ClassDef" else "parameters"
         have_return_tell = "**Output Example**: Mock up a possible appearance of the code's return value." if have_return else ""
         # reference_letter = "This object is called in the following files, the file paths and corresponding calling parts of the code are as follows:" if referenced else ""
         combine_ref_situation = "and combine it with its calling situation in the project," if referenced else ""
@@ -117,6 +119,7 @@ class ChatEngine:
             # referenced=referenced, 
             reference_letter=reference_letter, 
             referencer_content=referencer_content,
+            parameters_or_attribute=parameters_or_attribute,
             language=language
             )
         usr_prompt = USR_PROMPT.format(language=language)
@@ -179,26 +182,49 @@ class ChatEngine:
             except BadRequestError as e:
                 # import pdb; pdb.set_trace()
                 if 'context_length_exceeded' in str(e):
-                    print(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}(don't provide reference/referenced_letter)")
-                    # Set referenced to False and remove referencer_content
-                    referenced = False
-                    referencer_content = ""
-                    reference_letter = ""
-                    combine_ref_situation = ""
+                    logger.info(f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}")
+                    logger.info(f"Length of sys_prompt: {len(sys_prompt)}, removing project_structure...")
+                    project_structure_prefix = ''
+                    project_structure = ''
+                    # Remove project_structure and project_structure_prefix
                     sys_prompt = SYS_PROMPT.format(
+                        reference_letter=reference_letter, 
                         combine_ref_situation=combine_ref_situation, 
                         file_path=file_path, 
+                        project_structure_prefix=project_structure_prefix,
                         project_structure=project_structure, 
                         code_type_tell=code_type_tell, 
                         code_name=code_name, 
                         code_content=code_content, 
                         have_return_tell=have_return_tell, 
-                        # referenced=referenced, 
-                        reference_letter=reference_letter, 
+                        referenced=referenced, 
                         referencer_content=referencer_content,
+                        parameters_or_attribute=parameters_or_attribute,
                         language=language
                     )
+                                     
                     attempt += 1
+                    if attempt >= 2:
+                        referenced = False
+                        referencer_content = ""
+                        reference_letter = ""
+                        combine_ref_situation = ""
+
+                        sys_prompt = SYS_PROMPT.format(
+                            combine_ref_situation=combine_ref_situation, 
+                            file_path=file_path, 
+                            project_structure=project_structure, 
+                            code_type_tell=code_type_tell, 
+                            code_name=code_name, 
+                            code_content=code_content, 
+                            have_return_tell=have_return_tell, 
+                            # referenced=referenced, 
+                            reference_letter=reference_letter, 
+                            referencer_content=referencer_content,
+                            parameters_or_attribute=parameters_or_attribute,
+                            language=language
+                        )
+
                     continue  # Try to request again
                 else:
                     print(f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}")

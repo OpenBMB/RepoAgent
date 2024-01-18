@@ -76,6 +76,7 @@ class Runner:
             doc_item.md_content.append(response_message.content)
             doc_item.item_status = DocItemStatus.doc_up_to_date
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
+            self.markdown_refresh()
         else:
             logger.info(f" 文档已生成，跳过：{doc_item.get_full_name()}")
         
@@ -122,13 +123,16 @@ class Runner:
                         return True
                 return False
             if recursive_check(file_item) == False:
+                logger.info(f"跳过：{file_item.get_full_name()}")
                 continue
             rel_file_path = file_item.get_full_name()
             file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
             # 对于每个文件，转换json内容到markdown
             markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
+            assert markdown != None, f"markdown内容为空，文件路径为{rel_file_path}"
             # 写入markdown内容到.md文件
             file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
+            
         logger.info(f"markdown document has been refreshed at {CONFIG['Markdown_Docs_folder']}")
 
     def git_commit(self, commit_message):
@@ -147,6 +151,8 @@ class Runner:
         Returns:
             None
         """
+        self.markdown_refresh()
+        exit(0)
 
         if self.meta_info.document_version == "": 
             # 根据document version自动检测是否仍在最初生成的process里
@@ -204,8 +210,8 @@ class Runner:
         """
         file_dict = {}
         # 因为是新增的项目，所以这个文件里的所有对象都要写一个文档
-        for structure_type, name, start_line, end_line, parent in file_handler.get_functions_and_classes(file_handler.read_file()):
-            code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent)
+        for structure_type, name, start_line, end_line, parent, params in file_handler.get_functions_and_classes(file_handler.read_file()):
+            code_info = file_handler.get_obj_code_info(structure_type, name, start_line, end_line, parent, params)
             response_message = self.chat_engine.generate_doc(code_info, file_handler)
             md_content = response_message.content
             code_info["md_content"] = md_content

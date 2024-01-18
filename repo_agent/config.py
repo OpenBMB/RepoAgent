@@ -1,6 +1,6 @@
 import yaml
 
-CONFIG = yaml.load(open('private.yml', 'r'), Loader=yaml.FullLoader)
+CONFIG = yaml.load(open('config.yml', 'r'), Loader=yaml.FullLoader)
 
 language_mapping = {
     "en": "English",

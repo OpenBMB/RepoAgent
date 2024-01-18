@@ -6,6 +6,7 @@ import ast
 from config import CONFIG
 from utils.gitignore_checker import GitignoreChecker
 
+
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
     def __init__(self, repo_path, file_path):
@@ -25,7 +26,7 @@ class FileHandler:
             content = file.read()
         return content
 
-    def get_obj_code_info(self, code_type, code_name, start_line, end_line, parent, file_path = None):
+    def get_obj_code_info(self, code_type, code_name, start_line, end_line, parent, params, file_path = None):
         """
         Get the code information for a given object.
 
@@ -48,6 +49,7 @@ class FileHandler:
         code_info['code_start_line'] = start_line
         code_info['code_end_line'] = end_line
         code_info['parent'] = parent
+        code_info['params'] = params
 
         with open(os.path.join(self.repo_path, file_path if file_path != None else self.file_path), 'r', encoding='utf-8') as code_file:
             lines = code_file.readlines()
@@ -147,11 +149,10 @@ class FileHandler:
             child.parent = node
             self.add_parent_references(child, node)
 
-
     def get_functions_and_classes(self, code_content):
         """
-        Retrieves all functions, classes, and their hierarchical relationships.
-        Output Examples: [('FunctionDef', 'AI_give_params', 86, 95, None), ('ClassDef', 'PipelineEngine', 97, 104, None), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine')]
+        Retrieves all functions, classes, their parameters (if any), and their hierarchical relationships.
+        Output Examples: [('FunctionDef', 'AI_give_params', 86, 95, None, ['param1', 'param2']), ('ClassDef', 'PipelineEngine', 97, 104, None, []), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine', ['param1'])]
         On the example above, PipelineEngine is the Father structure for get_all_pys.
 
         Args:
@@ -159,7 +160,7 @@ class FileHandler:
 
         Returns:
             A list of tuples containing the type of the node (FunctionDef, ClassDef, AsyncFunctionDef),
-            the name of the node, the starting line number, the ending line number, and the name of the parent node.
+            the name of the node, the starting line number, the ending line number, the name of the parent node, and a list of parameters (if any).
         """
         tree = ast.parse(code_content)
         self.add_parent_references(tree)
@@ -169,8 +170,9 @@ class FileHandler:
                 start_line = node.lineno
                 end_line = self.get_end_lineno(node)
                 parent_name = node.parent.name if 'name' in dir(node.parent) else None
+                parameters = [arg.arg for arg in node.args.args] if 'args' in dir(node) else []
                 functions_and_classes.append(
-                    (type(node).__name__, node.name, start_line, end_line, parent_name)
+                    (type(node).__name__, node.name, start_line, end_line, parent_name, parameters)
                 )
         return functions_and_classes
         
@@ -207,8 +209,8 @@ class FileHandler:
             structures = self.get_functions_and_classes(content)
             file_objects = {}
             for struct in structures:
-                structure_type, name, start_line, end_line, parent = struct
-                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, file_path)
+                structure_type, name, start_line, end_line, parent, params = struct
+                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, params, file_path)
                 file_objects[name] = code_info
 
         return file_objects
@@ -274,7 +276,10 @@ class FileHandler:
             if level == 1 and current_parent is not None:
                 markdown += "***\n"
             current_parent = obj["name"]
-            markdown += f"{'#' * level} {obj['type']} {obj['name']}\n"
+            params_str = ''
+            if obj['type'] in ['FunctionDef', 'AsyncFunctionDef'] and obj['params']:
+                params_str = f"({', '.join(obj['params'])})"
+            markdown += f"{'#' * level} {obj['type']} {obj['name']}{params_str}:\n"
             markdown += f"{obj['md_content'][-1] if len(obj['md_content']) >0 else ''}\n"
         markdown += "***\n"
 
