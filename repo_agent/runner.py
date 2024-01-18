@@ -151,8 +151,6 @@ class Runner:
         Returns:
             None
         """
-        self.markdown_refresh()
-        exit(0)
 
         if self.meta_info.document_version == "": 
             # 根据document version自动检测是否仍在最初生成的process里

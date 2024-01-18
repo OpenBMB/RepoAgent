@@ -1,68 +1,43 @@
 # ClassDef ProjectManager:
-**ProjectManager**: The function of this Class is to manage the project hierarchy and provide functionality to retrieve the project structure and find all references of a variable in a given file.
+**ProjectManager**: The function of this Class is to manage a project by providing methods to retrieve the project structure and find all references of a variable in a given file.
 
 **attributes**: 
-- repo_path (str): The path of the repository.
-- project (jedi.Project): The Jedi project associated with the repository.
-- project_hierarchy (str): The path of the project hierarchy file.
+- `repo_path (str)`: The path of the repository where the project is located.
+- `project (jedi.Project)`: The Jedi project object representing the project.
+- `project_hierarchy (str)`: The path of the project hierarchy file.
 
 **Code Description**: 
-The `ProjectManager` class is responsible for managing the project hierarchy and providing methods to retrieve the project structure and find all references of a variable in a given file.
+The `ProjectManager` class has three attributes: `repo_path`, `project`, and `project_hierarchy`. The `repo_path` attribute stores the path of the repository where the project is located. The `project` attribute is an instance of the `jedi.Project` class, which represents the project. The `project_hierarchy` attribute stores the path of the project hierarchy file.
 
-The `__init__` method initializes the `ProjectManager` object by setting the `repo_path` attribute to the provided repository path, creating a Jedi project associated with the repository, and setting the `project_hierarchy` attribute to the path of the project hierarchy file.
+The `ProjectManager` class has two methods: `get_project_structure()` and `find_all_referencer()`.
 
-The `get_project_structure` method is used to retrieve the project structure. It defines a nested function `walk_dir` that recursively traverses the repository directory and appends the directory and file names to the `structure` list. The method then calls `walk_dir` with the repository path as the root directory and returns the project structure as a string.
+The `get_project_structure()` method is used to retrieve the structure of the project. It internally calls the `walk_dir()` function to recursively traverse the repository directory and collect the names of directories and Python files. The collected structure is then returned as a formatted string.
 
-The `find_all_referencer` method is used to find all references of a variable in a given file. It takes the variable name, file path, line number, and column number as arguments. It creates a Jedi script object with the file path and uses the `get_references` method to retrieve all references of the variable at the specified location. The method filters out the references with the same variable name and returns a list of tuples containing the file path, line number, and column number of each reference.
+The `find_all_referencer()` method is used to find all references of a variable in a given file. It takes four parameters: `variable_name`, `file_path`, `line_number`, and `column_number`. It uses the `jedi.Script` class to create a script object for the given file path. It then calls the `get_references()` method of the script object to retrieve all references of the variable at the specified line and column. The method filters out the references with the same variable name and returns a list of tuples containing the file path, line number, and column number of each reference.
+
+If an error occurs during the execution of the `find_all_referencer()` method, an error message is printed along with the parameters that caused the error. An empty list is returned in case of an error.
 
 **Note**: 
-- This class requires the `jedi` library to be installed.
-- The `get_project_structure` method only includes directories and Python files in the project structure.
-- The `find_all_referencer` method assumes that the provided file path is relative to the repository path.
+- The `jedi` module is used for code analysis and introspection.
+- The `get_project_structure()` method assumes that the repository directory contains only directories and Python files. Other file types are ignored.
+- The `find_all_referencer()` method assumes that the given file path is relative to the repository directory.
 
 **Output Example**: 
-- `get_project_structure`:
-  ```
-  RepoAgent
-    assets
-      images
-    display
-      book_template
-      book_tools
-        generate_repoagent_books.py
-        generate_summary_from_book.py
-      books
-      scripts
-    examples
-      init.py
-    repo_agent
-      __init__.py
-      __pycache__
-      change_detector.py
-      chat_engine.py
-      config.py
-      doc_meta_info.py
-      file_handler.py
-      project_manager.py
-      prompt.py
-      runner.py
-      utils
-        __pycache__
-        gitignore_checker.py
-    setup.py
-    tests
-      __init__.py
-      test_change_detector.py
-  ```
+Example output of the `get_project_structure()` method:
+```
+project_folder
+  subfolder1
+    file1.py
+    file2.py
+  subfolder2
+    file3.py
+  file4.py
+```
 
-- `find_all_referencer`:
-  ```
-  [
-    ('repo_agent/chat_engine.py', 10, 5),
-    ('repo_agent/chat_engine.py', 15, 10),
-    ('repo_agent/chat_engine.py', 20, 15)
-  ]
-  ```
+Example output of the `find_all_referencer()` method:
+```
+[('subfolder1/file1.py', 10, 5), ('subfolder1/file2.py', 5, 10)]
+```
 ## FunctionDef __init__(self, repo_path, project_hierarchy):
 **__init__**: The function of this Function is to initialize a ProjectManager object.
 
@@ -91,52 +66,43 @@ Raw code:
         self.project_hierarchy = os.path.join(self.repo_path, project_hierarchy, ".project_hierarchy.json")
 ```
 ## FunctionDef get_project_structure(self):
-**get_project_structure**: The function of this Function is to retrieve the hierarchical structure of a project.
+**get_project_structure**: The function of this Function is to retrieve the structure of the project.
 
 **parameters**: This Function does not take any parameters.
 
-**Code Description**: This Function uses a recursive approach to traverse the project directory and retrieve the hierarchical structure. It starts by calling the `walk_dir` function with the root directory path. The `walk_dir` function takes two parameters: `root` and `prefix`. 
+**Code Description**: 
+The `get_project_structure` function is responsible for retrieving the structure of the project. It uses a helper function called `walk_dir` to recursively traverse the project directory and collect the names of all directories and Python files.
 
-Inside the `walk_dir` function, the base name of the current directory is appended to the `structure` list with the provided `prefix`. Then, a new prefix is created by adding two spaces to the current prefix. 
+Inside the `get_project_structure` function, an empty list called `structure` is initialized. Then, the `walk_dir` function is called with the `repo_path` attribute of the ProjectManager object as the root directory. The `walk_dir` function appends the names of directories and Python files to the `structure` list.
 
-Next, the function iterates over the sorted list of names in the current directory. If a name starts with a dot, indicating a hidden file or directory, it is ignored. If the name corresponds to a directory, the `walk_dir` function is recursively called with the path of the subdirectory and the new prefix. If the name corresponds to a Python file (ends with '.py'), it is appended to the `structure` list with the new prefix.
+After the `walk_dir` function completes, the `structure` list is joined with newline characters using the `join` method, and the resulting string is returned.
 
-After traversing the entire project directory, the `structure` list is joined with newline characters and returned as a string.
+**Note**: 
+- The `os` module is assumed to be imported before using this function.
+- The `repo_path` attribute is assumed to be defined outside of the `get_project_structure` function and is not shown in the provided code.
 
-**Note**: This Function ignores hidden files and directories (those starting with a dot) and only includes Python files in the project structure.
-
-**Output Example**:
+**Output Example**: 
+If the project structure is as follows:
 ```
-RepoAgent
-  assets
-    images
-  display
-    book_template
-    book_tools
-      generate_repoagent_books.py
-      generate_summary_from_book.py
-    books
-    scripts
-  examples
-    init.py
-  repo_agent
-    __init__.py
-    __pycache__
-    change_detector.py
-    chat_engine.py
-    config.py
-    doc_meta_info.py
-    file_handler.py
-    project_manager.py
-    prompt.py
-    runner.py
-    utils
-      __pycache__
-      gitignore_checker.py
-  setup.py
-  tests
-    __init__.py
-    test_change_detector.py
+project/
+  ├── dir1/
+  │   ├── file1.py
+  │   └── file2.py
+  ├── dir2/
+  │   ├── file3.py
+  │   └── file4.py
+  └── file5.py
+```
+The return value of `get_project_structure` would be:
+```
+project
+  dir1
+    file1.py
+    file2.py
+  dir2
+    file3.py
+    file4.py
+  file5.py
 ```
 ### FunctionDef walk_dir(root, prefix):
 **walk_dir**: The function of this Function is to recursively traverse a directory and append the structure of the directory to a list.

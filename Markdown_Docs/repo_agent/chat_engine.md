@@ -17,6 +17,96 @@ The function will return the following list:
 ['import sys', 'from os import path']
 ```
 ***
+# FunctionDef build_path_tree(who_reference_me, reference_who, doc_item_path):
+**build_path_tree**: The function of this function is to build a hierarchical tree structure based on the given paths.
+
+**parameters**: 
+- who_reference_me: A list of paths that reference the current module.
+- reference_who: A list of paths that the current module references.
+- doc_item_path: The path of the current module.
+
+**Code Description**: 
+The `build_path_tree` function first defines a nested function called `tree`, which returns a `defaultdict` object. This `defaultdict` object is used to create a tree-like structure with default values as nested dictionaries.
+
+The function then initializes a `path_tree` variable by calling the `tree` function.
+
+Next, the function iterates over the `who_reference_me` and `reference_who` lists. For each path in these lists, the function splits the path into individual parts using the `split` method with the `os.sep` separator. It then traverses the `path_tree` by updating the `node` variable to the nested dictionary corresponding to each part of the path. This process effectively builds the hierarchical tree structure.
+
+After that, the function processes the `doc_item_path` by splitting it into parts and adding a special character ('✳️') before the last part. It then traverses the `path_tree` again to update the `node` variable to the nested dictionary corresponding to each part of the modified `doc_item_path`.
+
+The function also defines a nested function called `tree_to_string`, which recursively converts the `path_tree` into a string representation. This function takes an optional `indent` parameter to control the indentation level of each tree node. It iterates over the sorted items of the `tree` dictionary and appends each key to the string representation. If the corresponding value is another dictionary, the function recursively calls itself with an increased indentation level.
+
+Finally, the function returns the string representation of the `path_tree` by calling the `tree_to_string` function.
+
+**Note**: 
+- This function relies on the `os` module, so make sure to import it before using this function.
+- The `build_path_tree` function assumes that the `os.sep` separator is used to separate the parts of the paths.
+- The `build_path_tree` function assumes that the `defaultdict` class is available from the `collections` module.
+
+**Output Example**: 
+If the `who_reference_me` list contains `['repo_agent/chat_engine.py', 'repo_agent/utils.py']`, the `reference_who` list contains `['repo_agent/chat_engine.py/build_path_tree', 'repo_agent/utils.py']`, and the `doc_item_path` is `'repo_agent/chat_engine.py/build_path_tree'`, the function will return the following string representation of the `path_tree`:
+
+```
+repo_agent
+    chat_engine.py
+        build_path_tree
+    utils.py
+```
+## FunctionDef tree:
+**tree**: The function of this Function is to create a nested defaultdict object.
+
+**parameters**: This function does not take any parameters.
+
+**Code Description**: The `tree` function creates a defaultdict object with the default factory set to `tree`. A defaultdict is a subclass of the built-in dict class that provides a default value for missing keys. In this case, the default value is another defaultdict with the default factory set to `tree`. This creates a nested defaultdict structure that can be used to represent a tree-like data structure.
+
+The function returns the created defaultdict object.
+
+**Note**: The `tree` function does not require any parameters and can be called directly to create a nested defaultdict object.
+
+**Output Example**: If the `tree` function is called, it will return a defaultdict object with the default factory set to `tree`. This object can be used to represent a tree-like data structure.
+## FunctionDef tree_to_string(tree, indent):
+**tree_to_string**: The function of this function is to convert a nested dictionary representing a tree structure into a string representation. It recursively traverses the tree and appends each key to the string, indented according to its level in the tree.
+
+**parameters**: 
+- tree: A nested dictionary representing a tree structure.
+- indent (optional): An integer representing the current level of indentation. Default value is 0.
+
+**Code Description**: 
+The `tree_to_string` function takes a nested dictionary `tree` and an optional `indent` parameter. It initializes an empty string `s` to store the string representation of the tree.
+
+The function then iterates over the items of the `tree` dictionary, sorted by key. For each key-value pair, it appends the key to the string `s`, indented by `indent` number of spaces. 
+
+If the value corresponding to the key is another dictionary, the function recursively calls itself with the value as the new `tree` and increments the `indent` by 1. This ensures that the nested dictionaries are also converted to string representation with the appropriate indentation.
+
+Finally, the function returns the string representation of the tree.
+
+**Note**: 
+- The function assumes that the input `tree` is a nested dictionary representing a tree structure.
+- The `indent` parameter is used to control the level of indentation in the string representation. It is optional and has a default value of 0.
+- The function uses a depth-first traversal approach to convert the tree to a string representation.
+
+**Output Example**: 
+If the `tree` parameter is the following nested dictionary:
+```
+{
+    'A': {
+        'B': {
+            'C': {}
+        },
+        'D': {}
+    },
+    'E': {}
+}
+```
+The function will return the following string:
+```
+A
+    B
+        C
+    D
+E
+```
+***
 # ClassDef ChatEngine:
 **ChatEngine**: The function of this Class is to generate the documentation for functions or classes.
 

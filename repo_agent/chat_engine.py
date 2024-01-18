@@ -9,6 +9,7 @@ from project_manager import ProjectManager
 from prompt import SYS_PROMPT, USR_PROMPT
 from doc_meta_info import DocItem
 import inspect
+from collections import defaultdict
 from loguru import logger
 
 
@@ -17,6 +18,34 @@ def get_import_statements():
     import_lines = [line for line in source_lines if line.strip().startswith('import') or line.strip().startswith('from')]
     return import_lines
 
+def build_path_tree(who_reference_me, reference_who, doc_item_path):
+    def tree():
+        return defaultdict(tree)
+    path_tree = tree()
+
+    for path_list in [who_reference_me, reference_who]:
+        for path in path_list:
+            parts = path.split(os.sep)
+            node = path_tree
+            for part in parts:
+                node = node[part]
+
+    # 处理 doc_item_path
+    parts = doc_item_path.split(os.sep)
+    parts[-1] = '✳️' + parts[-1]  # 在最后一个对象前面加上星号
+    node = path_tree
+    for part in parts:
+        node = node[part]
+
+    def tree_to_string(tree, indent=0):
+        s = ''
+        for key, value in sorted(tree.items()):
+            s += '    ' * indent + key + '\n'
+            if isinstance(value, dict):
+                s += tree_to_string(value, indent + 1)
+        return s
+
+    return tree_to_string(path_tree)
 
 class ChatEngine:
     """
@@ -63,9 +92,16 @@ class ChatEngine:
         code_name = code_info["name"]
         code_content = code_info["code_content"]
         have_return = code_info["have_return"]
+        who_reference_me = doc_item.who_reference_me_name_list
+        reference_who = doc_item.reference_who_name_list    
+        file_path = doc_item.get_full_name()
+        doc_item_path = file_path + '/' + code_name
 
-        project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
-        project_structure = project_manager.get_project_structure()
+        # 树结构路径通过全局信息中的who reference me 和 reference who + 自身的file_path来获取
+        project_structure = build_path_tree(who_reference_me,reference_who, doc_item_path)
+
+        # project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
+        # project_structure = project_manager.get_project_structure() 
         # file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
         # code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) # 
         # referenced = True if len(code_from_referencer) > 0 else False
@@ -81,7 +117,7 @@ class ChatEngine:
             return "\n".join(prompt)
 
 
-        def get_referencer_prompt(doc_item: DocItem):
+        def get_referencer_prompt(doc_item: DocItem) -> str:
             if len(doc_item.who_reference_me) == 0:
                 return ""
             prompt = ["""Also, the code has been referenced by the following objects, their code and docs are as following:"""]
@@ -106,11 +142,12 @@ class ChatEngine:
         
         referencer_content = get_referencer_prompt(doc_item)
         reference_letter = get_referenced_prompt(doc_item)
-        file_path = doc_item.get_full_name()
+        project_structure_prefix = ", and the related hierarchical structure of this project is as follows (The current object is marked with an *):"
 
         sys_prompt = SYS_PROMPT.format(
             combine_ref_situation=combine_ref_situation, 
             file_path=file_path, 
+            project_structure_prefix = project_structure_prefix,
             project_structure=project_structure, 
             code_type_tell=code_type_tell, 
             code_name=code_name, 
@@ -122,6 +159,7 @@ class ChatEngine:
             parameters_or_attribute=parameters_or_attribute,
             language=language
             )
+        
         usr_prompt = USR_PROMPT.format(language=language)
         # import pdb; pdb.set_trace()
         # print("\nsys_prompt:\n",sys_prompt)
@@ -205,6 +243,7 @@ class ChatEngine:
                                      
                     attempt += 1
                     if attempt >= 2:
+                        # Remove related callers and callees
                         referenced = False
                         referencer_content = ""
                         reference_letter = ""
@@ -213,6 +252,7 @@ class ChatEngine:
                         sys_prompt = SYS_PROMPT.format(
                             combine_ref_situation=combine_ref_situation, 
                             file_path=file_path, 
+                            project_structure_prefix = project_structure_prefix,
                             project_structure=project_structure, 
                             code_type_tell=code_type_tell, 
                             code_name=code_name, 
