@@ -33,6 +33,8 @@ default_completion_kwargs:
   temperature: 0.2
   request_timeout: 60
 
+max_thread_count: 5
+
 repo_path: /path/to/your/local/repo
 project_hierarchy: .project_hierarchy # Please NOTE that this is a folder where you can store your project hierarchy and share it with your team members.
 Markdown_Docs_folder: Markdown_Docs # Please pay attention to the way the path is written. Do not add a slash cuz the absolute path is written starting with a slash.

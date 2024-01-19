@@ -4,6 +4,8 @@ import git
 import os,json
 import ast
 from tqdm import tqdm
+import threading
+from typing import Dict
 from config import CONFIG
 from utils.gitignore_checker import GitignoreChecker
 
@@ -23,6 +25,7 @@ class FileHandler:
             str: The content of the current changed file
         """
         abs_file_path = os.path.join(self.repo_path, self.file_path)
+
         with open(abs_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
         return content
@@ -288,39 +291,39 @@ class FileHandler:
 
         return markdown
 
-    def convert_all_to_markdown_files_from_json(self):
-        """
-        Converts all files to markdown format based on the JSON data.
+    # def convert_all_to_markdown_files_from_json(self):
+    #     """
+    #     Converts all files to markdown format based on the JSON data.
 
-        Reads the project hierarchy from a JSON file, checks if the Markdown_docs folder exists,
-        creates it if it doesn't, and then iterates through each file in the JSON data.
-        For each file, it converts the file to markdown format and writes it to the Markdown_docs folder.
+    #     Reads the project hierarchy from a JSON file, checks if the Markdown_docs folder exists,
+    #     creates it if it doesn't, and then iterates through each file in the JSON data.
+    #     For each file, it converts the file to markdown format and writes it to the Markdown_docs folder.
 
-        Args:
-            self (object): The file_handler object.
+    #     Args:
+    #         self (object): The file_handler object.
 
-        Returns:
-            None
-        """
-        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
+    #     Returns:
+    #         None
+    #     """
+    #     with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
+    #         json_data = json.load(f)
 
-        # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
-        markdown_docs_path = os.path.join(self.repo_path, CONFIG['Markdown_Docs_folder'])
-        if not os.path.exists(markdown_docs_path):
-            os.mkdir(markdown_docs_path)
+    #     # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
+    #     markdown_docs_path = os.path.join(self.repo_path, CONFIG['Markdown_Docs_folder'])
+    #     if not os.path.exists(markdown_docs_path):
+    #         os.mkdir(markdown_docs_path)
 
-        # 遍历json_data["files"]列表中的每个字典
-        for rel_file_path, file_dict in json_data.items():
-            md_path = os.path.join(markdown_docs_path, rel_file_path.replace('.py', '.md'))
-            markdown = self.convert_to_markdown_file(rel_file_path)
+    #     # 遍历json_data["files"]列表中的每个字典
+    #     for rel_file_path, file_dict in json_data.items():
+    #         md_path = os.path.join(markdown_docs_path, rel_file_path.replace('.py', '.md'))
+    #         markdown = self.convert_to_markdown_file(rel_file_path)
             
-            # 检查目录是否存在，如果不存在，就创建它
-            os.makedirs(os.path.dirname(md_path), exist_ok=True)
+    #         # 检查目录是否存在，如果不存在，就创建它
+    #         os.makedirs(os.path.dirname(md_path), exist_ok=True)
 
-            # 将markdown文档写入到Markdown_docs文件夹中
-            with open(md_path, 'w', encoding='utf-8') as f:
-                f.write(markdown)
+    #         # 将markdown文档写入到Markdown_docs文件夹中
+    #         with open(md_path, 'w', encoding='utf-8') as f:
+    #             f.write(markdown)
     
 
 if __name__ == "__main__":

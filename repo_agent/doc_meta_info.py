@@ -1,6 +1,7 @@
 """存储doc对应的信息，同时处理引用的关系
 """
 from __future__ import annotations
+import threading
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Callable, Optional
 from colorama import Fore, Style
@@ -14,7 +15,7 @@ from tqdm import tqdm
 
 from config import CONFIG
 from file_handler import FileHandler
-
+from multi_task_dispatch import TaskManager
 
 @unique
 class EdgeType(Enum):
@@ -43,7 +44,8 @@ class DocItemType(Enum):
             return "FunctionDef"
         elif self == DocItemType._sub_function:
             return "FunctionDef"
-        assert False, f"{self.name}"
+        # assert False, f"{self.name}"
+        return self.name
 
     def print_self(self):
         color = Fore.WHITE
@@ -90,6 +92,8 @@ class DocItem():
 
     reference_who_name_list: List[str] = field(default_factory=list) #他引用了谁，这个可能是老版本的
     who_reference_me_name_list: List[str] = field(default_factory=list) #谁引用了他，这个可能是老版本的
+
+    multithread_task_id: int = -1 #在多线程中的task_id
 
     def __eq__(self, other) -> bool:
         # 检查other是否是MyCustomClass的实例
@@ -219,6 +223,8 @@ class MetaInfo():
 
     in_generation_process: bool = False
 
+    checkpoint_lock: threading.Lock = threading.Lock()
+
     @staticmethod
     def init_from_project_path(project_abs_path: str) -> MetaInfo:
         """从一个仓库path中初始化metainfo"""
@@ -250,24 +256,22 @@ class MetaInfo():
         return metainfo   
 
     def checkpoint(self, target_dir_path: str, flash_reference_relation=False):
-        logger.info(f"will save MetaInfo at {target_dir_path}")
-        if not os.path.exists(target_dir_path):
-            os.makedirs(target_dir_path)
-        now_hierarchy_json = self.to_hierarchy_json(flash_reference_relation=flash_reference_relation)
-        with open(os.path.join(target_dir_path, ".project_hierarchy.json"), "w") as writer:
-            json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
-        
-        with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
-            meta = {
-                "repo_path": self.repo_path,
-                "doc_version": self.document_version,
-                "in_generation_process": self.in_generation_process,
-            }
-            json.dump(meta, writer, indent=2, ensure_ascii=False)
+        with self.checkpoint_lock:
+            logger.info(f"will save MetaInfo at {target_dir_path}")
+            if not os.path.exists(target_dir_path):
+                os.makedirs(target_dir_path)
+            now_hierarchy_json = self.to_hierarchy_json(flash_reference_relation=flash_reference_relation)
+            with open(os.path.join(target_dir_path, ".project_hierarchy.json"), "w") as writer:
+                json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
+            
+            with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
+                meta = {
+                    "repo_path": self.repo_path,
+                    "doc_version": self.document_version,
+                    "in_generation_process": self.in_generation_process,
+                }
+                json.dump(meta, writer, indent=2, ensure_ascii=False)
     
-    def load_task_list(self):
-        task_list = self.get_topology()
-        return [item for item in task_list if item.item_status != DocItemStatus.doc_up_to_date]
     
     def print_task_list(self, item_list):
         from prettytable import PrettyTable
@@ -370,7 +374,7 @@ class MetaInfo():
             # logger.info(f"find {ref_count} refer-relation in {file_node.get_full_name()}")
     
 
-    def get_subtree_list(self, now_node: DocItem) -> List[Any]:
+    def get_task_manager(self, now_node: DocItem, task_available_func: Callable = None) -> TaskManager:
         """先写一个退化的版本，只考虑拓扑引用关系
         """
         doc_items = now_node.get_travel_list()
@@ -382,41 +386,55 @@ class MetaInfo():
                 return False
             doc_items = list(filter(in_white_list, doc_items))
         items_by_depth = sorted(doc_items, key=lambda x: x.depth)
-        sorted_items = []
+        deal_items = []
+        task_manager = TaskManager()
         bar = tqdm(total = len(items_by_depth),desc="sorting topology order")
         while items_by_depth:
             for item in items_by_depth:
-                if all(referenced in sorted_items for referenced in item.reference_who):
-                    sorted_items.append(item)
+                if all(referenced in deal_items for referenced in item.reference_who):
+                    """一个任务依赖于所有引用者和他的子节点"""
+                    item_denp_task_ids = []
+                    for _, child in item.children.items():
+                        if child.multithread_task_id in task_manager.task_dict.keys():
+                            item_denp_task_ids.append(child.multithread_task_id)
+                    for referenced_item in item.reference_who:
+                        if referenced_item.multithread_task_id in task_manager.task_dict.keys():
+                            item_denp_task_ids.append(referenced_item.multithread_task_id)
+                    item_denp_task_ids = list(set(item_denp_task_ids)) #去重
+                    if task_available_func == None or task_available_func(item):
+                        task_id = task_manager.add_task(dependency_task_id=item_denp_task_ids,extra=item)
+                        item.multithread_task_id = task_id
+                    deal_items.append(item)
                     items_by_depth.remove(item)
                     bar.update(1)
-
-                    #将尾递归转化为while的形式来解决最大深度的问题
-                    while item.father is not None:
-                        father_node = item.father
-                        all_children_processed = True
-                        for _, node in father_node.children.items():
-                            if node not in sorted_items:
-                                all_children_processed = False
-                                break
-                        if not all_children_processed:
-                            break
-                        sorted_items.append(father_node)
-                        if father_node in items_by_depth:
-                            items_by_depth.remove(father_node)
-                        bar.update(1)
-                        item = father_node  # 更新item为父节点，继续循环
                     break
 
-        # Further optimization for minimizing tree distance could be added here
-        return sorted_items
+                    # #将尾递归转化为while的形式来解决最大深度的问题
+                    # while item.father is not None:
+                    #     father_node = item.father
+                    #     all_children_processed = True
+                    #     for _, node in father_node.children.items():
+                    #         if node not in sorted_items:
+                    #             all_children_processed = False
+                    #             break
+                    #     if not all_children_processed:
+                    #         break
+                    #     sorted_items.append(father_node)
+                    #     if father_node in items_by_depth:
+                    #         items_by_depth.remove(father_node)
+                    #     bar.update(1)
+                    #     item = father_node  # 更新item为父节点，继续循环
+                    # break
 
-    def get_topology(self) -> List[DocItem]:
+        # Further optimization for minimizing tree distance could be added here
+        return task_manager
+
+    def get_topology(self, task_available_func = None) -> TaskManager:
         """计算repo中所有对象的拓扑顺序
         """
         self.parse_reference()
-        topology_list = self.get_subtree_list(self.target_repo_hierarchical_tree)
-        return topology_list
+        task_manager = self.get_task_manager(self.target_repo_hierarchical_tree,task_available_func=task_available_func)
+        return task_manager
     
     def _map(self, deal_func: Callable):
         """将所有节点进行同一个操作"""
