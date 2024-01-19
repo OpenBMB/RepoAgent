@@ -402,7 +402,8 @@ class MetaInfo():
                         if not all_children_processed:
                             break
                         sorted_items.append(father_node)
-                        items_by_depth.remove(father_node)
+                        if father_node in items_by_depth:
+                            items_by_depth.remove(father_node)
                         bar.update(1)
                         item = father_node  # 更新item为父节点，继续循环
                     break
