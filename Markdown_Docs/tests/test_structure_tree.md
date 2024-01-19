@@ -1,93 +1,65 @@
 # FunctionDef build_path_tree(who_reference_me, reference_who, doc_item_path):
-**build_path_tree**: The function of this Function is to build a tree-like structure representing the paths of objects in a project.
+**build_path_tree**: build_path_tree函数的功能是构建路径树。
+**parameters**: build_path_tree函数的参数有三个：
+- who_reference_me: 一个包含引用当前对象的路径列表的列表。
+- reference_who: 一个包含当前对象引用的路径列表的列表。
+- doc_item_path: 当前对象的路径。
 
-**parameters**: 
-- who_reference_me: A list of paths representing the objects that reference the current object.
-- reference_who: A list of paths representing the objects that the current object references.
-- doc_item_path: A string representing the path of the current object.
+**Code Description**: build_path_tree函数首先定义了一个内部函数tree，用于创建一个默认字典的树结构。然后，它创建了一个名为path_tree的树结构对象。
 
-**Code Description**: 
-The function starts by defining a nested function called "tree" which returns a defaultdict with the default value set to another defaultdict. This nested function is used to create a tree-like structure.
+接下来，函数使用两个循环遍历who_reference_me和reference_who列表中的路径。对于每个路径，函数将其拆分为部分，并使用这些部分构建路径树。最后，函数处理doc_item_path，将其拆分为部分，并在路径树中找到相应的节点。
 
-Next, the function initializes an empty path_tree using the "tree" function.
+函数还定义了一个内部函数tree_to_string，用于将路径树转换为字符串表示。该函数使用递归方式遍历树，并按照一定的缩进格式将树的节点转换为字符串。
 
-The function then iterates over the paths in both "who_reference_me" and "reference_who" lists. For each path, it splits the path into individual parts using the os.sep separator (which represents the path separator for the current operating system). It then traverses the path_tree, creating nested defaultdicts for each part of the path.
+最后，函数返回路径树的字符串表示。
 
-After that, the function processes the "doc_item_path" by splitting it into parts and replacing the last part with a modified version that has a star symbol (*) prepended to it. It then traverses the path_tree again, creating nested defaultdicts for each part of the modified "doc_item_path".
+**Note**: 使用该代码时需要注意以下几点：
+- 输入的路径列表应该是一个包含路径字符串的列表。
+- 路径应该使用操作系统特定的路径分隔符进行分割。
+- 函数返回的是路径树的字符串表示，可以根据需要进行进一步处理或打印输出。
 
-Finally, the function defines another nested function called "tree_to_string" which takes a tree-like structure and converts it into a string representation. It recursively iterates over the tree, sorting the items and adding each key to the string representation. If the value associated with a key is another dictionary, it recursively calls the "tree_to_string" function to add its contents to the string representation.
+**Output Example**: 假设输入的路径列表为：
+who_reference_me = ['tests', 'test_structure_tree.py']
+reference_who = ['build_path_tree']
+doc_item_path = 'tests/test_structure_tree.py/build_path_tree'
 
-The function returns the string representation of the path_tree.
-
-**Note**: 
-- The function assumes that the paths in "who_reference_me", "reference_who", and "doc_item_path" are using the operating system's path separator.
-- The function uses the defaultdict class from the collections module to automatically create nested defaultdicts when accessing non-existent keys.
-
-**Output Example**: 
-```
+函数返回的路径树字符串表示为：
 tests
     test_structure_tree.py
         build_path_tree
-            ✳️build_path_tree
-```
 ## FunctionDef tree:
-**tree**: The function of this Function is to create a nested dictionary representing a tree structure.
+**tree**: tree函数的功能是返回一个默认字典的树结构。
 
-**parameters**: This Function does not take any parameters.
+**参数**: 这个函数没有参数。
 
-**Code Description**: 
-The `tree` function initializes and returns a nested dictionary using the `defaultdict` class from the `collections` module. The `defaultdict` class allows us to specify a default value for keys that have not been set yet. In this case, the default value is another `tree` object, which means that each key in the dictionary will have a nested dictionary as its value.
+**代码说明**: 这个函数通过调用defaultdict函数创建一个默认字典的树结构，并将其返回。
 
-**Note**: 
-- This function assumes that the `defaultdict` class has been imported from the `collections` module.
-- The returned nested dictionary can be used to represent a tree structure, where each key represents a node and its value represents its children.
+- 首先，调用defaultdict函数，并将参数设置为tree，表示默认字典的值也是一个树结构。
+- 然后，将创建的默认字典的树结构返回。
 
-**Output Example**: 
-The output of this function is a nested dictionary representing a tree structure.
+**注意**: 使用这段代码时需要注意以下几点：
+- 这个函数没有参数。
+- 返回值是一个默认字典的树结构。
+
+**输出示例**: 假设调用tree函数后返回的树结构为{'A': {'B': {}, 'C': {}}, 'D': {'E': {}}}
 ## FunctionDef tree_to_string(tree, indent):
-**tree_to_string**: The function of this Function is to convert a nested dictionary representing a tree structure into a string representation.
-
-**parameters**: 
-- tree: A nested dictionary representing a tree structure.
-- indent: An integer representing the number of indentation levels.
-
-**Code Description**: 
-The `tree_to_string` function takes a nested dictionary `tree` and an integer `indent` as parameters. It initializes an empty string `s` to store the string representation of the tree. 
-
-The function iterates over the items in the `tree` dictionary, sorted by key. For each key-value pair, it appends the key to the string `s`, preceded by a number of indentation spaces determined by the `indent` parameter. 
-
-If the value associated with the key is another dictionary, the function recursively calls itself with the value as the new `tree` parameter and increments the `indent` by 1. This allows the function to handle nested levels of the tree structure.
-
-Finally, the function returns the string representation of the tree.
-
-**Note**: 
-- This function assumes that the input `tree` is a nested dictionary representing a tree structure.
-- The `indent` parameter is optional and defaults to 0 if not provided.
-
-**Output Example**: 
-If the input `tree` is:
-```
-{
-    'A': {
-        'B': {
-            'C': {},
-            'D': {}
-        },
-        'E': {}
-    },
-    'F': {
-        'G': {}
-    }
-}
-```
-The function will return the following string:
-```
-A
-    B
+**tree_to_string**: tree_to_string函数的功能是将树结构转换为字符串表示。
+**参数**: 这个函数的参数。
+- tree: 表示树结构的字典。
+- indent: 表示缩进的级别，默认为0。
+**代码说明**: 这个函数通过递归地遍历树结构，将每个节点的键值对转换为字符串，并根据缩进级别添加相应的缩进。
+- 首先，定义一个空字符串s，用于存储转换后的字符串。
+- 然后，对树结构的键值对进行排序，并遍历每个键值对。
+- 对于每个键值对，将键添加到字符串s中，并根据缩进级别添加相应的缩进。
+- 如果值是一个字典，则递归调用tree_to_string函数，并将缩进级别加1。
+- 最后，返回转换后的字符串s。
+**注意**: 使用这段代码时需要注意以下几点：
+- tree参数必须是一个字典类型。
+- indent参数必须是一个整数类型。
+**输出示例**: 假设树结构为{'A': {'B': {}, 'C': {}}, 'D': {'E': {}}}
+    A
+        B
         C
-        D
-    E
-F
-    G
-```
+    D
+        E
 ***

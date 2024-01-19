@@ -3,6 +3,7 @@
 import git
 import os,json
 import ast
+from tqdm import tqdm
 from config import CONFIG
 from utils.gitignore_checker import GitignoreChecker
 
@@ -226,12 +227,14 @@ class FileHandler:
         repo_structure = {}
         gitignore_checker = GitignoreChecker(directory=self.repo_path,
                                             gitignore_path=os.path.join(self.repo_path, '.gitignore'))
-        for not_ignored_files in gitignore_checker.check_files_and_folders():
+        bar = tqdm(gitignore_checker.check_files_and_folders())
+        for not_ignored_files in bar:
             try:
                 repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
             except Exception as e:
                 print(f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}")
                 continue
+            bar.set_description(f"generating repo structure: {not_ignored_files}")
         return repo_structure
     
 

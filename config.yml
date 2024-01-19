@@ -37,5 +37,6 @@ repo_path: /path/to/your/local/repo
 project_hierarchy: .project_hierarchy # Please NOTE that this is a folder where you can store your project hierarchy and share it with your team members.
 Markdown_Docs_folder: Markdown_Docs # Please pay attention to the way the path is written. Do not add a slash cuz the absolute path is written starting with a slash.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # optional and if needed, relative to repo_path
+whitelist_path: #if whitelist_path is not none, We only generate docs on whitelist
 
 language: zh

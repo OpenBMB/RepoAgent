@@ -1,249 +1,179 @@
 # FunctionDef get_import_statements:
-**get_import_statements**: The function of this function is to retrieve the import statements from the source code.
-
-**parameters**: This function does not take any parameters.
-
-**Code Description**: The `get_import_statements` function uses the `inspect.getsourcelines` function to retrieve the source code lines of the current module. It then filters the source lines to find the lines that start with either 'import' or 'from'. These lines are considered import statements. The function returns a list of import lines.
-
-**Note**: This function assumes that it is being called from within the module for which the import statements need to be retrieved.
-
-**Output Example**: If the source code contains the following import statements:
+**get_import_statements**: get_import_statements函数的功能是获取代码中的导入语句。
+**参数**: 该函数没有参数。
+**代码描述**: 该函数通过使用inspect模块的getsourcelines函数获取代码的源代码行，并将源代码行中以'import'或'from'开头的行筛选出来，然后返回这些导入语句的列表。
+**注意**: 使用该函数需要导入inspect和sys模块。
+**输出示例**: 假设代码中包含以下导入语句：
 ```
-import sys
-from os import path
+import os
+from datetime import datetime
 ```
-The function will return the following list:
+那么调用get_import_statements函数将返回以下列表：
 ```
-['import sys', 'from os import path']
+['import os', 'from datetime import datetime']
 ```
 ***
 # FunctionDef build_path_tree(who_reference_me, reference_who, doc_item_path):
-**build_path_tree**: The function of this function is to build a hierarchical tree structure based on the given paths.
-
-**parameters**: 
-- who_reference_me: A list of paths that reference the current module.
-- reference_who: A list of paths that the current module references.
-- doc_item_path: The path of the current module.
-
-**Code Description**: 
-The `build_path_tree` function first defines a nested function called `tree`, which returns a `defaultdict` object. This `defaultdict` object is used to create a tree-like structure with default values as nested dictionaries.
-
-The function then initializes a `path_tree` variable by calling the `tree` function.
-
-Next, the function iterates over the `who_reference_me` and `reference_who` lists. For each path in these lists, the function splits the path into individual parts using the `split` method with the `os.sep` separator. It then traverses the `path_tree` by updating the `node` variable to the nested dictionary corresponding to each part of the path. This process effectively builds the hierarchical tree structure.
-
-After that, the function processes the `doc_item_path` by splitting it into parts and adding a special character ('✳️') before the last part. It then traverses the `path_tree` again to update the `node` variable to the nested dictionary corresponding to each part of the modified `doc_item_path`.
-
-The function also defines a nested function called `tree_to_string`, which recursively converts the `path_tree` into a string representation. This function takes an optional `indent` parameter to control the indentation level of each tree node. It iterates over the sorted items of the `tree` dictionary and appends each key to the string representation. If the corresponding value is another dictionary, the function recursively calls itself with an increased indentation level.
-
-Finally, the function returns the string representation of the `path_tree` by calling the `tree_to_string` function.
-
-**Note**: 
-- This function relies on the `os` module, so make sure to import it before using this function.
-- The `build_path_tree` function assumes that the `os.sep` separator is used to separate the parts of the paths.
-- The `build_path_tree` function assumes that the `defaultdict` class is available from the `collections` module.
-
+**build_path_tree**: build_path_tree函数的功能是构建路径树。
+**parameters**: build_path_tree函数的参数为who_reference_me，reference_who和doc_item_path。
+**Code Description**: build_path_tree函数首先定义了一个内部函数tree，用于创建一个默认字典树。然后，它创建了一个路径树path_tree。接下来，它遍历who_reference_me和reference_who两个路径列表，并将每个路径拆分成部分。然后，它将每个部分添加到路径树中的相应节点。接着，它处理doc_item_path，将其拆分成部分，并在最后一个对象前面加上星号。然后，它将每个部分添加到路径树中的相应节点。最后，它定义了一个内部函数tree_to_string，用于将路径树转换为字符串表示。最后，它返回路径树的字符串表示。
+**Note**: 使用该代码时需要注意以下几点：
+- 该函数依赖于os模块和defaultdict类。
+- 参数who_reference_me和reference_who应该是包含路径字符串的列表。
+- 参数doc_item_path应该是一个路径字符串。
 **Output Example**: 
-If the `who_reference_me` list contains `['repo_agent/chat_engine.py', 'repo_agent/utils.py']`, the `reference_who` list contains `['repo_agent/chat_engine.py/build_path_tree', 'repo_agent/utils.py']`, and the `doc_item_path` is `'repo_agent/chat_engine.py/build_path_tree'`, the function will return the following string representation of the `path_tree`:
-
 ```
-repo_agent
-    chat_engine.py
-        build_path_tree
-    utils.py
+who_reference_me
+    path1
+        subpath1
+    path2
+        subpath2
+reference_who
+    path3
+        subpath3
+    path4
+        subpath4
+✳️doc_item_path
+    subpath5
 ```
 ## FunctionDef tree:
-**tree**: The function of this Function is to create a nested defaultdict object.
+**tree**: tree函数的作用是返回一个defaultdict(tree)对象。
+**参数**: 该函数没有参数。
+**代码描述**: 该函数的代码非常简单，只有一行代码。它使用了defaultdict函数来创建一个defaultdict(tree)对象，并将其作为返回值返回。
+**详细代码分析和描述**: 
+- 该函数使用了collections模块中的defaultdict函数。defaultdict函数是一个字典的子类，它重写了字典的__missing__方法，当访问一个不存在的键时，会自动调用__missing__方法来返回一个默认值。在这里，我们将defaultdict的默认值设置为tree函数本身，这样当访问一个不存在的键时，会返回一个新的defaultdict(tree)对象。
+- 使用defaultdict(tree)对象的好处是，它可以创建一个多层嵌套的字典结构。当访问一个不存在的键时，会自动创建一个新的defaultdict(tree)对象作为值，并将其关联到该键上。这样就可以方便地构建树形结构的数据。
+**注意**: 
+- 在使用tree函数之前，需要先导入collections模块。
+**输出示例**: 
+```
+from collections import defaultdict
 
-**parameters**: This function does not take any parameters.
-
-**Code Description**: The `tree` function creates a defaultdict object with the default factory set to `tree`. A defaultdict is a subclass of the built-in dict class that provides a default value for missing keys. In this case, the default value is another defaultdict with the default factory set to `tree`. This creates a nested defaultdict structure that can be used to represent a tree-like data structure.
-
-The function returns the created defaultdict object.
-
-**Note**: The `tree` function does not require any parameters and can be called directly to create a nested defaultdict object.
-
-**Output Example**: If the `tree` function is called, it will return a defaultdict object with the default factory set to `tree`. This object can be used to represent a tree-like data structure.
+tree = defaultdict(tree)
+```
+在上面的示例中，我们首先导入了collections模块，然后使用tree函数创建了一个defaultdict(tree)对象，并将其赋值给变量tree。这样我们就可以使用tree变量来访问和操作树形结构的数据了。
 ## FunctionDef tree_to_string(tree, indent):
-**tree_to_string**: The function of this function is to convert a nested dictionary representing a tree structure into a string representation. It recursively traverses the tree and appends each key to the string, indented according to its level in the tree.
+**tree_to_string**: tree_to_string函数的功能是将树结构转换为字符串表示。
+**参数**: 该函数的参数为tree和indent，其中tree是一个字典类型的树结构，indent是一个整数类型的缩进值，默认为0。
+**代码描述**: 该函数通过递归遍历树结构，将树的每个节点转换为字符串，并根据缩进值添加相应的缩进。具体步骤如下：
+- 初始化一个空字符串s。
+- 遍历树的每个节点，使用sorted函数按照节点的键进行排序。
+- 对于每个节点，根据缩进值添加相应的缩进，并将节点的键添加到字符串s中。
+- 如果节点的值是一个字典类型，则递归调用tree_to_string函数，并将缩进值加1。
+- 返回字符串s。
 
-**parameters**: 
-- tree: A nested dictionary representing a tree structure.
-- indent (optional): An integer representing the current level of indentation. Default value is 0.
-
-**Code Description**: 
-The `tree_to_string` function takes a nested dictionary `tree` and an optional `indent` parameter. It initializes an empty string `s` to store the string representation of the tree.
-
-The function then iterates over the items of the `tree` dictionary, sorted by key. For each key-value pair, it appends the key to the string `s`, indented by `indent` number of spaces. 
-
-If the value corresponding to the key is another dictionary, the function recursively calls itself with the value as the new `tree` and increments the `indent` by 1. This ensures that the nested dictionaries are also converted to string representation with the appropriate indentation.
-
-Finally, the function returns the string representation of the tree.
-
-**Note**: 
-- The function assumes that the input `tree` is a nested dictionary representing a tree structure.
-- The `indent` parameter is used to control the level of indentation in the string representation. It is optional and has a default value of 0.
-- The function uses a depth-first traversal approach to convert the tree to a string representation.
-
-**Output Example**: 
-If the `tree` parameter is the following nested dictionary:
-```
-{
-    'A': {
-        'B': {
-            'C': {}
-        },
-        'D': {}
-    },
-    'E': {}
-}
-```
-The function will return the following string:
+**注意**: 使用该函数时需要传入一个字典类型的树结构，并确保树结构中的键值对按照需要的顺序排列。
+**输出示例**: 假设树结构为{'A': {'B': {}, 'C': {}}, 'D': {'E': {}}}
+调用tree_to_string(tree)的返回值为：
 ```
 A
     B
-        C
-    D
-E
+    C
+D
+    E
 ```
 ***
 # ClassDef ChatEngine:
-**ChatEngine**: The function of this Class is to generate the documentation for functions or classes.
+**ChatEngine**: ChatEngine的功能是生成函数或类的文档。
 
-**attributes**: This Class has one attribute:
-- `config`: It stores the configuration settings.
+**attributes**: 这个类的属性。
 
-**Code Description**: The `ChatEngine` Class has the following methods:
+**Code Description**: 这个类的描述。
 
-1. `__init__(self, CONFIG)`: This method is the constructor of the `ChatEngine` Class. It initializes the `config` attribute with the provided `CONFIG` parameter.
+ChatEngine类用于生成函数或类的文档。
 
-2. `num_tokens_from_string(self, string: str, encoding_name = "cl100k_base") -> int`: This method takes a text string as input and returns the number of tokens in the string. It uses the `tiktoken` library to encode the string and then calculates the length of the encoded tokens.
+- `__init__(self, CONFIG)`: 这个方法是ChatEngine类的构造函数，它接受一个CONFIG参数，并将其赋值给self.config。
 
-3. `generate_doc(self, doc_item: DocItem, file_handler)`: This method generates the documentation for a given `doc_item` object. It takes the `doc_item` and `file_handler` as parameters. It extracts the necessary information from the `doc_item` object, such as the code type, name, content, and whether it has a return value. It also checks if the code has been referenced by other objects or if it references other objects. It then constructs a system prompt and a user prompt based on the extracted information. The system prompt includes the project structure, code type, code name, code content, and whether it has a return value. The user prompt includes the desired language for the documentation. The method then uses the OpenAI GPT-3.5 Turbo model to generate the documentation based on the prompts. It makes use of the OpenAI API to send the prompts and receive the generated documentation. The generated documentation is returned as the output.
+- `num_tokens_from_string(self, string: str, encoding_name = "cl100k_base") -> int`: 这个方法接受一个字符串参数和一个编码名称参数，默认为"cl100k_base"。它返回文本字符串中的标记数量。
 
-**Note**: The code makes use of the `ProjectManager` class from the `project_manager` module to get the project structure. It also uses the `tiktoken` library to encode the text string and calculate the number of tokens. The documentation generation process involves sending prompts to the OpenAI GPT-3.5 Turbo model using the OpenAI API.
+- `generate_doc(self, doc_item: DocItem, file_handler)`: 这个方法接受一个DocItem对象和一个file_handler参数。它根据传入的doc_item生成文档，并将结果写入file_handler。
 
-**Output Example**: Mock up a possible appearance of the code's return value.
+**Note**: 使用该代码时需要注意的事项。
+
+**Output Example**: 模拟代码返回值的可能外观。
 ## FunctionDef __init__(self, CONFIG):
-**__init__**: The function of this Function is to initialize an instance of the ChatEngine class.
-
-**parameters**: 
-- CONFIG: A configuration object that contains the settings for the chat engine.
-
-**Code Description**: 
-The `__init__` function is the constructor method of the ChatEngine class. It is called when a new instance of the class is created. The function takes a single parameter `CONFIG`, which is an object that contains the configuration settings for the chat engine.
-
-Inside the function, the `CONFIG` object is assigned to the `config` attribute of the instance using the `self` keyword. This allows the configuration settings to be accessed by other methods within the class.
-
-**Note**: 
-- The `__init__` function is automatically called when a new instance of the ChatEngine class is created.
-- The `CONFIG` parameter should be an object that contains the necessary configuration settings for the chat engine.
+**__init__**: __init__函数的功能是初始化ChatEngine对象。
+**参数**: 这个函数的参数是CONFIG，表示配置信息。
+**代码描述**: 这个函数将传入的CONFIG赋值给self.config，用于初始化ChatEngine对象的配置信息。
+**注意**: 在使用这段代码时需要注意以下几点：
+- CONFIG参数需要是一个有效的配置信息，否则可能会导致初始化失败。
+- 初始化后的ChatEngine对象可以通过self.config来访问配置信息。
 ## FunctionDef num_tokens_from_string(self, string, encoding_name):
-**num_tokens_from_string**: The function of this Function is to return the number of tokens in a text string.
-**parameters**: 
-- string: A string representing the text for which the number of tokens needs to be calculated.
-- encoding_name (optional): A string representing the name of the encoding to be used. The default value is "cl100k_base".
-
-**Code Description**: 
-The `num_tokens_from_string` function takes a text string and an optional encoding name as input parameters. It uses the `tiktoken.get_encoding` function to retrieve the encoding based on the provided encoding name. The function then encodes the input string using the retrieved encoding and calculates the number of tokens in the encoded string using the `len` function. Finally, it returns the number of tokens as an integer.
-
-**Note**: 
-- The encoding name parameter is optional and has a default value of "cl100k_base". If no encoding name is provided, the function will use the default encoding.
-- The `tiktoken.get_encoding` function is assumed to be defined elsewhere in the codebase.
-
-**Output Example**: 
-If the input string is "Hello, world!", and the encoding name is "cl100k_base", the function will return the number of tokens in the encoded string, which could be 3.
+**num_tokens_from_string**: num_tokens_from_string函数的功能是返回文本字符串中的标记数。
+**参数**: 这个函数的参数。
+- string: str类型，表示要计算标记数的文本字符串。
+- encoding_name: str类型，表示要使用的编码名称，默认为"cl100k_base"。
+**代码描述**: 这个函数通过使用指定的编码将文本字符串编码为标记列表，并返回标记列表的长度，即标记数。
+- 首先，函数使用tiktoken.get_encoding(encoding_name)获取指定编码的编码器。
+- 然后，函数使用编码器的encode方法将文本字符串编码为标记列表。
+- 最后，函数返回标记列表的长度，即标记数。
+**注意**: 使用这段代码需要注意以下几点：
+- 该函数依赖于tiktoken模块，需要确保该模块已经正确安装和导入。
+- encoding_name参数可以根据需要进行修改，以使用不同的编码。
+**输出示例**: 模拟代码返回值的可能外观。
+例如，假设输入的文本字符串为"Hello, world!"，编码名称为"cl100k_base"，则函数将返回整数值6，表示文本字符串中的标记数为6。
 ## FunctionDef generate_doc(self, doc_item, file_handler):
-**generate_doc**: The function of this Function is to generate a detailed explanation document for a given object based on its code content and combine it with its calling situation in the project.
+**generate_doc**: generate_doc函数的作用是生成文档。
 
 **parameters**: 
-- `doc_item` (DocItem): The DocItem object representing the target object for which the documentation needs to be generated.
-- `file_handler`: The FileHandler object used to handle the file operations.
+- doc_item: DocItem类型的参数，表示文档项的信息。
+- file_handler: 表示文件处理器。
 
 **Code Description**: 
-The `generate_doc` function takes in a `doc_item` object and a `file_handler` object as parameters. It first extracts the necessary information from the `doc_item` object, such as the code type, code name, code content, and whether the code has a return value. It also checks if the `doc_item` object has any references or is referenced by other objects.
-
-Next, it retrieves the project structure using the `ProjectManager` class and prepares the necessary prompts for the OpenAI GPT-3 chat-based language model. It constructs a system prompt that includes information about the code type, code name, code content, whether it has a return value, and the project structure. It also includes prompts for the references and referencers of the `doc_item` object.
-
-The function then makes a request to the OpenAI API using the configured language model. It sends the system prompt and a user prompt to generate a response. The response contains the generated documentation for the `doc_item` object.
+该函数首先获取代码的相关信息，包括代码类型、代码名称、代码内容、是否有返回值等。然后根据代码的引用关系和文件路径构建项目的层级结构。接下来，根据代码的引用关系和被引用关系，生成引用和被引用的提示信息。最后，根据系统提示和用户提示，调用OpenAI的API生成文档。
 
 **Note**: 
-- The function uses the OpenAI GPT-3 chat-based language model to generate the documentation.
-- The function handles potential errors, such as connection errors and exceeding the model's maximum context length.
-- The function limits the code length to ensure it fits within the model's maximum token limit.
+- 该函数使用了OpenAI的API来生成文档，需要确保API的可用性和正确的配置。
+- 生成的文档内容可能会受到代码长度的限制，如果超过限制，会尝试使用更长的模型来处理。
+- 生成的文档内容可能会受到网络连接的影响，如果连接出现问题，会进行重试。
 
 **Output Example**: 
-Mock up a possible appearance of the code's return value.
+生成的文档的示例输出如下：
+
+```python
+generate_doc(self, doc_item: DocItem, file_handler)
+```
+
+请注意：
+- 生成的文档内容不包含Markdown的标题和分割线语法。
+- 主要使用中文进行描述，如果需要，可以在分析和描述中使用一些英文单词来增强文档的可读性，因为不需要将函数名或变量名翻译成目标语言。
 ### FunctionDef get_referenced_prompt(doc_item):
-**get_referenced_prompt**: The function of this Function is to generate a prompt that displays the objects called by the code.
-
-**parameters**: 
-- doc_item: A DocItem object that contains information about the code item.
-
-**Code Description**: 
-The `get_referenced_prompt` function takes a `DocItem` object as input and returns a string prompt that displays the objects called by the code. 
-
-The function first checks if the `doc_item` has any referenced objects. If there are no referenced objects, an empty string is returned.
-
-If there are referenced objects, the function creates a list called `prompt` to store the prompt lines. The initial line of the prompt is a general description of the code calling the objects.
-
-Then, the function iterates over each referenced object in the `doc_item.reference_who` list. For each referenced object, it generates a prompt line that includes the object's name, document, and raw code. The object's name is obtained using the `get_full_name` method of the `reference_item` object. The document is extracted from the `md_content` attribute of the `reference_item` object, and if it is empty, the prompt displays "None". The raw code is obtained from the `code_content` key in the `content` attribute of the `reference_item` object, and if it is not present, an empty string is displayed.
-
-Each prompt line is then appended to the `prompt` list, followed by a line of equal signs as a separator.
-
-Finally, the function joins all the prompt lines in the `prompt` list with newline characters and returns the resulting string.
-
-**Note**: 
-- This function assumes that the `doc_item` object has a `reference_who` attribute that is a list of `DocItem` objects representing the referenced objects.
-- The prompt generated by this function is intended to provide information about the objects called by the code, including their names, documents, and raw code.
-
-**Output Example**: 
+**get_referenced_prompt**: get_referenced_prompt函数的功能是获取引用了该代码的对象的相关信息。
+**参数**: 这个函数的参数是一个DocItem对象，表示一个文档项。
+**代码描述**: 这个函数首先判断传入的doc_item对象的reference_who属性的长度是否为0，如果是0则返回空字符串。然后，函数会遍历doc_item对象的reference_who属性，对于每一个引用了该代码的对象，函数会生成一个包含其完整名称、文档和原始代码的字符串，并将其添加到一个列表中。最后，函数将列表中的所有字符串通过换行符连接起来并返回。
+**注意**: 这个函数依赖于传入的DocItem对象的reference_who属性，如果该属性为空，则函数会直接返回空字符串。
+**输出示例**: 假设有两个引用了该代码的对象，其完整名称分别为obj1和obj2，文档内容分别为"文档1"和"文档2"，原始代码分别为"代码1"和"代码2"，那么函数的返回值将是:
+```
 As you can see, the code calls the following objects, their code and docs are as following:
-obj: repo_agent/chat_engine.py/get_import_statements
-Document: None
+obj: obj1
+Document: 文档1
 Raw code:
-```
-def get_import_statements():
-    source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
-    import_lines = [line for line in source_lines if line.strip().startswith('import') or line.strip().startswith('from')]
-    return import_lines
-```
+代码1
 ==========
+obj: obj2
+Document: 文档2
+Raw code:
+代码2
+==========
+```
 ### FunctionDef get_referencer_prompt(doc_item):
-**get_referencer_prompt**: The function of this Function is to generate a prompt that displays the objects that reference the given `doc_item`.
-
-**parameters**: 
-- `doc_item` (type: DocItem): The `DocItem` object for which the referencers are to be displayed.
-
-**Code Description**: 
-The `get_referencer_prompt` function first checks if the `doc_item` has any objects that reference it. If there are no referencers, an empty string is returned.
-
-If there are referencers, a prompt is generated to display the objects that reference the `doc_item`. The prompt starts with a header message indicating that the code has been referenced by the following objects.
-
-Then, for each referencer, the function generates a prompt containing the following information:
-- Object name (`obj`): The full name of the referencer object.
-- Document (`Document`): The last line of the Markdown content of the referencer object, if available. Otherwise, it displays "None".
-- Raw code: The code content of the referencer object, enclosed in triple backticks. If the code content is not available, it displays "None".
-- Divider: A line of equal signs (`=`) to separate each referencer prompt.
-
-The function appends each referencer prompt to a list of prompts. Finally, it joins all the prompts with newline characters and returns the generated prompt.
-
-**Note**: 
-- The `doc_item` is an object of the `DocItem` class, which contains information about a specific code item, such as its name, type, content, and references.
-- The generated prompt provides information about the objects that reference the `doc_item`, including their names, documentation, and code content.
-- If the referencer object does not have any Markdown content or code content, it is indicated as "None" in the prompt.
-- The prompt uses triple backticks to enclose the raw code content for better readability.
-
-**Output Example**: 
+**get_referencer_prompt**: get_referencer_prompt函数的作用是获取引用了当前对象的其他对象的代码和文档信息。
+**参数**: 这个函数的参数是一个DocItem对象，表示当前对象的文档信息。
+**代码描述**: 这个函数首先判断当前对象是否被其他对象引用，如果没有被引用则返回空字符串。然后，函数会遍历引用了当前对象的每一个对象，获取它们的代码和文档信息，并将它们拼接成一个字符串返回。
+**注意**: 使用这段代码需要注意以下几点：
+- 参数doc_item必须是一个有效的DocItem对象。
+- 引用了当前对象的对象必须包含代码和文档信息。
+**输出示例**: 下面是一个可能的返回值的示例：
+```
 Also, the code has been referenced by the following objects, their code and docs are as following:
 obj: repo_agent/chat_engine.py/get_import_statements
 Document: None
-Raw code:
-```
+Raw code:```
 def get_import_statements():
     source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
     import_lines = [line for line in source_lines if line.strip().startswith('import') or line.strip().startswith('from')]
     return import_lines
+
+```==========
 ```
-==========
 ***

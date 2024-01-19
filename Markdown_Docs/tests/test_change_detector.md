@@ -1,115 +1,54 @@
 # ClassDef TestChangeDetector:
-**TestChangeDetector**: The function of this Class is to test the functionality of the ChangeDetector class.
+**TestChangeDetector**: TestChangeDetector的功能是执行一系列的测试用例，用于测试ChangeDetector类的各个方法。
 
-**attributes**: This Class does not have any attributes.
+**属性**: 
+- test_repo_path: 测试仓库的路径
+- repo: Git仓库对象
 
-**Code Description**:
-The TestChangeDetector Class is a subclass of the unittest.TestCase Class, which is used for writing and running tests. It contains several test methods that test different functionalities of the ChangeDetector class.
+**代码描述**: 
+TestChangeDetector是一个继承自unittest.TestCase的测试类，用于测试ChangeDetector类的各个方法。在setUpClass方法中，首先定义了测试仓库的路径，并创建了该路径下的测试仓库文件夹。然后，初始化了一个Git仓库，并配置了Git用户信息。接下来，创建了两个测试文件test_file.py和test_file.md，并使用Git操作将它们添加和提交到仓库中。
 
-The setUpClass() method is a class method that is called once before any tests are run. In this method, the test repository path is defined and created if it does not exist. The Git repository is initialized, and the user information is configured. Some test files are created and added to the repository. Finally, the files are committed.
+在test_get_staged_pys方法中，首先创建了一个新的Python文件new_test_file.py，并将其暂存到Git仓库中。然后，使用ChangeDetector类检查暂存的Python文件，并断言新文件在暂存文件列表中。
 
-The test_get_staged_pys() method is a test method that tests the get_staged_pys() method of the ChangeDetector class. It creates a new Python file, adds it to the repository, and then uses the ChangeDetector class to get the staged Python files. It asserts that the newly created file is present in the staged files list.
+在test_get_unstaged_mds方法中，修改了一个Markdown文件但不暂存。然后，使用ChangeDetector类获取未暂存的Markdown文件，并断言修改的文件在未暂存文件列表中。
 
-The test_get_unstaged_mds() method is a test method that tests the get_unstaged_mds() method of the ChangeDetector class. It modifies a Markdown file without staging it and then uses the ChangeDetector class to get the unstaged Markdown files. It asserts that the modified file is present in the unstaged files list.
+在test_add_unstaged_mds方法中，首先调用了test_get_unstaged_mds方法，确保有一个未暂存的Markdown文件。然后，使用ChangeDetector类添加未暂存的Markdown文件，并检查文件是否被暂存。最后，断言暂存操作后没有未暂存的Markdown文件。
 
-The test_add_unstaged_mds() method is a test method that tests the add_unstaged_mds() method of the ChangeDetector class. It ensures that there is at least one unstaged Markdown file by calling the test_get_unstaged_mds() method. Then, it uses the ChangeDetector class to add the unstaged files. It checks if there are any remaining unstaged Markdown files after the add operation.
+在tearDownClass方法中，清理了测试仓库。
 
-The tearDownClass() method is a class method that is called once after all the tests have been run. It cleans up the test repository by closing the Git repository and removing the test repository directory.
-
-**Note**: 
-- The TestChangeDetector Class is used to test the functionality of the ChangeDetector class.
-- The setUpClass() method is used to set up the test environment before running the tests.
-- The test methods test specific functionalities of the ChangeDetector class.
-- The tearDownClass() method is used to clean up the test environment after running the tests.
+**注意**: 
+- 在使用TestChangeDetector类之前，需要先安装Git和GitPython库。
+- 在运行测试用例之前，需要确保测试仓库的路径存在且为空。
 ## FunctionDef setUpClass(cls):
-**setUpClass**: The function of this Function is to set up the necessary environment for the test class. It creates a test repository, initializes a Git repository, configures the Git user information, creates some test files, and simulates Git operations to add and commit the files.
+**setUpClass**: setUpClass函数的功能是在测试类的所有测试方法执行之前进行一次性的设置。
 
-**parameters**: This function does not take any parameters.
+**参数**: cls (类对象) - 表示测试类本身。
 
-**Code Description**: 
-The code begins by defining the test repository path using the `os.path.join()` function, which joins the directory path of the current file (`__file__`) with the 'test_repo' folder name. This ensures that the test repository is created in the same directory as the test file.
+**代码描述**: setUpClass函数首先定义了测试仓库的路径，通过os.path.join方法将当前文件的目录路径与'test_repo'拼接起来。然后，通过os.path.exists方法判断测试仓库文件夹是否存在，如果不存在，则使用os.makedirs方法创建该文件夹。接下来，使用Repo.init方法初始化Git仓库，将测试仓库路径作为参数传入。然后，使用repo.git.config方法配置Git用户信息，将'user.email'和'user.name'分别设置为'ci@example.com'和'CI User'。接着，使用open方法创建两个测试文件，分别是'test_file.py'和'test_file.md'，并向其中写入内容。然后，使用repo.git.add方法将文件添加到暂存区。最后，使用repo.git.commit方法提交文件到仓库，参数'-m'表示提交信息，这里设置为'Initial commit'。
 
-Next, the code checks if the test repository folder does not exist using the `os.path.exists()` function. If the folder does not exist, it creates the folder using the `os.makedirs()` function.
-
-The code then initializes a Git repository using the `Repo.init()` method, passing the test repository path as an argument. This creates a new Git repository in the test repository folder.
-
-Next, the code configures the Git user information using the `repo.git.config()` method. It sets the email to 'ci@example.com' and the name to 'CI User'. This ensures that the Git commits made during the test have the correct user information.
-
-The code then creates two test files in the test repository folder using the `open()` function. It opens the files in write mode and writes some content to them. The first file is named 'test_file.py' and contains the line `print("Hello, Python")`. The second file is named 'test_file.md' and contains the line `# Hello, Markdown`.
-
-After creating the test files, the code simulates Git operations to add and commit the files. It uses the `repo.git.add()` method with the `A=True` argument to add all files in the repository. This stages the files for commit. Then, it uses the `repo.git.commit()` method with the `-m` argument to commit the changes with the message 'Initial commit'.
-
-**Note**: 
-- This function is used to set up the necessary environment for the test class.
-- It assumes that the test repository has already been set up and initialized with Git.
-- The test repository path is obtained using the `test_repo_path` attribute, which is set in the `setUpClass` method of the test class.
+**注意**: 在使用该函数之前，需要确保已经初始化了测试仓库，并且测试仓库中存在'test_file.md'文件。
 ## FunctionDef test_get_staged_pys(self):
-**test_get_staged_pys**: The function of this Function is to test the functionality of the `get_staged_pys` method in the `ChangeDetector` class.
-
-**parameters**: This function does not take any parameters.
-
-**Code Description**: This function first creates a new Python file called "new_test_file.py" and writes the content "print("New Python File")" into it. The file is then added to the staging area using the `git.add` method.
-
-Next, an instance of the `ChangeDetector` class is created, passing the path of the test repository as an argument. The `get_staged_pys` method is then called on the `change_detector` object to retrieve a list of staged Python files.
-
-The function asserts that the newly created file "new_test_file.py" is present in the list of staged files by checking if its basename exists in the list.
-
-Finally, the function prints the list of staged Python files.
-
-**Note**: 
-- This function is used to test the functionality of the `get_staged_pys` method in the `ChangeDetector` class.
-- It assumes that the test repository has already been set up and initialized.
-- The `ChangeDetector` class and the `os` module need to be imported for this function to work properly.
+**test_get_staged_pys**: test_get_staged_pys函数的功能是获取暂存的Python文件。
+**参数**: 该函数没有参数。
+**代码描述**: 这个函数的作用是创建一个新的Python文件并将其暂存，然后使用ChangeDetector检查暂存的文件，并断言新文件在暂存文件列表中。
+首先，函数会创建一个新的Python文件并将其暂存。它通过使用os模块的join函数将新文件的路径与测试仓库路径拼接起来，并将文件名命名为'new_test_file.py'。然后，它使用open函数以写入模式打开文件，并将字符串'print("New Python File")'写入文件中。接下来，函数使用repo对象的git属性的add方法将新文件添加到暂存区中。
+然后，函数使用ChangeDetector类创建一个change_detector对象，并将测试仓库路径作为参数传递给它。接着，函数调用change_detector对象的get_staged_pys方法，获取暂存的Python文件列表，并将结果赋值给变量staged_files。
+最后，函数使用断言语句来验证新文件是否在暂存文件列表中。它使用self.assertIn方法来断言'new_test_file.py'是否在暂存文件列表中的文件名中。如果断言成功，则打印出暂存的Python文件列表。
+**注意**: 使用该函数前需要确保已经导入了os模块和ChangeDetector类，并且已经创建了一个名为test_repo_path的测试仓库路径。
 ## FunctionDef test_get_unstaged_mds(self):
-**test_get_unstaged_mds**: The function of this Function is to test the functionality of the `get_unstaged_mds` method in the `ChangeDetector` class.
-
-**parameters**: This function does not take any parameters.
-
-**Code Description**: 
-The code begins by creating a new Markdown file named `test_file.md` in the test repository directory. Some additional content is then appended to the file. 
-
-Next, an instance of the `ChangeDetector` class is created, passing the test repository path as an argument. 
-
-The `get_to_be_staged_files` method is called on the `change_detector` object to retrieve a list of unstaged files in the repository.
-
-The code then asserts that the modified file (`test_file.md`) is present in the list of unstaged files.
-
-Finally, a message is printed to the console, displaying the list of unstaged Markdown files.
-
-**Note**: 
-- This function is used to test the functionality of the `get_unstaged_mds` method in the `ChangeDetector` class.
-- It assumes that the test repository has already been set up and initialized with Git.
-- The test repository path is obtained using the `test_repo_path` attribute, which is set in the `setUpClass` method of the `TestChangeDetector` class.
+**test_get_unstaged_mds**: test_get_unstaged_mds函数的功能是获取未暂存的Markdown文件。
+**参数**: 该函数没有参数。
+**代码说明**: 该函数首先在测试仓库中创建一个Markdown文件，并向其中添加额外的Markdown内容。然后，使用ChangeDetector类获取未暂存的文件列表。最后，通过断言判断修改的文件是否在未暂存文件列表中，并打印出未暂存的Markdown文件列表。
+**注意**: 使用该函数前需要确保已经初始化了测试仓库，并且测试仓库中存在test_file.md文件。
 ## FunctionDef test_add_unstaged_mds(self):
-**test_add_unstaged_mds**: The function of this Function is to test the functionality of adding unstaged Markdown files.
-
-**parameters**: This Function does not take any parameters.
-
-**Code Description**: This Function first ensures that there is at least one unstaged Markdown file by calling the `test_get_unstaged_mds()` function. 
-
-Then, it creates an instance of the `ChangeDetector` class, passing the test repository path as a parameter. This `ChangeDetector` object is used to perform the operation of adding unstaged files.
-
-Next, it calls the `add_unstaged_files()` method of the `ChangeDetector` object to add the unstaged Markdown files.
-
-After that, it retrieves the list of files that are still unstaged by calling the `get_to_be_staged_files()` method of the `ChangeDetector` object.
-
-Finally, it asserts that the length of the `unstaged_files_after_add` list is equal to 0, indicating that all the unstaged Markdown files have been successfully staged. It also prints the number of remaining unstaged Markdown files after the add operation.
-
-**Note**: It is important to note that this test function assumes the existence of at least one unstaged Markdown file before the add operation is performed.
+**test_add_unstaged_mds**: test_add_unstaged_mds函数的功能是将未暂存的Markdown文件添加到暂存区。
+**参数**: 该函数没有参数。
+**代码描述**: 该函数首先调用test_get_unstaged_mds函数，确保存在一个未暂存的Markdown文件。然后，使用ChangeDetector类创建一个change_detector对象，并将未暂存的文件添加到暂存区。接着，通过调用change_detector对象的get_to_be_staged_files函数，获取暂存操作后的未暂存文件列表。最后，使用self.assertEqual函数断言暂存操作后未暂存的Markdown文件数量为0，并打印出剩余未暂存Markdown文件的数量。
+**注意**: 使用该函数前，需要确保存在未暂存的Markdown文件。
 ## FunctionDef tearDownClass(cls):
-**tearDownClass**: The function of this Function is to perform cleanup operations after all the test cases in the test class have been executed.
-
-**parameters**: The parameter of this Function is `cls`, which represents the class itself.
-
-**Code Description**: 
-The `tearDownClass` function is responsible for cleaning up the test repository and closing the repository connection. 
-
-In the code, the function first closes the repository connection by calling `cls.repo.close()`. This ensures that the repository is properly closed and any resources associated with it are released.
-
-Next, the function removes the test repository directory by executing the command `os.system('rm -rf ' + cls.test_repo_path)`. This command uses the `os.system` function to execute the shell command `rm -rf` followed by the path of the test repository directory (`cls.test_repo_path`). The `rm -rf` command is used to forcefully remove a directory and its contents. By executing this command, the function ensures that the test repository directory is completely removed.
-
-**Note**: 
-- It is important to call `tearDownClass` after all the test cases in the test class have been executed to perform the necessary cleanup operations.
-- The `tearDownClass` function assumes that the test repository has been initialized and the path to the test repository directory is stored in `cls.test_repo_path`.
-- The `tearDownClass` function uses the `os.system` function to execute a shell command. This can be a potential security risk if the command is constructed using user input. It is important to ensure that the command is constructed safely to prevent any unintended consequences.
+**tearDownClass**: tearDownClass函数的作用是清理测试类的资源。
+**参数**: cls - 测试类的类对象。
+**代码描述**: 这个函数用于关闭测试仓库并删除测试仓库的文件。
+在函数内部，首先调用cls.repo.close()关闭测试仓库，确保资源被正确释放。然后使用os.system('rm -rf ' + cls.test_repo_path)命令删除测试仓库的文件和文件夹。
+**注意**: 使用这个函数时需要确保测试仓库已经被正确关闭，否则可能会导致资源泄露。另外，删除文件和文件夹的操作是不可逆的，请谨慎使用。
 ***

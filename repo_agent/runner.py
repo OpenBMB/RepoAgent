@@ -10,6 +10,7 @@ from tqdm import tqdm
 from typing import List
 import subprocess
 from loguru import logger
+import json
 from config import CONFIG
 
 
@@ -28,6 +29,17 @@ def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
         doc_item = doc_item.father
     return False
 
+def load_whitelist():
+    if CONFIG["whitelist_path"] != None:
+        assert os.path.exists(CONFIG["whitelist_path"]), f"whitelist_path must be a json-file,and must exists: {CONFIG['whitelist_path']}"
+        with open(CONFIG["whitelist_path"], "r") as reader:
+            white_list_json_data = json.load(reader)
+        # for i in range(len(white_list_json_data)):
+        #     white_list_json_data[i]["file_path"] = white_list_json_data[i]["file_path"].replace("https://github.com/huggingface/transformers/blob/v4.36.1/","")
+        return white_list_json_data
+    else:
+        return None
+
 class Runner:
     def __init__(self):
         self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
@@ -39,6 +51,7 @@ class Runner:
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
         else:
             self.meta_info = MetaInfo.from_checkpoint_path(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
+        self.meta_info.white_list = load_whitelist()
         self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
 
 
@@ -123,7 +136,7 @@ class Runner:
                         return True
                 return False
             if recursive_check(file_item) == False:
-                logger.info(f"跳过：{file_item.get_full_name()}")
+                # logger.info(f"不存在文档内容，跳过：{file_item.get_full_name()}")
                 continue
             rel_file_path = file_item.get_full_name()
             file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
@@ -181,6 +194,7 @@ class Runner:
         # 处理任务队列
         ignore_list = CONFIG.get('ignore_list', [])
         task_list = self.meta_info.load_task_list()
+        # self.meta_info.print_task_list(task_list)
         task_list = [item for item in task_list if need_to_generate(item, ignore_list)]
         self.meta_info.print_task_list(task_list)
 
@@ -399,7 +413,6 @@ class Runner:
 
         new_obj = list(current_obj - previous_obj)
         del_obj = list(previous_obj - current_obj)
-
         return new_obj, del_obj
 
 

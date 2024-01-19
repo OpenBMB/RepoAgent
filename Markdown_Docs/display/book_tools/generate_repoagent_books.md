@@ -1,40 +1,34 @@
 # FunctionDef main:
-**main**: The function of this Function is to copy the contents of a specified directory to a destination directory, and create a README.md file in the destination directory if it does not exist.
-
-**parameters**: This Function does not have any parameters.
-
+**main**: main函数的功能是将指定的Markdown文档文件夹复制到指定的书籍目录中，并创建书籍的README.md文件。
+**parameters**: 无参数
 **Code Description**: 
-- The function first retrieves the command line arguments passed to the script, which are the markdown_docs_folder, book_name, and repo_path.
-- It then creates the destination directory path by joining the './books', book_name, and 'src' directories.
-- The docs_dir variable is set to the path of the markdown_docs_folder within the repo_path.
-- The function checks if the destination directory does not exist, and if so, it creates the directory using os.makedirs() and prints a message indicating the creation of the directory.
-- It then iterates over the items in the docs_dir directory using os.listdir().
-- For each item, it constructs the source path by joining the docs_dir and the item, and the destination path by joining the dst_dir and the item.
-- If the item is a directory, it uses shutil.copytree() to recursively copy the directory and its contents to the destination directory, and prints a message indicating the copy operation.
-- If the item is a file, it uses shutil.copy2() to copy the file to the destination directory, and prints a message indicating the copy operation.
-- The function then defines a nested function called create_book_readme_if_not_exist() that takes a directory path as an argument.
-- Inside this nested function, it constructs the path to the README.md file within the specified directory.
-- If the README.md file does not exist, it creates the file using open() in write mode, and writes the book_name as the content of the file.
-- Finally, the main function calls the create_book_readme_if_not_exist() function with the dst_dir as the argument to create the README.md file in the destination directory.
+main函数首先通过sys.argv获取命令行参数，分别为markdown_docs_folder（Markdown文档文件夹）、book_name（书籍名称）和repo_path（仓库路径）。
+
+然后，main函数使用os.path.join函数将目标书籍的路径拼接成dst_dir，将Markdown文档文件夹的路径拼接成docs_dir。
+
+接下来，main函数检查dst_dir是否存在，如果不存在则使用os.makedirs函数创建该目录，并打印出创建目录的信息。
+
+然后，main函数遍历docs_dir中的所有文件和文件夹。对于每个文件或文件夹，使用os.path.join函数将其源路径和目标路径拼接成src_path和dst_path。
+
+如果src_path是一个文件夹，则使用shutil.copytree函数将其复制到dst_path，并打印出复制文件夹的信息。
+
+如果src_path是一个文件，则使用shutil.copy2函数将其复制到dst_path，并打印出复制文件的信息。
+
+接下来，main函数定义了一个名为create_book_readme_if_not_exist的内部函数，用于在目标书籍的目录中创建README.md文件。
+
+create_book_readme_if_not_exist函数首先通过os.path.join函数将目标书籍的目录和README.md文件名拼接成readme_path。
+
+然后，create_book_readme_if_not_exist函数检查readme_path是否存在，如果不存在则使用open函数创建该文件，并写入书籍名称作为标题。
+
+最后，main函数调用create_book_readme_if_not_exist函数，传入dst_dir作为参数，以创建书籍的README.md文件。
 
 **Note**: 
-- This function assumes that the command line arguments are passed correctly and in the expected order.
-- The function uses the shutil module from the standard library to perform the file and directory copying operations.
-- If the destination directory already exists, the function will not overwrite any existing files or directories.
+- main函数通过命令行参数获取目标文件夹、书籍名称和仓库路径，确保传入正确的参数。
+- main函数会将Markdown文档文件夹复制到指定的书籍目录中，确保目标书籍的目录结构正确。
+- main函数会在目标书籍的目录中创建README.md文件，确保书籍有一个简要的介绍和说明。
 ## FunctionDef create_book_readme_if_not_exist(dire):
-**create_book_readme_if_not_exist**: The function of this Function is to create a README.md file if it does not already exist in the specified directory.
-
-**parameters**: 
-- dire: The directory path where the README.md file should be created.
-
-**Code Description**:
-The function first constructs the path to the README.md file by joining the specified directory path (`dire`) with the filename 'README.md'. 
-
-Next, it checks if the README.md file already exists in the specified directory by using the `os.path.exists()` function. If the file does not exist, it proceeds to create it.
-
-To create the file, it opens the README.md file in write mode using the `open()` function with the 'w' flag. It then writes the content to the file using the `write()` method of the file object. In this case, it writes a single line containing the book name surrounded by '#' symbols.
-
-**Note**: 
-- This function assumes that the `os` module has been imported and is available.
-- The `book_name` variable used in the code snippet is not defined in the given code. It should be replaced with the actual book name before using this function.
+**create_book_readme_if_not_exist**: create_book_readme_if_not_exist函数的功能是检查指定目录下是否存在README.md文件，如果不存在则创建一个新的README.md文件。
+**parameters**: 这个函数的参数是dire，表示指定的目录路径。
+**Code Description**: 这个函数首先使用os模块的join方法将指定目录路径和README.md文件名拼接起来，得到README.md文件的完整路径。然后使用os模块的exists方法判断该路径下是否存在README.md文件。如果不存在，就使用open函数以写入模式打开该路径下的README.md文件，并使用write方法写入文件内容，内容为"# book_name"，其中book_name是一个变量，表示书籍的名称。
+**Note**: 使用这个函数之前，需要确保os模块已经导入。另外，需要在调用这个函数之前，先定义好book_name变量，表示书籍的名称。
 ***
