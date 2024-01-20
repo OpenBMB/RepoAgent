@@ -296,13 +296,14 @@ class MetaInfo():
 
 
     def find_obj_with_lineno(self, file_node, start_line_num) -> DocItem:
-        """每个DocItem._file，对于所有的行，建立他们对应的对象是谁"""
+        """每个DocItem._file，对于所有的行，建立他们对应的对象是谁
+        一个行属于这个obj的范围，并且没法属于他的儿子的范围了"""
         now_node = file_node
         while len(now_node.children) > 0:
             find_qualify_child = False
             for _, child in now_node.children.items():
                 assert child.content != None
-                if child.content["code_start_line"] <= start_line_num:
+                if child.content["code_start_line"] <= start_line_num and child.content["code_end_line"] >= start_line_num:
                     now_node = child
                     find_qualify_child = True
                     break
@@ -316,11 +317,12 @@ class MetaInfo():
         """双向提取所有引用关系
         """
         file_nodes = self.get_all_files()
-        white_list_file_names = []
-        obj_names = []
+
+        white_list_file_names, white_list_obj_names = [], [] #如果指定白名单，只处理白名单上的双向引用关系
         if self.white_list != None:
             white_list_file_names = [cont["file_path"] for cont in self.white_list]
-            white_list_file_names = [cont["id_text"] for cont in self.white_list]
+            white_list_obj_names = [cont["id_text"] for cont in self.white_list]
+
         for file_node in tqdm(file_nodes, desc="parsing bidirectional reference"):
             ref_count = 0
             rel_file_path = file_node.get_full_name()
@@ -329,9 +331,9 @@ class MetaInfo():
 
             def walk_file(now_obj: DocItem):
                 """在文件内遍历所有变量"""
-                nonlocal ref_count
+                nonlocal ref_count, white_list_file_names
                 in_file_only = False
-                if white_list_file_names != [] and (now_obj.obj_name not in white_list_file_names):
+                if white_list_obj_names != [] and (now_obj.obj_name not in white_list_obj_names):
                     in_file_only = True #作为加速，如果有白名单，白名单obj同文件夹下的也parse，但是只找同文件内的引用
 
                 reference_list = find_all_referencer(
@@ -340,15 +342,14 @@ class MetaInfo():
                     file_path=rel_file_path,
                     line_number=now_obj.content["code_start_line"],
                     column_number=now_obj.content["name_column"],
-                    in_file_only=True,
+                    in_file_only=in_file_only,
                 )
                 for referencer_pos in reference_list: #对于每个引用
                     referencer_file_ral_path = referencer_pos[0]
                     referencer_file_item = self.target_repo_hierarchical_tree.find(referencer_file_ral_path.split("/"))
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
-                    # if now_obj.get_full_name() == "experiment2_gpt4_pdb.py/main":
-                    #     print(reference_list)
-                    #     print(referencer_node.get_full_name())
+                    # if now_obj.obj_name == "_AgentSkill":
+                    #     import pdb; pdb.set_trace()
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         # print(referencer_node.get_full_name())
@@ -388,43 +389,40 @@ class MetaInfo():
         items_by_depth = sorted(doc_items, key=lambda x: x.depth)
         deal_items = []
         task_manager = TaskManager()
-        bar = tqdm(total = len(items_by_depth),desc="sorting topology order")
+        bar = tqdm(total = len(items_by_depth),desc="parsing topology task-list")
         while items_by_depth:
+            min_break_level = 1e7
+            target_item = None
             for item in items_by_depth:
-                if all(referenced in deal_items for referenced in item.reference_who):
-                    """一个任务依赖于所有引用者和他的子节点"""
-                    item_denp_task_ids = []
-                    for _, child in item.children.items():
-                        if child.multithread_task_id in task_manager.task_dict.keys():
-                            item_denp_task_ids.append(child.multithread_task_id)
-                    for referenced_item in item.reference_who:
-                        if referenced_item.multithread_task_id in task_manager.task_dict.keys():
-                            item_denp_task_ids.append(referenced_item.multithread_task_id)
-                    item_denp_task_ids = list(set(item_denp_task_ids)) #去重
-                    if task_available_func == None or task_available_func(item):
-                        task_id = task_manager.add_task(dependency_task_id=item_denp_task_ids,extra=item)
-                        item.multithread_task_id = task_id
-                    deal_items.append(item)
-                    items_by_depth.remove(item)
-                    bar.update(1)
+                now_break_level = 0
+                for referenced in item.reference_who:
+                    """一个任务依赖于所有引用者和他的子节点。
+                    我们不能保证引用不成环(也许有些仓库的废代码会出现成环)。这时就只能选择一个相对来说遵守程度最好的了"""
+                    if not (referenced in deal_items):
+                        now_break_level += 1
+                if now_break_level < min_break_level:
+                    target_item = item
+                    min_break_level = now_break_level
+                if now_break_level == 0:
                     break
+            
+            item_denp_task_ids = []
+            for _, child in target_item.children.items():
+                if child.multithread_task_id in task_manager.task_dict.keys():
+                    item_denp_task_ids.append(child.multithread_task_id)
+            for referenced_item in target_item.reference_who:
+                if referenced_item.multithread_task_id in task_manager.task_dict.keys():
+                    item_denp_task_ids.append(referenced_item.multithread_task_id)
+            item_denp_task_ids = list(set(item_denp_task_ids)) #去重
+            if task_available_func == None or task_available_func(target_item):
+                task_id = task_manager.add_task(dependency_task_id=item_denp_task_ids,extra=target_item)
+                target_item.multithread_task_id = task_id
+            deal_items.append(target_item)
+            items_by_depth.remove(target_item)
+            bar.update(1)
+            if min_break_level > 0:
+                print(f"Reference becoming a circle: have a choose break-level={min_break_level}")
 
-                    # #将尾递归转化为while的形式来解决最大深度的问题
-                    # while item.father is not None:
-                    #     father_node = item.father
-                    #     all_children_processed = True
-                    #     for _, node in father_node.children.items():
-                    #         if node not in sorted_items:
-                    #             all_children_processed = False
-                    #             break
-                    #     if not all_children_processed:
-                    #         break
-                    #     sorted_items.append(father_node)
-                    #     if father_node in items_by_depth:
-                    #         items_by_depth.remove(father_node)
-                    #     bar.update(1)
-                    #     item = father_node  # 更新item为父节点，继续循环
-                    # break
 
         # Further optimization for minimizing tree distance could be added here
         return task_manager

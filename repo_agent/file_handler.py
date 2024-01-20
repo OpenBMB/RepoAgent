@@ -171,9 +171,19 @@ class FileHandler:
         functions_and_classes = []
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                # if node.name == "recursive_check":
+                #     import pdb; pdb.set_trace()
                 start_line = node.lineno
                 end_line = self.get_end_lineno(node)
-                parent_name = node.parent.name if 'name' in dir(node.parent) else None
+                def get_recursive_parent_name(node):
+                    now = node
+                    while "parent" in dir(now):
+                        if isinstance(now.parent, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                            assert 'name' in dir(now.parent)
+                            return now.parent.name
+                        now = now.parent
+                    return None
+                parent_name = get_recursive_parent_name(node)
                 parameters = [arg.arg for arg in node.args.args] if 'args' in dir(node) else []
                 functions_and_classes.append(
                     (type(node).__name__, node.name, start_line, end_line, parent_name, parameters)
