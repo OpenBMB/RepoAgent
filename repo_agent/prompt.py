@@ -20,8 +20,11 @@ The standard format is as follows:
 
 **{code_name}**: The function of {code_name} is XXX
 **{parameters_or_attribute}**: The {parameters_or_attribute} of this {code_type_tell}.
+· parameter1: XXX
+· parameter2: XXX
+· ...
 **Code Description**: The description of this {code_type_tell}.
-(Detailed code analysis and description...)
+(Detailed and CERTAIN code analysis and description...{has_relationship})
 **Note**: Points to note about the use of the code
 {have_return_tell}
 
@@ -31,4 +34,4 @@ Please note:
 
 """
 
-USR_PROMPT = """Please provide the documentation for the target object in {language}."""
+USR_PROMPT = """Keep in mind that your audience is document readers, so use a deterministic tone to generate precise content and don't let them know you're provided with code snippet and documents. AVOID ANY SPECULATION and inaccurate descriptions! Now, provide the documentation for the target object in {language} in a professional way."""

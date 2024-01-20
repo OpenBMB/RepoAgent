@@ -280,8 +280,10 @@ class FileHandler:
                 markdown += "***\n"
             current_parent = obj["name"]
             params_str = ''
-            if obj['type'] in ['FunctionDef', 'AsyncFunctionDef'] and obj['params']:
-                params_str = f"({', '.join(obj['params'])})"
+            if obj['type'] in ['FunctionDef', 'AsyncFunctionDef']:
+                params_str = '()'
+                if obj['params']:
+                    params_str = f"({', '.join(obj['params'])})"
             markdown += f"{'#' * level} {obj['type']} {obj['name']}{params_str}:\n"
             markdown += f"{obj['md_content'][-1] if len(obj['md_content']) >0 else ''}\n"
         markdown += "***\n"

@@ -78,20 +78,25 @@ class Runner:
     def generate_doc_for_a_single_item(self, doc_item: DocItem, task_len: int, now_task_id: int):
         """为一个对象生成文档
         """
-        rel_file_path = doc_item.get_full_name()
-        if doc_item.item_status != DocItemStatus.doc_up_to_date:
-            logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...({now_task_id}/{task_len})")
-            file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
-            response_message = self.chat_engine.generate_doc(
-                doc_item = doc_item,
-                file_handler = file_handler,
-            )
-            doc_item.md_content.append(response_message.content)
-            doc_item.item_status = DocItemStatus.doc_up_to_date
-            self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
-            self.markdown_refresh()
-        else:
-            logger.info(f" 文档已生成，跳过：{doc_item.get_full_name()}")
+        try:
+            rel_file_path = doc_item.get_full_name()
+            if doc_item.item_status != DocItemStatus.doc_up_to_date:
+                logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...({now_task_id}/{task_len})")
+                file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+                response_message = self.chat_engine.generate_doc(
+                    doc_item = doc_item,
+                    file_handler = file_handler,
+                )
+                doc_item.md_content.append(response_message.content)
+                doc_item.item_status = DocItemStatus.doc_has_not_been_generated
+                self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
+                self.markdown_refresh()
+            else:
+                logger.info(f" 文档已生成，跳过：{doc_item.get_full_name()}")
+        except Exception as e:
+            logger.info(f" 多次尝试后生成文档失败，跳过：{doc_item.get_full_name()}")
+            logger.info(f" Error: {e}")
+            doc_item.item_status = DocItemStatus.doc_has_not_been_generated
         
 
     def first_generate(self):

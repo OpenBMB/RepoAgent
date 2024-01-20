@@ -112,7 +112,7 @@ class ChatEngine:
                 return ""
             prompt = ["""As you can see, the code calls the following objects, their code and docs are as following:"""]
             for k, reference_item in enumerate(doc_item.reference_who):
-                instance_prompt = f'''obj: {reference_item.get_full_name()}\nDocument: {reference_item.md_content[-1] if len(reference_item.md_content) > 0 else 'None'}\nRaw code:```\n{reference_item.content['code_content'] if 'code_content' in reference_item.content.keys() else ''}\n```''' + "="*10
+                instance_prompt = f'''obj: {reference_item.get_full_name()}\nDocument: \n{reference_item.md_content[-1] if len(reference_item.md_content) > 0 else 'None'}\nRaw code:```\n{reference_item.content['code_content'] if 'code_content' in reference_item.content.keys() else ''}\n```''' + "="*10
                 prompt.append(instance_prompt)
             return "\n".join(prompt)
 
@@ -120,11 +120,21 @@ class ChatEngine:
         def get_referencer_prompt(doc_item: DocItem) -> str:
             if len(doc_item.who_reference_me) == 0:
                 return ""
-            prompt = ["""Also, the code has been referenced by the following objects, their code and docs are as following:"""]
+            prompt = ["""Also, the code has been called by the following objects, their code and docs are as following:"""]
             for k, referencer_item in enumerate(doc_item.who_reference_me):
-                instance_prompt = f'''obj: {referencer_item.get_full_name()}\nDocument: {referencer_item.md_content[-1] if len(referencer_item.md_content) > 0 else 'None'}\nRaw code:```\n{referencer_item.content['code_content'] if 'code_content' in referencer_item.content.keys() else 'None'}\n```''' + "="*10
+                instance_prompt = f'''obj: {referencer_item.get_full_name()}\nDocument: \n{referencer_item.md_content[-1] if len(referencer_item.md_content) > 0 else 'None'}\nRaw code:```\n{referencer_item.content['code_content'] if 'code_content' in referencer_item.content.keys() else 'None'}\n```''' + "="*10
                 prompt.append(instance_prompt)
             return "\n".join(prompt)
+
+        def get_relationship_description(referencer_content, reference_letter):
+            if referencer_content and reference_letter:
+                has_relationship = "And please include the reference relationship with its callers and callees in the project from a functional perspective"
+            elif referencer_content:
+                return "And please include the relationship with its callers in the project from a functional perspective."
+            elif reference_letter:
+                return "And please include the relationship with its callees in the project from a functional perspective."
+            else:
+                return ""
 
 
         # language
@@ -142,6 +152,8 @@ class ChatEngine:
         
         referencer_content = get_referencer_prompt(doc_item)
         reference_letter = get_referenced_prompt(doc_item)
+        has_relationship = get_relationship_description(referencer_content, reference_letter)
+
         project_structure_prefix = ", and the related hierarchical structure of this project is as follows (The current object is marked with an *):"
 
         sys_prompt = SYS_PROMPT.format(
@@ -154,6 +166,7 @@ class ChatEngine:
             code_content=code_content, 
             have_return_tell=have_return_tell, 
             # referenced=referenced, 
+            has_relationship=has_relationship,
             reference_letter=reference_letter, 
             referencer_content=referencer_content,
             parameters_or_attribute=parameters_or_attribute,
@@ -164,6 +177,10 @@ class ChatEngine:
         # import pdb; pdb.set_trace()
         # print("\nsys_prompt:\n",sys_prompt)
         # print("\nusr_prompt:\n",str(usr_prompt))
+
+        # # 保存prompt到txt文件
+        # with open(f'prompt_output/sys_prompt_{code_name}.txt', 'w', encoding='utf-8') as f:
+        #     f.write(sys_prompt+'\n'+ usr_prompt)
 
         max_attempts = 5  # 设置最大尝试次数
         model = self.config["default_completion_kwargs"]["model"]
@@ -229,12 +246,13 @@ class ChatEngine:
                         reference_letter=reference_letter, 
                         combine_ref_situation=combine_ref_situation, 
                         file_path=file_path, 
-                        project_structure_prefix=project_structure_prefix,
-                        project_structure=project_structure, 
+                        project_structure_prefix="",
+                        project_structure="", 
                         code_type_tell=code_type_tell, 
                         code_name=code_name, 
                         code_content=code_content, 
                         have_return_tell=have_return_tell, 
+                        has_relationship=has_relationship,
                         referenced=referenced, 
                         referencer_content=referencer_content,
                         parameters_or_attribute=parameters_or_attribute,
@@ -244,13 +262,14 @@ class ChatEngine:
                     attempt += 1
                     if attempt >= 2:
                         # Remove related callers and callees
+                        logger.info(f"Length of sys_prompt: {len(sys_prompt)}, removing related callers and callees...")
                         referenced = False
                         referencer_content = ""
                         reference_letter = ""
                         combine_ref_situation = ""
 
                         sys_prompt = SYS_PROMPT.format(
-                            combine_ref_situation=combine_ref_situation, 
+                            combine_ref_situation="", 
                             file_path=file_path, 
                             project_structure_prefix = project_structure_prefix,
                             project_structure=project_structure, 
@@ -259,8 +278,9 @@ class ChatEngine:
                             code_content=code_content, 
                             have_return_tell=have_return_tell, 
                             # referenced=referenced, 
-                            reference_letter=reference_letter, 
-                            referencer_content=referencer_content,
+                            has_relationship=has_relationship,
+                            reference_letter="", 
+                            referencer_content="",
                             parameters_or_attribute=parameters_or_attribute,
                             language=language
                         )
@@ -275,6 +295,6 @@ class ChatEngine:
                 time.sleep(10)
                 attempt += 1
                 if attempt == max_attempts:
-                    raise
+                    return None
 
 
