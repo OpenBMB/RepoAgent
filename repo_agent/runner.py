@@ -1,3 +1,4 @@
+import threading
 import os, json
 from file_handler import FileHandler
 from change_detector import ChangeDetector
@@ -8,14 +9,19 @@ from doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
 import yaml
 from tqdm import tqdm
 from typing import List
+from functools import partial
 import subprocess
 from loguru import logger
 import json
 from config import CONFIG
+from multi_task_dispatch import worker
+
 
 
 def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
     """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
+    if doc_item.item_status == DocItemStatus.doc_up_to_date:
+        return False
     rel_file_path = doc_item.get_full_name()
     if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
         return False
@@ -53,7 +59,7 @@ class Runner:
             self.meta_info = MetaInfo.from_checkpoint_path(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy']))
         self.meta_info.white_list = load_whitelist()
         self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
-
+        self.runner_lock = threading.Lock()
 
     def get_all_pys(self, directory):
         """
@@ -75,28 +81,30 @@ class Runner:
         return python_files
     
 
-    def generate_doc_for_a_single_item(self, doc_item: DocItem, task_len: int, now_task_id: int):
+    def generate_doc_for_a_single_item(self, doc_item: DocItem):
         """为一个对象生成文档
         """
         try:
             rel_file_path = doc_item.get_full_name()
-            if doc_item.item_status != DocItemStatus.doc_up_to_date:
-                logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...({now_task_id}/{task_len})")
+
+            ignore_list = CONFIG.get('ignore_list', [])
+            if not need_to_generate(doc_item, ignore_list):
+                logger.info(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
+            else:
+                logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...")
                 file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
                 response_message = self.chat_engine.generate_doc(
                     doc_item = doc_item,
                     file_handler = file_handler,
                 )
                 doc_item.md_content.append(response_message.content)
-                doc_item.item_status = DocItemStatus.doc_has_not_been_generated
+                doc_item.item_status = DocItemStatus.doc_up_to_date
                 self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
-                self.markdown_refresh()
-            else:
-                logger.info(f" 文档已生成，跳过：{doc_item.get_full_name()}")
         except Exception as e:
             logger.info(f" 多次尝试后生成文档失败，跳过：{doc_item.get_full_name()}")
-            logger.info(f" Error: {e}")
+            logger.info("Error:", e)
             doc_item.item_status = DocItemStatus.doc_has_not_been_generated
+
         
 
     def first_generate(self):
@@ -108,50 +116,74 @@ class Runner:
         """
         logger.info("Starting to generate documentation")
         ignore_list = CONFIG.get('ignore_list', [])
-        topology_list = self.meta_info.get_topology() #将按照此顺序生成文档
-        topology_list = [item for item in topology_list if need_to_generate(item, ignore_list)]
-        already_generated = 0
+        check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
+        task_manager = self.meta_info.get_topology(check_task_available_func) #将按照此顺序生成文档
+        # topology_list = [item for item in topology_list if need_to_generate(item, ignore_list)]
+        before_task_len = len(task_manager.task_dict)
 
         if not self.meta_info.in_generation_process:
             self.meta_info.in_generation_process = True
         
         try:
-            for k, doc_item in enumerate(topology_list): #按照拓扑顺序遍历所有的可能obj
-                self.generate_doc_for_a_single_item(doc_item,task_len=len(topology_list), now_task_id=k)
-                already_generated += 1
+            task_manager.sync_func = self.markdown_refresh
+            threads = [threading.Thread(target=worker, args=(task_manager,process_id, self.generate_doc_for_a_single_item)) for process_id in range(CONFIG["max_thread_count"])]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
 
             self.meta_info.document_version = self.change_detector.repo.head.commit.hexsha
             self.meta_info.in_generation_process = False
             self.meta_info.checkpoint(target_dir_path=os.path.join(CONFIG['repo_path'],CONFIG['project_hierarchy']))
-            logger.info(f"Generation Success: {len(topology_list)} doc generated")
+            logger.info(f"成功生成了 {before_task_len - len(task_manager.task_dict)} 个文档")
 
         except BaseException as e:
-            logger.info(f"Finding an error as {e}, {already_generated} docs are generated at this time")
+            logger.info(f"Finding an error as {e}, {before_task_len - len(task_manager.task_dict)} docs are generated at this time")
 
     def markdown_refresh(self):
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)
         """
-        file_item_list = self.meta_info.get_all_files()
-        for file_item in tqdm(file_item_list):
-            def recursive_check(doc_item: DocItem) -> bool: #检查一个file内是否存在doc
-                if doc_item.md_content != []:
-                    return True
-                for _,child in doc_item.children.items():
-                    if recursive_check(child):
+        with self.runner_lock:
+            file_item_list = self.meta_info.get_all_files()
+            for file_item in tqdm(file_item_list):
+                def recursive_check(doc_item: DocItem) -> bool: #检查一个file内是否存在doc
+                    if doc_item.md_content != []:
                         return True
-                return False
-            if recursive_check(file_item) == False:
-                # logger.info(f"不存在文档内容，跳过：{file_item.get_full_name()}")
-                continue
-            rel_file_path = file_item.get_full_name()
-            file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
-            # 对于每个文件，转换json内容到markdown
-            markdown = file_handler.convert_to_markdown_file(file_path=rel_file_path)
-            assert markdown != None, f"markdown内容为空，文件路径为{rel_file_path}"
-            # 写入markdown内容到.md文件
-            file_handler.write_file(os.path.join(CONFIG['Markdown_Docs_folder'], file_handler.file_path.replace('.py', '.md')), markdown)
-            
-        logger.info(f"markdown document has been refreshed at {CONFIG['Markdown_Docs_folder']}")
+                    for _,child in doc_item.children.items():
+                        if recursive_check(child):
+                            return True
+                    return False
+                if recursive_check(file_item) == False:
+                    # logger.info(f"不存在文档内容，跳过：{file_item.get_full_name()}")
+                    continue
+                rel_file_path = file_item.get_full_name()
+                # file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
+                def to_markdown(item: DocItem, now_level: int) -> str:
+                    markdown_content = ""
+                    markdown_content += "#"*now_level + f" {item.item_type.name} {item.obj_name}"
+                    if "params" in item.content.keys() and len(item.content["params"]) > 0:
+                        markdown_content += f"({', '.join(item.content['params'])})"
+                    markdown_content += "\n"
+                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc has not been generated...'}\n"
+                    for _, child in item.children.items():
+                        markdown_content += to_markdown(child, now_level+1)
+                    return markdown_content
+                    
+                markdown = ""
+                for _, child in file_item.children.items():
+                    markdown += to_markdown(child, 2)
+                assert markdown != None, f"markdown内容为空，文件路径为{rel_file_path}"
+                # 写入markdown内容到.md文件
+                file_path = os.path.join(CONFIG['Markdown_Docs_folder'], file_item.get_file_name().replace('.py', '.md'))
+                if file_path.startswith('/'):
+                    # 移除开头的 '/'
+                    file_path = file_path[1:]
+                abs_file_path = os.path.join(CONFIG["repo_path"], file_path)
+                os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
+                with open(abs_file_path, 'w', encoding='utf-8') as file:
+                    file.write(markdown)
+
+            logger.info(f"markdown document has been refreshed at {CONFIG['Markdown_Docs_folder']}")
 
     def git_commit(self, commit_message):
         try:
@@ -198,13 +230,18 @@ class Runner:
 
         # 处理任务队列
         ignore_list = CONFIG.get('ignore_list', [])
-        task_list = self.meta_info.load_task_list()
-        # self.meta_info.print_task_list(task_list)
-        task_list = [item for item in task_list if need_to_generate(item, ignore_list)]
-        self.meta_info.print_task_list(task_list)
+        check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
 
-        for k, item in enumerate(task_list):
-            self.generate_doc_for_a_single_item(item,task_len=len(task_list), now_task_id=k)
+        task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
+        self.meta_info.print_task_list([cont.extra_info for cont in task_manager.task_dict.values()])
+
+        task_manager.sync_func = self.markdown_refresh
+        threads = [threading.Thread(target=worker, args=(task_manager,process_id, self.generate_doc_for_a_single_item)) for process_id in range(CONFIG["max_thread_count"])]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
         self.meta_info.in_generation_process = False
         self.meta_info.document_version = self.change_detector.repo.head.commit.hexsha
 

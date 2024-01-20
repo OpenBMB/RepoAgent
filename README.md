@@ -66,10 +66,13 @@ default_completion_kwargs:
   temperature: 0.2
   request_timeout: 60
 
+max_thread_count: int #We support multiprocessing to speedup the process
+
 repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy # Please NOTE that this is a folder where you can store your project hierarchy and share it with your team members.
+project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
 Markdown_Docs_folder: Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore some py files or folders that you don't want to generate documentation for by giving relative paths in ignore_list.
+whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json, will only process the given part. This is useful in a very big project, like "higgingface Transformers"
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
 ```
@@ -142,7 +145,7 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 - [x] **chat with repo** Chat with the repository by giving code and document at the same time 
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
-- [ ] Local model support like Llama, chatGLM, Qianwen, etc.
+- [ ] Local model support like Llama, chatGLM, Qianwen, GLM4, etc.
 - [x] Automatically generate better visualizations such as Gitbook
 
 # 🇺🇳 Supported Language
