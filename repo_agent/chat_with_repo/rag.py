@@ -73,7 +73,7 @@ class RepoAssistant:
         keyword = str(self.textanslys.nerquery(bot_message))
         code='\n'+'```python'+'\n'+self.textanslys.queryblock(keyword)+'\n'+'```'
         bot_message = bot_message +'\n'+ str(self.textanslys.tree(bot_message))
-        return "", bot_message,chunkrecall,questions,code,message
+        return message, bot_message,chunkrecall,questions,code
     
 if __name__ == "__main__":
     api_key = ""
