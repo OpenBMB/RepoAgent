@@ -14,10 +14,11 @@ class JsonFileProcessor:
         # 从 JSON 数据中提取 Markdown 内容并返回一个列表
         json_data = self.read_json_file()
         md_contents = []
-        for file in json_data["files"]:
-            for obj in file["objects"]:
-                if "md_content" in obj:
-                    md_contents.append(obj["md_content"])
+        for file ,content in json_data.items():
+            if isinstance(content, dict):
+                for class_name, class_info in  content.items():
+                    if "md_content" in class_info:
+                        md_contents.append(class_info["md_content"][0])
         return md_contents
     
     def search_in_json_nested(self, file_path, search_text):
