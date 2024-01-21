@@ -7,6 +7,7 @@ from tqdm import tqdm
 import threading
 from typing import Dict
 from config import CONFIG
+from loguru import logger
 from utils.gitignore_checker import GitignoreChecker
 
 
@@ -185,9 +186,15 @@ class FileHandler:
                     return None
                 parent_name = get_recursive_parent_name(node)
                 parameters = [arg.arg for arg in node.args.args] if 'args' in dir(node) else []
-                functions_and_classes.append(
-                    (type(node).__name__, node.name, start_line, end_line, parent_name, parameters)
-                )
+                all_names = [item[1] for item in functions_and_classes]
+                # (parent_name == None or parent_name in all_names) and 
+                if node.name not in all_names:
+                    #必须父亲名字正确传入里面，并且自己不和某个已有value重名
+                    functions_and_classes.append(
+                        (type(node).__name__, node.name, start_line, end_line, parent_name, parameters)
+                    )
+                else:
+                    logger.info(f"circle-definition dected, skipped: {type(node).__name__}: {node.name}")
         return functions_and_classes
         
     def generate_file_structure(self, file_path):

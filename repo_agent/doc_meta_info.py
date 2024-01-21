@@ -299,6 +299,7 @@ class MetaInfo():
         """每个DocItem._file，对于所有的行，建立他们对应的对象是谁
         一个行属于这个obj的范围，并且没法属于他的儿子的范围了"""
         now_node = file_node
+        assert now_node != None
         while len(now_node.children) > 0:
             find_qualify_child = False
             for _, child in now_node.children.items():
@@ -347,9 +348,11 @@ class MetaInfo():
                 for referencer_pos in reference_list: #对于每个引用
                     referencer_file_ral_path = referencer_pos[0]
                     referencer_file_item = self.target_repo_hierarchical_tree.find(referencer_file_ral_path.split("/"))
+                    if referencer_file_item == None:
+                        # import pdb; pdb.set_trace()
+                        logger.info(f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo")
+                        continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
-                    # if now_obj.obj_name == "_AgentSkill":
-                    #     import pdb; pdb.set_trace()
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         # print(referencer_node.get_full_name())
@@ -593,10 +596,12 @@ class MetaInfo():
             def parse_one_item(key, value, item_reflection):
                 #递归parse，做过了就跳过，如果有father就先parse father
                 # print(f"key: {key}")
+                nonlocal file_content
                 if key in item_reflection.keys():
                     return 
                 if value["parent"] != None:
                     # print(f"will parse father {value['parent']}")
+                    # assert file_content[value["parent"]]["name"] != value["name"]
                     parse_one_item(value["parent"], file_content[value["parent"]], item_reflection)
 
                 item_reflection[key] = DocItem(
