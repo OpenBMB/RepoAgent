@@ -1,46 +1,74 @@
 import gradio as gr
+import markdown
 
 class GradioInterface:
     def __init__(self, respond_function):
         self.respond = respond_function
         self.setup_gradio_interface()
 
+    def wrapper_respond(self, msg_input, system_input):
+        # 调用原来的 respond 函数
+        msg, output1, output2, output3, code = self.respond(msg_input, system_input)
+        output1 = markdown.markdown(str(output1))
+        output2 = markdown.markdown(str(output2))
+        code = markdown.markdown(str(code))
+        output1 = (
+                "<div style='border: 1px solid gray;max-width:100%; max-height:420px; overflow:auto'>"
+                + str(output1)
+                + "</div>"
+            )
+        output2 = (
+                "<div style='border: 1px solid gray;max-width:100%; max-height:650px; overflow:auto'>"
+                + str(output2)
+                + "</div>"
+            )
+        code = (
+                "<div style='border: 1px solid gray;max-width:100%; max-height:540px; overflow:auto'>"
+                + str(code)
+                + "</div>"
+            )
+        
+        return msg, output1, output2, output3, code
+
     def setup_gradio_interface(self):
-        css="""
-            .markdown-container:nth-of-type(2){
-                max-height: 200px; /* 设置最大高度 */
-                overflow-y: auto; /* 超出部分显示滚动条 */
-            }
-
-            .output-container:nth-of-type(5) {  
-                max-height: 150px;
-                overflow-y: auto;
-            }
-        """
-
-        with gr.Blocks(css = css) as demo:
+        with gr.Blocks() as demo:
             gr.Markdown("""
-                # RepoChat Test
-                This is a test for retrieval repo 
+                # RepoAgent: Chat with doc
             """)
             with gr.Row():
                 with gr.Column(scale = 2):
-                    msg = gr.Textbox(label = "Question Input")
-                    gr.Markdown("### question") 
-                    question = gr.Markdown(label = "qa")
+                    msg = gr.Textbox(label = "Question Input") 
+                    btn = gr.Button("Submit")
+
                     with gr.Accordion(label = "Advanced options", open = False):
                         system = gr.Textbox(label = "System message", lines = 2, value = "A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
-                    output1 = gr.Textbox(label = "RAG")
+                    gr.Markdown("# RAG")
+                    output1 = gr.HTML("""
+                                      
+                    <div style='border: 1px solid gray; max-width: 100%; height: 420px; overflow: auto; padding: 10px;'>
+                   
+                    </div>
+                                          """)
 
                 with gr.Column(scale=1):
-                    output2 = gr.Textbox(label = "Embedding recall")
+                    # output2 = gr.Textbox(label = "Embedding recall")
+                    gr.Markdown("# Embedding Recall")
+                    output2 = gr.HTML("""
+                                          
+                    <div style='border: 1px solid gray;max-width:100%; height:650px; overflow:auto'>
+                    </div>
+                                          """)
                 with gr.Column(scale=1):
                     output3 = gr.Textbox(label = "key words")
-                    code = gr.Textbox(label = "code")
-            
-            btn = gr.Button("Submit")
-            btn.click(self.respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code, question])
-            msg.submit(self.respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code, question])  # Press enter to submit
+                    gr.Markdown("# Code")
+                    code = gr.HTML("""
+                                          
+                    <div style='border: 1px solid gray;max-width:100%; height:540px; overflow:auto'>
+                    </div>
+                                          """)
+           
+            btn.click(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code])
+            msg.submit(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code])  # Press enter to submit
 
         gr.close_all()
         demo.queue().launch(share=True)

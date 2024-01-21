@@ -1,4 +1,4 @@
-from repo_agent.chat_with_repo.gradio_ui import GradioInterface
+from gradio_ui import GradioInterface
 import yaml
 from rag import RepoAssistant
 
@@ -13,8 +13,7 @@ def main():
     api_key = config['api_key']
     api_base = config['api_base']
     db_path = config['db_path']
-    log_file = config['log_file']
-    assistant = RepoAssistant(api_key, api_base, db_path,log_file)
+    assistant = RepoAssistant(api_key, api_base, db_path)
     md_contents = assistant.json_data.extract_md_contents()
     assistant.chroma_data.create_vector_store(md_contents)
     GradioInterface(assistant.respond)

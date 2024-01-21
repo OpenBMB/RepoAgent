@@ -1,12 +1,14 @@
 
 from llama_index.llms import OpenAI
-from logger import LoggerManager
-from repo_agent.chat_with_repo.json_handle import JsonFileProcessor
+from loguru import logger
+from json_handle import JsonFileProcessor
+
+logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+
 class TextAnalysisTool:
-    def __init__(self, llm, logger, db_path):
+    def __init__(self, llm, db_path):
         self.jsonsearch = JsonFileProcessor(db_path)
         self.llm = llm
-        self.logger = logger.get_logger()
         self.db_path = db_path
 
     def keyword(self, query):
@@ -39,7 +41,7 @@ class TextAnalysisTool:
         """
         query = f"Extract the most relevant class or function from the following{query1}input:\n{message}\nOutput:"
         response = self.llm.complete(query)
-        self.logger.debug(f"Input: {message}, Output: {response}")
+        logger.debug(f"Input: {message}, Output: {response}")
         return response
 
 if __name__ == "__main__":
@@ -47,6 +49,5 @@ if __name__ == "__main__":
     api_key = "your_api_key"
     log_file = "your_logfile_path"
     llm = OpenAI(api_key=api_key, api_base=api_base)
-    logger = LoggerManager(log_file)
     db_path = "your_database_path"
-    test= TextAnalysisTool(llm,logger,db_path)
+    test= TextAnalysisTool(llm,db_path)
