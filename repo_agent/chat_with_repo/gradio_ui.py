@@ -42,7 +42,7 @@ class GradioInterface:
 
                     with gr.Accordion(label = "Advanced options", open = False):
                         system = gr.Textbox(label = "System message", lines = 2, value = "A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.")
-                    gr.Markdown("# RAG")
+                    gr.Markdown("# Responese")
                     output1 = gr.HTML("""
                                       
                     <div style='border: 1px solid gray; max-width: 100%; height: 420px; overflow: auto; padding: 10px;'>
