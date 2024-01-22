@@ -99,30 +99,31 @@ class RepoAssistant:
         all_results = []
         all_ids = []
         for i in promptq:
-            query_result = self.chroma_data.chroma_collection.query(query_texts = [i], n_results = 5)
+            query_result = self.chroma_data.chroma_collection.query(query_texts = [i], n_results = 5,include=['documents','metadatas'])
             all_results.append(query_result)
             all_ids.extend(query_result['ids'][0])
         
         unique_ids = [id for id in all_ids if all_ids.count(id) == 1]
+        # logger.debug(f"uniqueid: {unique_ids}")
         unique_documents = []
+        unique_code = []
         for result in all_results:
-            for id, doc in zip(result['ids'][0], result['documents'][0]):
+            for id, doc , code in zip(result['ids'][0], result['documents'][0],result['metadatas'][0]):
                 if id in unique_ids:
                     unique_documents.append(doc)
-
-        # results = self.chroma_data.chroma_collection.query(query_texts = [prompt], n_results = 5)
-        # logger.debug(f"Results: {results}")
+                    unique_code.append(code.get("code_content"))
+    
         retrieved_documents=unique_documents
-        # chunkrecall = self.extract_and_format_documents(result)
-        # retrieved_documents = results['documents'][0]
+        # logger.debug(f"retrieveddocuments: {retrieved_documents}")
         response = self.rag(prompt,retrieved_documents)
         chunkrecall = self.list_to_markdown(retrieved_documents)
         bot_message = str(response)
         keyword = str(self.textanslys.nerquery(bot_message))
-        code='\n'+'```python'+'\n'+self.textanslys.queryblock(keyword)+'\n'+'```'
-        bot_message = self.rag_ar(prompt,code,retrieved_documents,"test")
-        # bot_message = bot_message +'\n'+ str(self.textanslys.tree(bot_message))
-        return message, bot_message,chunkrecall,questions,code
+        codex='\n'+'```python'+'\n'+self.textanslys.queryblock(keyword)+'\n'+'```'
+        unique_code.append(codex)
+        bot_message = self.rag_ar(prompt,unique_code,retrieved_documents,"test")
+        bot_message = str(bot_message) +'\n'+ str(self.textanslys.tree(bot_message))
+        return message, bot_message,chunkrecall,questions,unique_code
     
 if __name__ == "__main__":
     api_key = ""
