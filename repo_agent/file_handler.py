@@ -31,7 +31,7 @@ class FileHandler:
             content = file.read()
         return content
 
-    def get_obj_code_info(self, code_type, code_name, start_line, end_line, parent, params, file_path = None):
+    def get_obj_code_info(self, code_type, code_name, start_line, end_line, params, file_path = None):
         """
         Get the code information for a given object.
 
@@ -53,7 +53,6 @@ class FileHandler:
         code_info['md_content'] = []
         code_info['code_start_line'] = start_line
         code_info['code_end_line'] = end_line
-        code_info['parent'] = parent
         code_info['params'] = params
 
         with open(os.path.join(self.repo_path, file_path if file_path != None else self.file_path), 'r', encoding='utf-8') as code_file:
@@ -176,25 +175,21 @@ class FileHandler:
                 #     import pdb; pdb.set_trace()
                 start_line = node.lineno
                 end_line = self.get_end_lineno(node)
-                def get_recursive_parent_name(node):
-                    now = node
-                    while "parent" in dir(now):
-                        if isinstance(now.parent, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
-                            assert 'name' in dir(now.parent)
-                            return now.parent.name
-                        now = now.parent
-                    return None
-                parent_name = get_recursive_parent_name(node)
+                # def get_recursive_parent_name(node):
+                #     now = node
+                #     while "parent" in dir(now):
+                #         if isinstance(now.parent, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                #             assert 'name' in dir(now.parent)
+                #             return now.parent.name
+                #         now = now.parent
+                #     return None
+                # parent_name = get_recursive_parent_name(node)
                 parameters = [arg.arg for arg in node.args.args] if 'args' in dir(node) else []
                 all_names = [item[1] for item in functions_and_classes]
                 # (parent_name == None or parent_name in all_names) and 
-                if node.name not in all_names:
-                    #必须父亲名字正确传入里面，并且自己不和某个已有value重名
-                    functions_and_classes.append(
-                        (type(node).__name__, node.name, start_line, end_line, parent_name, parameters)
-                    )
-                else:
-                    logger.info(f"circle-definition dected, skipped: {type(node).__name__}: {node.name}")
+                functions_and_classes.append(
+                    (type(node).__name__, node.name, start_line, end_line, parameters)
+                )
         return functions_and_classes
         
     def generate_file_structure(self, file_path):
@@ -228,11 +223,11 @@ class FileHandler:
         with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
             content = f.read()
             structures = self.get_functions_and_classes(content)
-            file_objects = {}
+            file_objects = [] #以列表的形式存储
             for struct in structures:
-                structure_type, name, start_line, end_line, parent, params = struct
-                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, parent, params, file_path)
-                file_objects[name] = code_info
+                structure_type, name, start_line, end_line, params = struct
+                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, params, file_path)
+                file_objects.append(code_info)
 
         return file_objects
     

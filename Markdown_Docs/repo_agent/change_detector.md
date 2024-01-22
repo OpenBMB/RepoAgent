@@ -1,136 +1,107 @@
 ## _class ChangeDetector
-**ChangeDetector**: ChangeDetector的功能是检测代码仓库中的变动。
-
-**属性**：该类具有一个属性`repo_path`，表示代码仓库的路径。
-
-**代码描述**：ChangeDetector类是一个用于检测代码仓库变动的工具类。它提供了一些方法来获取代码仓库中的变动信息。
-
-- `__init__(self, repo_path)`：初始化ChangeDetector对象。接受一个参数`repo_path`，表示代码仓库的路径。该方法会将`repo_path`赋值给`self.repo_path`属性，并使用`git.Repo(repo_path)`创建一个Git仓库对象赋值给`self.repo`属性。
-
-- `get_staged_pys(self)`：获取已暂存的Python文件。该方法会返回一个字典，其中键为文件路径，值为布尔值，表示文件是否为新创建的文件。
-
-- `get_file_diff(self, file_path, is_new_file)`：获取指定文件的变动内容。该方法接受两个参数，`file_path`表示文件的相对路径，`is_new_file`表示文件是否为新创建的文件。根据`is_new_file`的值，该方法使用不同的方式获取文件的变动内容，并返回一个包含变动内容的列表。
-
-- `parse_diffs(self, diffs)`：解析变动内容，提取添加和删除的对象信息。该方法接受一个包含变动内容的列表`diffs`，并将变动内容解析为添加和删除的行信息，返回一个包含添加和删除行信息的字典。
-
-- `identify_changes_in_structure(self, changed_lines, structures)`：识别发生变动的函数或类的结构。该方法接受两个参数，`changed_lines`为发生变动的行号信息，`structures`为函数或类的结构信息。该方法会遍历所有发生变动的行，对于每一行，它会检查该行是否在某个结构（函数或类）的起始行和结束行之间，如果是，则将该结构及其父结构的名称添加到结果字典`changes_in_structures`中。
-
-- `get_to_be_staged_files(self)`：获取待暂存的文件。该方法会返回一个列表，包含满足条件的未暂存文件的路径。
-
-- `add_unstaged_files(self)`：将待暂存的文件添加到暂存区。该方法会将满足条件的未暂存文件添加到暂存区。
-
-**注意**：在使用`get_staged_pys`方法时，需要先确保已经初始化了Git仓库对象`self.repo`。
-
-**输出示例**：一个可能的返回值的示例：
-```
-{
-    'file1.py': True,
-    'file2.py': False
-}
-```
-### _class_function __init__(self, repo_path)
+Doc has not been generated...
+### _function __init__(self, repo_path)
 **__init__**: __init__函数的功能是初始化一个ChangeDetector对象。
-**参数**: 这个函数的参数。
-**代码描述**: 这个函数的描述。
-__init__函数接受一个参数repo_path，它是一个字符串类型，表示仓库的路径。这个函数没有返回值。在函数体内部，将传入的repo_path赋值给self.repo_path，然后使用git.Repo函数将repo_path作为参数创建一个git仓库对象，并将其赋值给self.repo。
 
-**注意**: 使用这段代码时需要注意的事项。
-### _class_function get_staged_pys(self)
+**参数**：这个函数的参数。
+· repo_path: 仓库的路径，类型为字符串。
+
+**代码描述**：这个函数的描述。
+__init__函数用于初始化一个ChangeDetector对象。在初始化过程中，需要传入一个仓库的路径作为参数。该路径将被用于创建一个git仓库对象，并将其赋值给self.repo属性。
+
+**注意**：在使用该函数时，需要确保传入的repo_path参数是一个有效的仓库路径。
+### _function get_staged_pys(self)
 **get_staged_pys**: get_staged_pys函数的功能是获取已暂存的代码库中新增的Python文件。
 
-**参数**: 该函数没有参数。
+**参数**：
+- self: 类的实例对象，表示当前的ChangeDetector对象。
 
-**代码描述**: 该函数通过GitPython库检测已暂存的代码库中新增的Python文件。它首先获取代码库对象repo，然后创建一个空字典staged_files用于存储新增的Python文件。接下来，通过调用repo.index.diff("HEAD", R=True)获取已暂存的变更列表diffs。然后，遍历diffs列表，对于变更类型为"A"或"M"且文件后缀为".py"的变更，将文件路径作为键，是否为新增文件作为值，添加到staged_files字典中。最后，返回staged_files字典。
+**代码描述**：该函数通过GitPython库来检测已暂存的Python文件的变化。它首先获取当前的代码库对象，然后使用`repo.index.diff("HEAD", R=True)`来获取已暂存的变化。在这里，R=True参数用于反转版本比较逻辑，确保正确地将最新的提交（HEAD）作为旧状态与当前的暂存区域（Index）进行比较。然后，遍历变化列表，筛选出新增或修改的Python文件，并将其路径和是否为新文件的信息存储在一个字典中。最后，返回包含变化Python文件的字典。
 
-**注意**: 该函数只追踪已暂存的Python文件的变更，即使用`git add`添加的文件。在GitPython库中，repo.index.diff('HEAD')将暂存区（index）作为新状态与原始HEAD提交（旧状态）进行比较。这意味着如果当前暂存区有一个新文件，它将显示为在HEAD中不存在，即"deleted"。R=True参数反转了这个逻辑，将最后一次提交（HEAD）作为旧状态，并将其与当前暂存区（新状态）（Index）进行比较。在这种情况下，暂存区中的新文件将正确显示为已添加，因为它在HEAD中不存在。
+**注意**：需要注意的是，该函数只能追踪已暂存的Python文件的变化，即通过`git add`命令添加到暂存区域的文件。
 
-**输出示例**: 
-```python
+**输出示例**：一个可能的返回值示例：
+```
 {
     'path/to/file1.py': True,
-    'path/to/file2.py': False
+    'path/to/file2.py': False,
+    ...
 }
 ```
-### _class_function get_file_diff(self, file_path, is_new_file)
-**get_file_diff**: get_file_diff函数的功能是检索特定文件的更改。对于新文件，它使用git diff --staged命令获取差异。
-**参数**：
-- file_path (str): 文件的相对路径
-- is_new_file (bool): 表示文件是否为新文件
-**代码说明**：
-该函数首先获取self.repo对象，然后根据is_new_file的值来判断是新文件还是已存在的文件。如果是新文件，则先将其添加到暂存区，然后从暂存区获取差异。如果是已存在的文件，则从HEAD获取差异。最后，将差异以列表形式返回。
-**注意**：
-- 该函数依赖于self.repo对象，因此在调用之前需要确保self.repo已经初始化。
-**输出示例**：
-['diff --git a/repo_agent/change_detector.py b/repo_agent/change_detector.py', 'index 5e9e3c0..f2d9e6b 100644', '--- a/repo_agent/change_detector.py', '+++ b/repo_agent/change_detector.py', '@@ -1,5 +1,6 @@', ' import subprocess', ' import os', ' import git', '+import sys', ' ', ' from repo_agent.file_handler import FileHandler', ' from repo_agent.logger import logger']
-### _class_function parse_diffs(self, diffs)
-**parse_diffs**: parse_diffs函数的功能是解析差异内容，提取出添加和删除的对象信息，这些对象可以是类或函数。
-**参数**: diffs (list): 包含差异内容的列表。通过类内的get_file_diff()函数获取。
-**代码描述**: 这个函数用于解析差异内容，提取出添加和删除的行信息。函数首先初始化了一个字典changed_lines，用于存储添加和删除的行信息。然后通过遍历diffs列表，逐行解析差异内容。对于每一行，函数首先使用正则表达式匹配行号信息，如果匹配成功，则更新当前行号和变更行号。然后根据行的开头字符判断是添加行还是删除行，并将对应的行号和内容添加到changed_lines字典中。对于没有变化的行，函数会将两个行号都增加1。最后，函数返回changed_lines字典，其中包含了添加和删除行的信息。
-**注意**: 对于修改的内容，也会被表示为添加操作。如果需要明确知道一个对象是新增的，需要使用get_added_objs()函数。
-**输出示例**: {'added': [(86, '    '), (87, '    def to_json_new(self, comments = True):'), (88, '        data = {'), (89, '            "name": self.node_name,')...(95, '')], 'removed': []}
-### _class_function identify_changes_in_structure(self, changed_lines, structures)
-**identify_changes_in_structure**: identify_changes_in_structure函数的功能是识别发生更改的结构。它遍历所有更改的行，对于每一行，它检查该行是否在一个结构（函数或类）的起始行和结束行之间。如果是，则认为该结构发生了更改，并将其名称和父结构的名称添加到结果字典changes_in_structures的相应集合中（根据该行是添加还是删除而定）。
 
-**参数**：
+从功能的角度来看，该函数被`tests/test_change_detector.py`文件中的`TestChangeDetector`类的`test_get_staged_pys`方法调用。在该测试方法中，首先创建一个新的Python文件并将其暂存，然后使用`ChangeDetector`类来检查暂存的文件，并断言新文件在暂存文件列表中。最后，打印出暂存的Python文件列表。
+
+以上是对`get_staged_pys`函数的详细解释，包括其自身的代码分析和与项目中调用者的功能关系。
+### _function get_file_diff(self, file_path, is_new_file)
+**get_file_diff**: get_file_diff函数的作用是检索特定文件的更改。对于新文件，它使用git diff --staged命令来获取差异。
+**参数**：此函数的参数。
+· file_path（str）：文件的相对路径
+· is_new_file（bool）：指示文件是否为新文件
+**代码说明**：此函数的描述。
+该函数首先获取repo对象，然后根据is_new_file参数的值来执行不同的操作。如果is_new_file为True，则将文件添加到暂存区，并使用git diff --staged命令获取暂存区的差异。如果is_new_file为False，则使用git diff命令获取HEAD的差异。
+
+**注意**：使用此代码的注意事项
+- 请确保在使用此函数之前已经初始化了repo对象。
+- 请确保在使用此函数之前已经安装了git并配置了环境变量。
+
+**输出示例**：模拟代码返回值的可能外观。
+['diff --git a/file.txt b/file.txt', 'index 0000000..1111111 100644', '--- a/file.txt', '+++ b/file.txt', '@@ -1 +1,2 @@', '+Hello, world!', ' World!']
+### _function parse_diffs(self, diffs)
+**parse_diffs**: parse_diffs函数的功能是解析差异内容，提取添加和删除的对象信息，这些对象可以是类或函数。
+**参数**：这个函数的参数。
+· diffs（列表）：包含差异内容的列表。通过类内的get_file_diff()函数获取。
+**代码描述**：这个函数的描述。
+parse_diffs函数通过遍历diffs列表，解析差异内容，并提取出添加和删除的行信息。函数首先初始化了一个字典changed_lines，用于存储添加和删除的行信息。然后，函数通过遍历diffs列表中的每一行，检测行号信息，并根据行号信息判断该行是添加的行还是删除的行。对于添加的行，函数将行号和行内容添加到changed_lines字典的"added"键对应的列表中，并将行号自增1；对于删除的行，函数将行号和行内容添加到changed_lines字典的"removed"键对应的列表中，并将行号自增1；对于没有变化的行，函数将两个行号都自增1。最后，函数返回changed_lines字典，其中包含了添加和删除行的信息。
+**注意**：关于代码使用的注意事项。
+**输出示例**：模拟代码返回值的可能外观。
+{
+    'added': [
+        (86, '    '),
+        (87, '    def to_json_new(self, comments = True):'),
+        (88, '        data = {'),
+        (89, '            "name": self.node_name,'),
+        ...
+        (95, '')
+    ],
+    'removed': []
+}
+### _function identify_changes_in_structure(self, changed_lines, structures)
+**identify_changes_in_structure**: identify_changes_in_structure函数的功能是识别发生更改的结构：遍历所有更改的行，对于每一行，它检查该行是否在一个结构（函数或类）的起始行和结束行之间。如果是这样，那么认为该结构发生了更改，并将其名称和父结构的名称添加到结果字典changes_in_structures的相应集合中（根据该行是添加还是删除而定）。
+
+**parameters**:
 - changed_lines（dict）：包含发生更改的行号的字典，格式为{'added': [(行号, 更改内容)], 'removed': [(行号, 更改内容)]}
-- structures（list）：从get_functions_and_classes接收的是一个函数或类结构的列表，每个结构由结构类型、名称、起始行号、结束行号和父结构名称组成。
+- structures（list）：从get_functions_and_classes接收到的函数或类结构的列表，每个结构由结构类型、名称、起始行号、结束行号和父结构名称组成。
 
-**代码说明**：
-- 首先，创建一个空的字典changes_in_structures，用于存储发生更改的结构。
-- 然后，根据changed_lines中的更改类型（'added'或'removed'），遍历每个更改的行。
-- 对于每个更改的行，遍历structures中的每个结构，判断该行是否在结构的起始行和结束行之间。
-- 如果是，则将该结构的名称和父结构的名称添加到changes_in_structures字典的相应集合中。
-- 最后，返回changes_in_structures字典，其中包含发生更改的结构，键是更改类型，值是结构名称和父结构名称的集合。
+**Code Description**:
+该函数通过遍历changed_lines中的每一行，然后在structures中查找与该行号对应的结构。如果找到了对应的结构，则将该结构的名称和父结构的名称添加到changes_in_structures字典的相应集合中。最后，返回changes_in_structures字典，其中包含发生更改的结构和更改类型。
 
-**注意**：
-- 该函数依赖于get_functions_and_classes函数的返回结果，需要确保传入正确的结构列表。
-- changed_lines参数中的行号应与源代码中的行号一致。
+**Note**:
+- 该函数假设输入的changed_lines和structures参数是有效的，并且符合预期的格式。
+- 结构的起始行和结束行是包含在结构内的。
 
-**输出示例**：
+**Output Example**:
 {'added': {('PipelineAutoMatNode', None), ('to_json_new', 'PipelineAutoMatNode')}, 'removed': set()}
-### _class_function get_to_be_staged_files(self)
+### _function get_to_be_staged_files(self)
 **get_to_be_staged_files**: get_to_be_staged_files函数的功能是检索仓库中所有未暂存的文件，这些文件满足以下条件之一：
 1. 将文件的扩展名更改为.md后，与已暂存的文件对应。
 2. 文件的路径与CONFIG中的'project_hierarchy'字段相同。
 
-它返回这些文件的路径列表。
+它返回一个包含这些文件路径的列表。
 
-**参数**: 无参数。
+**参数**：该函数没有参数。
 
-**代码描述**: 该函数首先获取已暂存的文件列表staged_files，然后获取CONFIG中的'project_hierarchy'字段。接下来，它通过self.repo.index.diff(None)获取所有未暂存的更改文件列表diffs，以及通过self.repo.untracked_files获取所有未跟踪文件列表untracked_files。然后，它遍历untracked_files和diffs列表，处理每个文件的路径，并根据条件判断是否将其加入到to_be_staged_files列表中。最后，函数返回to_be_staged_files列表。
+**代码描述**：该函数首先获取已暂存的文件列表，然后获取未暂存的更改文件列表和未跟踪文件列表。接下来，它遍历未跟踪文件列表和未暂存的更改文件列表，并根据条件判断是否将文件加入到待暂存文件列表中。最后，它返回待暂存文件列表。
 
-**注意**: 
-- 函数中的路径处理使用了os.path模块的join和relpath方法。
-- 函数中的文件类型判断使用了endswith和splitext方法。
+**注意**：在判断文件类型时，只处理.md文件。在拼接文件路径时，需要注意路径的格式。
 
-**输出示例**: 
-```
-staged_files:['file1.py', 'file2.py']
-untracked_files:['/absolute/path/file1.md', '/absolute/path/file2.md']
-repo_path:/absolute/path/to/repo
-rel_untracked_file:file1.md
-corresponding_py_file in untracked_files:file1.py
-rel_untracked_file:file2.md
-corresponding_py_file in untracked_files:file2.py
-unstaged_files:['file3.py', 'file4.py']
-rel_unstaged_file:file3.py
-corresponding_py_file:file3.py
-rel_unstaged_file:file4.py
-corresponding_py_file:file4.py
-['file1.md', 'file2.md', 'file3.py', 'file4.py']
-```
+**输出示例**：假设待暂存文件列表为['file1.md', 'file2.md']。
 ### _class_function add_unstaged_files(self)
 **add_unstaged_files**: add_unstaged_files函数的功能是将满足条件的未暂存文件添加到暂存区。
 
-**参数**: 无参数。
+**参数**：该函数没有参数。
 
-**代码描述**: 该函数首先调用self.get_to_be_staged_files()方法获取满足条件的未暂存文件列表unstaged_files_meeting_conditions。然后，它遍历unstaged_files_meeting_conditions列表，对每个文件路径进行处理，并使用subprocess模块运行git命令将文件添加到暂存区。最后，函数返回unstaged_files_meeting_conditions列表。
+**代码描述**：该函数首先调用get_to_be_staged_files函数获取满足条件的未暂存文件列表。然后，它遍历未暂存文件列表，对每个文件执行git add命令将其添加到暂存区。最后，函数返回满足条件的未暂存文件列表。
 
-**注意**: 
-- 函数中的文件添加使用了subprocess模块运行git命令。
-- 函数中的文件路径处理使用了os.path模块的join方法。
+**注意**：在执行git add命令时，需要使用subprocess模块的run函数，并将shell参数设置为True，以便在执行命令时使用shell。此外，需要注意文件路径的格式。
 
-**输出示例**: 
-```
-unstaged_files_meeting_conditions:['file1.md', 'file2.md', 'file3.py', 'file4.py']
-```
+**输出示例**：假设满足条件的未暂存文件列表为['file1.md', 'file2.md']。
