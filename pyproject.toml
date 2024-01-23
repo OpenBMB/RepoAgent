@@ -20,6 +20,10 @@ dependencies = [
     "python-iso639<2025.0.0,>=2024.1.2",
     "tenacity<9.0.0,>=8.2.3",
     "colorama>=0.4.6",
+    "chromadb>=0.4.22",
+    "markdown>=3.5.2",
+    "llama-index>=0.9.35",
+    "gradio>=3.50.2",
 ]
 name = "repoagent"
 version = "0.0.6"
@@ -35,6 +39,9 @@ repoagent = "repo_agent.main:app"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
+    "ruff>=0.1.14",
+]
+test = [
     "pytest<8.0.0,>=7.4.4",
     "pytest-mock<4.0.0,>=3.12.0",
 ]

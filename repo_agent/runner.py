@@ -11,7 +11,7 @@ from tqdm import tqdm
 from typing import List
 from functools import partial
 import subprocess
-from loguru import logger
+from repo_agent.log import logger
 import json
 from config import CONFIG
 from multi_task_dispatch import worker

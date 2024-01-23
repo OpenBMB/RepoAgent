@@ -7,14 +7,14 @@ It is designed to be a handy tool for developers who need to organize their code
 
 ![RepoAgent](assets/images/RepoAgent.png)
 
-# 👾 Background
+## 👾 Background
 In the realm of computer programming, the significance of comprehensive project documentation, including detailed explanations for each Python file, cannot be overstated. Such documentation serves as the cornerstone for understanding, maintaining, and enhancing the codebase. It provides essential context and rationale for the code, making it easier for current and future developers to comprehend the purpose, functionality, and structure of the software. It not only facilitates current and future developers in grasping the project's purpose and structure but also ensures that the project remains accessible and modifiable over time, significantly easing the learning curve for new team members.
 
 Traditionally, creating and maintaining software documentation demanded significant human effort and expertise, a challenge for small teams without dedicated personnel. The introduction of Large Language Models (LLMs) like GPT has transformed this, enabling AI to handle much of the documentation process. This shift allows human developers to focus on verification and fine-tuning, greatly reducing the manual burden of documentation.
 
 **🏆 Our goal is to create an intelligent document assistant that helps people read and understand repositories and generate documents, ultimately helping people improve efficiency and save time.**
 
-# 🪭 Features
+## ✨ Features
 
 - **🤖 Automatically detects changes in Git repositories, tracking additions, deletions, and modifications of files.**
 - **📝 Independently analyzes the code structure through AST, generating documents for individual objects.**
@@ -23,26 +23,55 @@ Traditionally, creating and maintaining software documentation demanded signific
 - **🕙 Executes multi-threaded concurrent operations, enhancing the efficiency of document generation.**
 - **👭 Offer a sustainable, automated documentation update method for team collaboration.**
 
-# 📦 Installation
+## 🚀 Getting Started
 
-First, ensure that your machine is installed with Python version 3.9 or higher.
-```
-$ python --version
-python 3.11.4
-```
-Next, clone the project, create a virtual environment, and install dependencies within this environment.
+### Installation Methods
 
-```
-cd RepoAgent
-conda create -n RepoAgent python=3.11.4
-conda activate RepoAgent
-pip install -r requirements.txt
+#### Using pip (Recommended for Users)
+
+Install the `repoagent` package directly using pip:
+
+```bash
+pip install repoagent
 ```
 
+#### Development Setup Using PDM
 
-# 📖 Quick Start
+If you're looking to contribute or set up a development environment:
 
-## Configuring RepoAgent
+1. **Install PDM**: If you haven't already, [install PDM](https://pdm-project.org/latest/#installation).
+2. **Use CodeSpace, or Clone the Repository**:
+
+  2.1 **Use CodeSpace**
+  The easiest way to get RepoAgent enviornment. Click below to use the GitHub Codespace, then go to the next step.
+
+  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
+
+  2.2 **Clone the Repository**
+
+  ```bash
+  git clone https://github.com/LOGIC-10/RepoAgent.git
+  cd RepoAgent
+  ```
+
+3. **Setup with PDM**
+
+- Initialize the Python virtual environment. Make sure to run the below cmd in `/RepoAgent` directory:
+
+  ```bash
+  pdm venv create --name repoagent
+  ```
+
+- [Activate virtual environment](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
+
+- Install dependencies using PDM
+
+  ```bash
+   pdm install
+  ```
+
+### Configuring RepoAgent
+
 First, configure the OpenAI API parameters in the config.yml file.
 For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
 
@@ -77,7 +106,7 @@ whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json,
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
 ```
 
-## Run RepoAgent
+### Run RepoAgent
 
 Enter the root directory of RepoAgent and type the following command in the terminal:
 ```
@@ -91,7 +120,7 @@ The paths of the global structure information json file and the documentation fo
 Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
 
 
-## Configuring the Target Repository
+### Configuring the Target Repository
 
 RepoAgent currently supports generating documentation for projects, which requires some configuration in the target repository.
 
@@ -137,18 +166,31 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 
 **In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.** 
 
-# ✅ Future Work
+### Using chat with repo
+
+```bash
+python -m repo_agent.chat_with_repo
+```
+
+or 
+
+```bash
+python repo_agent/chat_with_repo/main.py
+```
+
+## ✅ Future Work
 
 - [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
 - [x] Implement Black commit
 - [x] **Bi-direct reference**  Construct Bi-directional reference topology
 - [x] **chat with repo** Chat with the repository by giving code and document at the same time 
+- [x] Automatically generate better visualizations such as Gitbook
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qianwen, GLM4, etc.
-- [x] Automatically generate better visualizations such as Gitbook
 
-# 🇺🇳 Supported Language
+## 🇺🇳 Supported Language
+
 Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
 
 <details>
@@ -186,7 +228,8 @@ Set the target language with the two-letter language codes (ISO 639-1 codes), Cl
 
 > e.g., `language: en` for English.
 
-# 📊 Citation
+## 📊 Citation
+
 ```bibtex
 @misc{RepoAgent,
   author = {Qinyu Luo, Yining Ye, Shihao Liang, Arno},

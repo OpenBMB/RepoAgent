@@ -9,7 +9,7 @@ from enum import Enum, unique, auto
 import time
 import os
 import json
-from loguru import logger
+from repo_agent.log import logger
 import jedi
 from tqdm import tqdm
 

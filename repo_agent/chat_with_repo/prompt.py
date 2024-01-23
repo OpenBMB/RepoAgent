@@ -1,9 +1,9 @@
-
 from llama_index.llms import OpenAI
 from loguru import logger
-from json_handle import JsonFileProcessor
+from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
 
 logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+
 
 class TextAnalysisTool:
     def __init__(self, llm, db_path):
@@ -28,7 +28,7 @@ class TextAnalysisTool:
     def queryblock(self, message):
         search_result = self.jsonsearch.search_in_json_nested(self.db_path, message)
         if isinstance(search_result, dict):
-            search_result = search_result['code_content']
+            search_result = search_result["code_content"]
         return str(search_result)
 
     def nerquery(self, message):
@@ -44,10 +44,11 @@ class TextAnalysisTool:
         logger.debug(f"Input: {message}, Output: {response}")
         return response
 
+
 if __name__ == "__main__":
     api_base = "https://api.openai.com/v1"
     api_key = "your_api_key"
     log_file = "your_logfile_path"
     llm = OpenAI(api_key=api_key, api_base=api_base)
     db_path = "your_database_path"
-    test= TextAnalysisTool(llm,db_path)
+    test = TextAnalysisTool(llm, db_path)

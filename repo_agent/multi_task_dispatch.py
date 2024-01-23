@@ -4,7 +4,7 @@ import time
 import random
 from typing import List, Callable, Dict, Any
 
-from loguru import logger
+from repo_agent.log import logger
 
 class Task:
     def __init__(self, task_id: int, dependencies: List[Task],extra_info: Any = None):

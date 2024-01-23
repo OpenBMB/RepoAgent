@@ -7,7 +7,7 @@ from tqdm import tqdm
 import threading
 from typing import Dict
 from config import CONFIG
-from loguru import logger
+from repo_agent.log import logger
 from utils.gitignore_checker import GitignoreChecker
 
 

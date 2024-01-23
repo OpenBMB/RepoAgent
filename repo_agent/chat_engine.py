@@ -10,7 +10,7 @@ from prompt import SYS_PROMPT, USR_PROMPT
 from doc_meta_info import DocItem
 import inspect
 from collections import defaultdict
-from loguru import logger
+from repo_agent.log import logger
 
 
 def get_import_statements():

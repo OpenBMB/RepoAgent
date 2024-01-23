@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import chromadb
-from ..repo_agent.chat_with_repo.vectordbs import ChromaManager  # Replace 'your_module' with the actual module name
+from ..repo_agent.chat_with_repo.vectordb import ChromaManager  # Replace 'your_module' with the actual module name
 
 class TestChromaManager(unittest.TestCase):
 
