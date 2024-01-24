@@ -1,4 +1,6 @@
 import json
+import sys
+from repo_agent.log import logger
 
 
 class JsonFileProcessor:
@@ -6,10 +8,13 @@ class JsonFileProcessor:
         self.file_path = file_path
 
     def read_json_file(self):
-        # 读取 JSON 文件作为数据库
-        with open(self.file_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-        return data
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+            return data
+        except FileNotFoundError:
+            logger.exception(f"File not found: {self.file_path}")
+            sys.exit(1)
 
     def extract_md_contents(self):
         # 从 JSON 数据中提取 Markdown 内容并返回一个列表

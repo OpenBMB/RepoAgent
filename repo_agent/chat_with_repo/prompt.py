@@ -1,8 +1,6 @@
 from llama_index.llms import OpenAI
-from loguru import logger
+from repo_agent.log import logger
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
-
-logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 
 
 class TextAnalysisTool:

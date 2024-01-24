@@ -1,8 +1,6 @@
 import chromadb
 from chromadb.utils import embedding_functions
-from loguru import logger
-
-logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+from repo_agent.log import logger
 
 
 class ChromaManager:

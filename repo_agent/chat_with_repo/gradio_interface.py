@@ -1,5 +1,6 @@
 import gradio as gr
 import markdown
+from repo_agent.log import logger
 
 
 class GradioInterface:
@@ -34,7 +35,7 @@ class GradioInterface:
     def setup_gradio_interface(self):
         with gr.Blocks() as demo:
             gr.Markdown(
-            """
+                """
             # RepoAgent: Chat with doc
             """
             )
@@ -51,7 +52,7 @@ class GradioInterface:
                         )
                     gr.Markdown("## Response")
                     output1 = gr.HTML(
-                    """            
+                        """            
                     <div style='border: 1px solid gray; max-width: 100%; height: 420px; overflow: auto; padding: 10px;'></div>
                     """
                     )
@@ -60,7 +61,7 @@ class GradioInterface:
                     # output2 = gr.Textbox(label = "Embedding recall")
                     gr.Markdown("## Embedding Recall")
                     output2 = gr.HTML(
-                    """                 
+                        """                 
                     <div style='border: 1px solid gray;max-width:100%; height:650px; overflow:auto'></div>
                     """
                     )
@@ -68,7 +69,7 @@ class GradioInterface:
                     output3 = gr.Textbox(label="key words")
                     gr.Markdown("## Code")
                     code = gr.HTML(
-                    """                      
+                        """                      
                     <div style='border: 1px solid gray;max-width:100%; height:540px; overflow:auto'></div>
                     """
                     )
@@ -85,6 +86,7 @@ class GradioInterface:
             )  # Press enter to submit
 
         gr.close_all()
+        logger.success(f"Starting Gradio Server.", enqueue=True)
         demo.queue().launch()
 
 
