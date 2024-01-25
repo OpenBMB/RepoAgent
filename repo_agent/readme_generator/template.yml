@@ -1,0 +1,98 @@
+
+name : |
+  # Name
+
+
+Description : |
+
+  >A brief description of what this project does and who it's for...
+
+
+Badges : |
+
+  ## Badges
+
+  Add badges from somewhere like: [shields.io](https://shields.io/)
+
+  [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+  [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
+  [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
+
+
+
+Visuals : |
+  ## Visuals
+
+    Add images from somewhere like: [imgur.com](https://imgur.com/)
+
+
+
+Installation : |
+
+  ## Installation
+
+  Install my-project with npm
+
+  ```bash
+    npm install my-project
+    cd my-project
+  ```
+
+Usage : |
+
+
+  ## Usage/Examples
+
+  ```javascript
+  import Component from 'my-project'
+
+  function App() {
+    return <Component />
+    }
+  ```
+
+
+
+
+Support : |
+
+  ## Support
+
+  For support, email fake@fake.com or join our Slack channel.
+
+
+
+Roadmap : |
+
+
+
+Contributing : |
+
+
+
+Authors_and_acknowledgment : |
+  ## Authors
+
+  - [@octokatherine](https://www.github.com/octokatherine)
+
+
+License : |
+
+  ## License
+
+  [MIT](https://choosealicense.com/licenses/mit/)
+
+
+
+Project_status : |
+
+
+
+citation : | 
+  ## citation
+  @article{zeng2022glm,
+    title={Glm-130b: An open bilingual pre-trained model},
+    author={Zeng, Aohan and Liu, Xiao and Du, Zhengxiao and Wang, Zihan and Lai, Hanyu and Ding, Ming and Yang, Zhuoyi and Xu, Yifan and Zheng, Wendi and Xia, Xiao and others},
+    journal={arXiv preprint arXiv:2210.02414},
+    year={2022}
+  }
