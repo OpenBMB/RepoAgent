@@ -38,7 +38,7 @@ def create_readme(yaml_data, output_file):
             readme_content += f">{valuea}\n\n"
         if key.lower() == 'license':
             info = str(data.extract_license()) + appendix_content
-            valuea=clients.processother(info,str(data.tree()),value)
+            valuea=clients.processlinces(info,value)
             logger.debug(f"许可: {valuea}")
             readme_content += f"{valuea}\n\n"
         if key.lower() == 'installation':

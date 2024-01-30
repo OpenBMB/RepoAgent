@@ -53,7 +53,7 @@ class ChromaManager:
     def create_vector_store(self, md_contents,meta_data):
         # Process Markdown content and store it in Chroma
         if self.is_new_collection:  # 仅当是新集合时执行
-            logger.debug(f"judge: {self.is_new_collection}")
+            # logger.debug(f"judge: {self.is_new_collection}")
             ids = [str(i) for i in range(len(md_contents))]
             self.chroma_collection.add(ids = ids, documents = md_contents,metadatas = meta_data)
         else:

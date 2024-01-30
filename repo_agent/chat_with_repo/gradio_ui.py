@@ -25,7 +25,7 @@ class GradioInterface:
                         .content {
                             white-space: pre-wrap; /* 保留空白符和换行符 */
                             font-size: 16px; /* 内容文字大小 */
-                            height: 400px;
+                            height: 405px;
                             overflow: auto;
                         }
                     </style>
@@ -41,7 +41,7 @@ class GradioInterface:
 
     def wrapper_respond(self, msg_input, system_input):
         # 调用原来的 respond 函数
-        msg, output1, output2, output3, code = self.respond(msg_input, system_input)
+        msg, output1, output2, output3, code ,codex= self.respond(msg_input, system_input)
         output1 = markdown.markdown(str(output1))
         output2 = markdown.markdown(str(output2))
         code = markdown.markdown(str(code))
@@ -81,7 +81,33 @@ class GradioInterface:
             )
 
         
-        return msg, output1, output2, output3, code
+        return msg, output1, output2, output3, code, codex
+    def clean(self):
+        msg =""
+        output1 =gr.HTML(self.cssa
+                                      +"""
+                                        <div class="title">Response</div>
+                                            <div class="inner-box">
+                                                <div class="content">
+                      
+                                            """+self.cssb)
+        output2 =gr.HTML(self.cssa
+                                      +"""
+                                        <div class="title">Embedding Recall</div>
+                                            <div class="inner-box">
+                                                <div class="content">
+                                    
+                                            """+self.cssb)
+        output3 =""
+        code =gr.HTML(self.cssa
+                                      +"""
+                                        <div class="title">Code</div>
+                                            <div class="inner-box">
+                                                <div class="content">
+                                   
+                                            """+self.cssb)
+        codex = ""
+        return msg, output1, output2, output3, code, codex
 
     def setup_gradio_interface(self):
         with gr.Blocks() as demo:
@@ -94,15 +120,16 @@ class GradioInterface:
                     with gr.Column():
                         msg = gr.Textbox(label = "Question Input",lines = 4) 
                         system = gr.Textbox(label = "(Optional)insturction editing", lines = 4)
-                        btn = gr.Button("Submit",scale=2)
+                        btn = gr.Button("Submit")
+                        btnc = gr.ClearButton()
+                        btnr = gr.Button("record")
                     
                     output1 = gr.HTML(self.cssa
                                       +"""
                                         <div class="title">Response</div>
                                             <div class="inner-box">
                                                 <div class="content">
-                                                这里是内框的文本内容，可以包含多行。
-                                                换行符和空格都将被保留。
+                      
                                             """+self.cssb)
                 with gr.Row():
                     with gr.Column():
@@ -112,21 +139,23 @@ class GradioInterface:
                                         <div class="title">Embedding Recall</div>
                                             <div class="inner-box">
                                                 <div class="content">
-                                                这里是内框的文本内容，可以包含多行。
-                                                换行符和空格都将被保留。
+                                    
                                             """+self.cssb)
-                    output3 = gr.Textbox(label = "key words")
                     code = gr.HTML(self.cssa
                                       +"""
                                         <div class="title">Code</div>
                                             <div class="inner-box">
                                                 <div class="content">
-                                                这里是内框的文本内容，可以包含多行。
-                                                换行符和空格都将被保留。
+                                   
                                             """+self.cssb)
+                    with gr.Row():
+                        with gr.Column():
+                            output3 = gr.Textbox(label = "key words",lines=2)
+                            output4 = gr.Textbox(label = "key words code",lines=14)
            
-            btn.click(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code])
-            msg.submit(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code],scroll_to_output = True)  # Press enter to submit
+            btn.click(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code,output4])
+            btnc.click(self.clean,outputs= [msg, output1, output2, output3, code,output4]) 
+            msg.submit(self.wrapper_respond, inputs = [msg, system], outputs = [msg, output1, output2, output3, code,output4])  # Press enter to submit
 
         gr.close_all()
         demo.queue().launch(share=True,height = 800)

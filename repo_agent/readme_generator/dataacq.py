@@ -49,8 +49,8 @@ class DataAquire:
         if os.path.isfile(path):
             with open(path, 'r', encoding="utf-8") as file:
                 lines = file.readlines()
-                # 仅选择前7行
-                useful_lines = lines[:7]
+                # 仅选择前3行
+                useful_lines = lines[:3]
                 return ''.join(useful_lines)
         return "无法找到 LICENSE 文件"
 

@@ -5,7 +5,7 @@ from loguru import logger
 from llama_index import PromptTemplate 
 from llama_index.llms import OpenAI 
 
-logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+# logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 
 class RepoAssistant:
     def __init__(self, api_key, api_base, db_path):
@@ -14,7 +14,7 @@ class RepoAssistant:
         self.api_base = api_base
         self.db_path = db_path
         self.md_contents = []
-        self.llm = OpenAI(api_key=api_key, api_base=api_base)
+        self.llm = OpenAI(api_key=api_key, api_base=api_base,model="gpt-3.5-turbo-1106")
         self.client = OpenAI(api_key=api_key, api_base=api_base,model="gpt-4-32k")
         self.textanslys = TextAnalysisTool(self.llm,db_path)
         self.json_data = JsonFileProcessor(db_path)
@@ -112,18 +112,26 @@ class RepoAssistant:
                 if id in unique_ids:
                     unique_documents.append(doc)
                     unique_code.append(code.get("code_content"))
-    
+        unique_code=self.textanslys.list_to_markdown(unique_code)
         retrieved_documents=unique_documents
         # logger.debug(f"retrieveddocuments: {retrieved_documents}")
         response = self.rag(prompt,retrieved_documents)
         chunkrecall = self.list_to_markdown(retrieved_documents)
         bot_message = str(response)
         keyword = str(self.textanslys.nerquery(bot_message))
-        codex='\n'+'```python'+'\n'+self.textanslys.queryblock(keyword)+'\n'+'```'
-        unique_code.append(codex)
+        keywords = str(self.textanslys.nerquery(str(prompt)+str(questions)))
+        codez=self.textanslys.queryblock(keyword)
+        codey=self.textanslys.queryblock(keywords)
+        if not isinstance(codez, list):
+            codex = [codez]
+        # 确保 codey 是列表，如果不是，则将其转换为列表
+        if not isinstance(codey, list):
+            codey = [codey]
+        codex=codez+codey
+        codex=self.textanslys.list_to_markdown(codex)
         bot_message = self.rag_ar(prompt,unique_code,retrieved_documents,"test")
         bot_message = str(bot_message) +'\n'+ str(self.textanslys.tree(bot_message))
-        return message, bot_message,chunkrecall,questions,unique_code
+        return message, bot_message,chunkrecall,questions,unique_code,codex
     
 if __name__ == "__main__":
     api_key = ""

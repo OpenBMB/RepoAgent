@@ -41,31 +41,35 @@ class JsonFileProcessor:
                 extracted_contents.append(function_dict)
         return extracted_contents
     
-    def search_in_json_nested(self, file_path, search_text):
-        # retrieve code from json
+    def recursive_search(self,data_item, search_text, results):
+        if isinstance(data_item, dict):
+            for key, value in data_item.items():
+                # 检查是否是我们要找的名称
+                if key == search_text and 'code_content' in value:
+                    # 如果是，添加其code_content到结果列表
+                    results.append(value['code_content'])
+                # 递归搜索字典或列表
+                if isinstance(value, (dict, list)):
+                    self.recursive_search(value, search_text, results)
+        elif isinstance(data_item, list):
+            for item in data_item:
+                self.recursive_search(item, search_text, results)
+
+
+    def search_code_contents_by_name(self,file_path, search_text):
+    # retrieve code from json
         try:
-            with open(file_path, 'r',encoding = 'utf-8') as file:
+            with open(file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
 
-                def recursive_search(data_item):
-                    if isinstance(data_item, dict):
-                        if 'name' in data_item and search_text.lower() in data_item['name'].lower():
-                            return data_item
+                # 结果列表，用于存储所有匹配项的code_content
+                results = []
 
-                        for key, value in data_item.items():
-                            if isinstance(value, (dict, list)):
-                                result = recursive_search(value)
-                                if result:
-                                    return result
-                    elif isinstance(data_item, list):
-                        for item in data_item:
-                            result = recursive_search(item)
-                            if result:
-                                return result
+                # 使用辅助函数进行递归搜索
+                self.recursive_search(data, search_text, results)
 
-                result = recursive_search(data)
-                if result:
-                    return result
+                if results:
+                    return results
                 else:
                     return "No matching item found."
 
