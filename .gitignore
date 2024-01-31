@@ -170,6 +170,8 @@ prompt_output/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# IDE
+.vscode
 
 # RepoAgent
 .project_doc_record

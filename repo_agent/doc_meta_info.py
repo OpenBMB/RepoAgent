@@ -6,16 +6,14 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Callable, Optional
 from colorama import Fore, Style
 from enum import Enum, unique, auto
-import time
 import os
 import json
-from loguru import logger
+from repo_agent.log import logger
 import jedi
 from tqdm import tqdm
-
-from config import CONFIG
-from file_handler import FileHandler
-from multi_task_dispatch import TaskManager
+from repo_agent.config import CONFIG
+from repo_agent.file_handler import FileHandler
+from repo_agent.multi_task_dispatch import TaskManager
 
 
 @unique

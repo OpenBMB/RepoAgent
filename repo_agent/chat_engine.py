@@ -4,10 +4,10 @@ from openai import BadRequestError, OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from config import language_mapping
-from project_manager import ProjectManager
-from prompt import SYS_PROMPT, USR_PROMPT
-from doc_meta_info import DocItem
+from repo_agent.config import language_mapping
+from repo_agent.project_manager import ProjectManager
+from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
+from repo_agent.doc_meta_info import DocItem
 import inspect
 from collections import defaultdict
 from repo_agent.log import logger

@@ -43,4 +43,4 @@ whitelist_path: #if whitelist_path is not none, We only generate docs on whiteli
 
 language: zh
 
-log_level: success
+log_level: info

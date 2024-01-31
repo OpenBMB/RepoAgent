@@ -1,19 +1,20 @@
 import threading
 import os, json
 import json
-from file_handler import FileHandler
-from change_detector import ChangeDetector
-from project_manager import ProjectManager
-from chat_engine import ChatEngine
+from repo_agent.file_handler import FileHandler
+from repo_agent.change_detector import ChangeDetector
+from repo_agent.project_manager import ProjectManager
+from repo_agent.chat_engine import ChatEngine
 from concurrent.futures import ThreadPoolExecutor
-from doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
+from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
+from repo_agent.log import logger
+from repo_agent.config import CONFIG
+from repo_agent.multi_task_dispatch import worker
 from tqdm import tqdm
 from typing import List
 from functools import partial
 import subprocess
-from repo_agent.log import logger
-from config import CONFIG
-from multi_task_dispatch import worker
+
 
 
 def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
