@@ -1,4 +1,4 @@
-[中文](README_CN.md) | [Background](#-background) | [Features](#-features) | [Quick Start](#-quick-start) | [Future Work](#-future-work) | [Supported Language](#-supported-language) | [Citation](#-citation)
+[中文](README_CN.md) | [Background](#-background) | [Features](#-features) | [Getting Started](#-getting-started) | [Future Work](#-future-work) | [Supported Language](#-supported-language) | [Citation](#-citation)
 
 # 🤗 Introduction
 
@@ -39,36 +39,36 @@ pip install repoagent
 
 If you're looking to contribute or set up a development environment:
 
-1. **Install PDM**: If you haven't already, [install PDM](https://pdm-project.org/latest/#installation).
-2. **Use CodeSpace, or Clone the Repository**:
+- **Install PDM**: If you haven't already, [install PDM](https://pdm-project.org/latest/#installation).
+- **Use CodeSpace, or Clone the Repository**:
 
-  2.1 **Use CodeSpace**
-  The easiest way to get RepoAgent enviornment. Click below to use the GitHub Codespace, then go to the next step.
+    - **Use CodeSpace**
+    The easiest way to get RepoAgent enviornment. Click below to use the GitHub Codespace, then go to the next step.
+  
+    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
+  
+    - **Clone the Repository**
+  
+    ```bash
+    git clone https://github.com/LOGIC-10/RepoAgent.git
+    cd RepoAgent
+    ```
 
-  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
+- **Setup with PDM**
 
-  2.2 **Clone the Repository**
-
-  ```bash
-  git clone https://github.com/LOGIC-10/RepoAgent.git
-  cd RepoAgent
-  ```
-
-3. **Setup with PDM**
-
-- Initialize the Python virtual environment. Make sure to run the below cmd in `/RepoAgent` directory:
-
-  ```bash
-  pdm venv create --name repoagent
-  ```
-
-- [Activate virtual environment](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
-
-- Install dependencies using PDM
-
-  ```bash
-   pdm install
-  ```
+    - Initialize the Python virtual environment. Make sure to run the below cmd in `/RepoAgent` directory:
+    
+      ```bash
+      pdm venv create --name repoagent
+      ```
+    
+    - [Activate virtual environment](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
+    
+    - Install dependencies using PDM
+    
+      ```bash
+       pdm install
+      ```
 
 ### Configuring RepoAgent
 
@@ -76,6 +76,7 @@ First, configure the OpenAI API parameters in the config.yml file.
 For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
 
 In the `config.yml` file, configure other parameters like OpenAI API, the destination repository path, document language, and so on:
+
 ```yaml
 api_keys:
   gpt-3.5-turbo-16k:
@@ -95,7 +96,7 @@ default_completion_kwargs:
   temperature: 0.2
   request_timeout: 60
 
-max_thread_count: int #We support multiprocessing to speedup the process
+max_thread_count: int # We support multiprocessing to speedup the process
 
 repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
@@ -109,8 +110,8 @@ language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` 
 ### Run RepoAgent
 
 Enter the root directory of RepoAgent and type the following command in the terminal:
-```
-python repo_agent/runner.py
+```sh
+python -m repo_agent
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
@@ -170,12 +171,6 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 
 ```bash
 python -m repo_agent.chat_with_repo
-```
-
-or 
-
-```bash
-python repo_agent/chat_with_repo/main.py
 ```
 
 ## ✅ Future Work
