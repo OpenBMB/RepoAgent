@@ -50,7 +50,7 @@ def load_whitelist():
 class Runner:
     def __init__(self):
         self.project_manager = ProjectManager(repo_path=CONFIG['repo_path'],project_hierarchy=CONFIG['project_hierarchy']) 
-        # self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
+        self.change_detector = ChangeDetector(repo_path=CONFIG['repo_path'])
         self.chat_engine = ChatEngine(CONFIG=CONFIG)
 
         if not os.path.exists(os.path.join(CONFIG['repo_path'], CONFIG['project_hierarchy'])):

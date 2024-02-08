@@ -161,6 +161,7 @@ cython_debug/
 assets/tests
 
 prompt_output/
+.idea/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
