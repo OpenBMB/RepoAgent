@@ -1,870 +1,869 @@
 ## _class EdgeType
 **EdgeType**: EdgeType的功能是定义边的类型。
 
-**属性**: 该类没有属性。
-
-**代码描述**: EdgeType是一个枚举类，用于定义边的类型。它包含了三种类型的边：reference_edge、subfile_edge和file_item_edge。每种类型的边都有一个自动生成的值。
-
-- reference_edge: 表示一个对象引用另一个对象。
-- subfile_edge: 表示一个文件或文件夹属于一个文件夹。
-- file_item_edge: 表示一个对象属于一个文件。
-
-**注意**: 在使用EdgeType时，可以通过引用枚举值来表示不同类型的边。例如，可以使用EdgeType.reference_edge来表示引用关系的边。
-## _class DocItemType
-**DocItemType**: DocItemType的功能是定义了一组枚举类型，用于表示文档项的类型。
-
 **属性**：
-- _repo: 根节点，需要生成readme
-- _dir: 目录
-- _file: 文件
-- _class: 类
-- _class_function: 类中的函数
-- _function: 文件内的常规函数
-- _sub_function: 函数内的定义的子函数
-- _global_var: 全局变量
+- reference_edge: 表示一个对象引用另一个对象的边。
+- subfile_edge: 表示一个文件/文件夹属于一个文件夹的边。
+- file_item_edge: 表示一个对象属于一个文件的边。
 
 **代码描述**：
-DocItemType是一个枚举类，用于表示文档项的类型。它定义了不同类型的文档项，包括根节点、目录、文件、类、类中的函数、文件内的常规函数、函数内的定义的子函数和全局变量。每个文档项都有一个to_str()方法，用于将其转换为字符串表示。它还有一个print_self()方法，用于打印文档项的名称，并根据类型使用不同的颜色进行标记。此外，它还有一个get_edge_type()方法，用于获取从一个文档项到另一个文档项的边的类型。
+EdgeType是一个枚举类，用于定义边的类型。它包含了三个枚举值，分别表示不同类型的边。reference_edge表示一个对象引用另一个对象的边，subfile_edge表示一个文件/文件夹属于一个文件夹的边，file_item_edge表示一个对象属于一个文件的边。
+
+在项目中，EdgeType被用于定义边的类型，用于描述不同对象之间的关系。例如，在repo_agent/doc_meta_info.py/DocItemType类的get_edge_type方法中，EdgeType被用作返回值的类型。该方法接受两个DocItemType类型的参数，根据参数的不同返回对应的EdgeType类型的值，用于表示两个对象之间的关系类型。
 
 **注意**：
-- DocItemType是一个枚举类，用于表示文档项的类型。
+- EdgeType是一个枚举类，用于定义边的类型。
+- EdgeType的枚举值包括reference_edge、subfile_edge和file_item_edge，分别表示不同类型的边。
+- 在项目中，EdgeType被用于描述不同对象之间的关系类型。
+## _class DocItemType
+**DocItemType**: DocItemType的功能是定义了文档项的类型。
+
+**attributes**:
+- _repo: 根节点，表示整个仓库。
+- _dir: 目录类型。
+- _file: 文件类型。
+- _class: 类类型。
+- _class_function: 类中的函数类型。
+- _function: 文件内的常规函数类型。
+- _sub_function: 函数内定义的子函数类型。
+- _global_var: 全局变量类型。
+
+**Code Description**: 
+DocItemType是一个枚举类，用于定义文档项的类型。它包含了不同类型的文档项，如根节点、目录、文件、类、函数等。每个文档项都有一个to_str()方法，用于将其转换为字符串表示。根据不同的类型，to_str()方法会返回相应的字符串表示，如"ClassDef"、"FunctionDef"等。此外，DocItemType还提供了print_self()方法，用于以不同的颜色打印文档项的名称。
+
+DocItemType还定义了一个静态方法get_edge_type()，用于获取两个文档项之间的边类型。该方法接受两个参数，from_item_type和to_item_type，表示起始文档项和目标文档项的类型。根据不同的类型组合，get_edge_type()方法会返回相应的边类型。
+
+**Note**: 
+- DocItemType是一个枚举类，用于定义文档项的类型。
 - 每个文档项都有一个to_str()方法，用于将其转换为字符串表示。
-- 每个文档项都有一个print_self()方法，用于打印文档项的名称，并根据类型使用不同的颜色进行标记。
-- DocItemType还定义了一个get_edge_type()方法，用于获取从一个文档项到另一个文档项的边的类型。
+- 可以使用print_self()方法以不同的颜色打印文档项的名称。
+- 可以使用get_edge_type()方法获取两个文档项之间的边类型。
+
+**Output Example**:
+```
+ClassDef
+```
+### _function to_str(self)
+**to_str**: to_str函数的作用是将DocItemType枚举类型的值转换为对应的字符串表示。
+
+**参数**：该函数没有参数。
+
+**代码说明**：该函数根据不同的枚举值，返回对应的字符串表示。如果枚举值为DocItemType._class，则返回"ClassDef"；如果枚举值为DocItemType._function、DocItemType._class_function或DocItemType._sub_function，则返回"FunctionDef"；否则，返回枚举值的名称。
+
+该函数被repo_agent/doc_meta_info.py/MetaInfo/to_hierarchy_json/walk_file对象调用。在该对象的代码中，to_str函数被用于将DocItemType枚举类型的值转换为字符串表示，并将其赋值给temp_json_obj字典的"type"键。
+
+**注意**：在使用该函数时，需要确保传入的参数是DocItemType枚举类型的值。
+
+**输出示例**：假设传入的参数为DocItemType._class，则函数将返回字符串"ClassDef"。
+### _function print_self(self)
+**print_self**: print_self函数的功能是根据不同的DocItemType类型，打印出相应的名称，并且根据类型设置不同的颜色。
+
+**参数**：
+- self: 当前对象的实例
+
+**代码描述**：
+print_self函数根据self的值来确定DocItemType的类型，并根据不同的类型设置不同的颜色。如果self等于DocItemType._dir，则将颜色设置为绿色；如果self等于DocItemType._file，则将颜色设置为黄色；如果self等于DocItemType._class，则将颜色设置为蓝色；如果self等于DocItemType._function，则将颜色设置为红色。然后返回设置了颜色的self.name。
+
+在调用该函数的代码中，首先定义了一个color变量，初始值为Fore.WHITE。然后通过判断self的值，将color变量的值更新为相应的颜色。最后返回color + self.name + Style.RESET_ALL。
+
+**注意**：
+- 该函数依赖于DocItemType类中定义的常量，确保在调用该函数之前已经正确设置了DocItemType的值。
 
 **输出示例**：
-```
-_class
-```
-### _class_function to_str(self)
-**to_str**: to_str函数的作用是将DocItemType枚举类型的实例转换为对应的字符串表示。
+- 如果self等于DocItemType._dir，则返回绿色的self.name。
+- 如果self等于DocItemType._file，则返回黄色的self.name。
+- 如果self等于DocItemType._class，则返回蓝色的self.name。
+- 如果self等于DocItemType._function，则返回红色的self.name。
+### _function get_edge_type(from_item_type, to_item_type)
+**get_edge_type**: get_edge_type函数的功能是根据给定的from_item_type和to_item_type参数，返回对应的EdgeType类型的值。
 
-**参数**: 该函数没有参数。
+**参数**：
+- from_item_type: 表示边的起始对象类型，类型为DocItemType。
+- to_item_type: 表示边的目标对象类型，类型为DocItemType。
 
-**代码说明**: to_str函数根据DocItemType的不同取值，返回对应的字符串表示。如果self等于DocItemType._class，则返回"ClassDef"；如果self等于DocItemType._function、DocItemType._class_function或DocItemType._sub_function，则返回"FunctionDef"；否则返回self.name。
+**代码描述**：
+get_edge_type函数接受两个参数from_item_type和to_item_type，这两个参数都是DocItemType类型的对象。根据这两个参数的不同，函数会返回对应的EdgeType类型的值，用于表示两个对象之间的关系类型。
 
-**注意**: 使用该函数时需要确保self是DocItemType枚举类型的实例。
+在项目中，get_edge_type函数被用于获取两个对象之间的边的类型。该函数的返回值类型为EdgeType。通过调用该函数，可以根据给定的起始对象类型和目标对象类型，获取它们之间的关系类型。
 
-**输出示例**: 
-- 示例1:
-    ```python
-    item_type = DocItemType._class
-    print(item_type.to_str())
-    ```
-    输出:
-    ```
-    ClassDef
-    ```
-
-- 示例2:
-    ```python
-    item_type = DocItemType._function
-    print(item_type.to_str())
-    ```
-    输出:
-    ```
-    FunctionDef
-    ```
-### _class_function print_self(self)
-**print_self**: print_self函数的功能是根据不同的DocItemType类型，打印出相应的颜色和名称。
-**参数**: 无参数。
-**代码描述**: 这个函数首先定义了一个变量color，初始值为Fore.WHITE。然后通过判断self的值，将color的值设置为对应的颜色。最后返回color加上self.name和Style.RESET_ALL的组合。
-**注意**: 这个函数依赖于DocItemType类的定义，需要确保DocItemType类已经被正确导入。
-**输出示例**: 假设self的值为DocItemType._class，那么返回的结果可能是Fore.BLUE + "class" + Style.RESET_ALL。
-### _class_function get_edge_type(from_item_type, to_item_type)
-**get_edge_type**: get_edge_type函数的功能是根据给定的from_item_type和to_item_type参数，获取边的类型。
-
-**参数**: 
-- from_item_type: 表示边的起始对象的类型，类型为DocItemType。
-- to_item_type: 表示边的目标对象的类型，类型为DocItemType。
-
-**代码描述**: 
-get_edge_type函数是一个用于获取边的类型的函数。它接受两个参数from_item_type和to_item_type，这两个参数都是DocItemType类型的对象。函数的返回值是一个EdgeType类型的对象，表示边的类型。
-
-**注意**: 
-在使用get_edge_type函数时，需要传入合法的from_item_type和to_item_type参数，否则可能会导致函数无法正常工作。函数的返回值是一个EdgeType类型的对象，可以通过引用枚举值来表示不同类型的边。例如，可以使用EdgeType.reference_edge来表示引用关系的边。
+**注意**：
+- get_edge_type函数的功能是根据给定的from_item_type和to_item_type参数，返回对应的EdgeType类型的值。
+- from_item_type和to_item_type参数分别表示边的起始对象类型和目标对象类型，类型为DocItemType。
+- 通过调用get_edge_type函数，可以获取两个对象之间的关系类型。
 ## _class DocItemStatus
 **DocItemStatus**: DocItemStatus的功能是定义文档项的状态。
 
 **属性**：
-- doc_up_to_date：文档已经是最新的状态，无需生成文档。
-- doc_has_not_been_generated：文档还未生成，需要生成。
-- code_changed：源码被修改了，需要改文档。
-- add_new_referencer：添加了新的引用者。
-- referencer_not_exist：曾经引用他的obj被删除了，或者不再引用他了。
+- doc_up_to_date: 表示文档项的文档已经是最新的，无需生成新的文档。
+- doc_has_not_been_generated: 表示文档项的文档还未生成，需要生成新的文档。
+- code_changed: 表示文档项的源码被修改了，需要重新生成文档。
+- add_new_referencer: 表示文档项添加了新的引用者。
+- referencer_not_exist: 表示曾经引用该文档项的对象被删除了，或者不再引用该文档项。
 
 **代码描述**：
-DocItemStatus是一个枚举类，用于表示文档项的状态。它定义了五种状态，分别表示文档的不同情况。这些状态包括文档已经是最新的状态（doc_up_to_date）、文档还未生成（doc_has_not_been_generated）、源码被修改了（code_changed）、添加了新的引用者（add_new_referencer）和曾经引用他的obj被删除了或者不再引用他了（referencer_not_exist）。
+DocItemStatus是一个枚举类，用于表示文档项的不同状态。它定义了五个状态常量，分别表示文档项的不同状态。这些状态常量可以用于判断文档项是否需要生成新的文档，或者文档项的源码是否被修改了。
+
+- doc_up_to_date: 表示文档项的文档已经是最新的，无需生成新的文档。
+- doc_has_not_been_generated: 表示文档项的文档还未生成，需要生成新的文档。
+- code_changed: 表示文档项的源码被修改了，需要重新生成文档。
+- add_new_referencer: 表示文档项添加了新的引用者。
+- referencer_not_exist: 表示曾经引用该文档项的对象被删除了，或者不再引用该文档项。
+
+DocItemStatus类还重写了`__eq__`方法，用于判断两个DocItemStatus对象是否相等。
+
+此外，DocItemStatus类还定义了一个静态方法`has_ans_relation`，用于判断两个节点之间是否存在祖先关系，并返回更早的节点。
 
 **注意**：
-- DocItemStatus是一个枚举类，用于表示文档项的状态。
-- 可以根据具体情况使用不同的状态来表示文档的状态。
-- 可以通过访问枚举类的属性来获取文档项的状态。
+- DocItemStatus是一个枚举类，用于表示文档项的不同状态。
+- 可以通过访问DocItemStatus的属性来获取不同的文档项状态。
+- 可以使用`==`运算符来比较两个DocItemStatus对象是否相等。
+- 可以使用静态方法`has_ans_relation`来判断两个节点之间是否存在祖先关系。
 ## _class DocItem
-**DocItem**: DocItem的功能是定义了一个类，用于表示文档项。
+**DocItem**: DocItem的功能是XXX
+**属性**：这个类的属性。
+· item_type: DocItemType = DocItemType._class_function
+· item_status: DocItemStatus = DocItemStatus.doc_has_not_been_generated
+· obj_name: str = "" #对象的名字
+· code_start_line: int = -1
+· code_end_line: int = -1
+· md_content: List[str] = field(default_factory=list) #存储不同版本的doc
+· content: Dict[Any,Any] = field(default_factory=dict) #原本存储的信息
+· children: Dict[str, DocItem] = field(default_factory=dict) #子对象
+· father: Any[DocItem] = None
+· depth: int = 0
+· tree_path: List[DocItem] = field(default_factory=list) #一整条链路，从root开始
+· max_reference_ansce: Any[DocItem] = None
+· reference_who: List[DocItem] = field(default_factory=list) #他引用了谁
+· who_reference_me: List[DocItem] = field(default_factory=list) #谁引用了他
+· special_reference_type: List[bool] = field(default_factory=list)
+· reference_who_name_list: List[str] = field(default_factory=list) #他引用了谁，这个可能是老版本
+· who_reference_me_name_list: List[str] = field(default_factory=list) #谁引用了他，这个可能是老版本的
+· multithread_task_id: int = -1 #在多线程中的task_id
 
-**属性**：
-- item_type: 文档项的类型
-- item_status: 文档项的状态
-- obj_name: 对象的名字
-- md_content: 存储不同版本的文档内容
-- content: 原本存储的信息
-- children: 子对象
-- father: 父对象
-- depth: 对象的深度
-- tree_path: 对象的路径
-- max_reference_ansce: 最大的引用祖先节点
-- reference_who: 引用了哪些对象
-- who_reference_me: 被哪些对象引用
-- reference_who_name_list: 引用了哪些对象的名字
-- who_reference_me_name_list: 被哪些对象引用的名字
-- multithread_task_id: 多线程中的任务ID
+**代码描述**：DocItem是一个类，用于表示文档项。它包含了一些属性，如item_type、item_status、obj_name等，用于存储文档项的相关信息。它还包含了一些方法，如__eq__、has_ans_relation等，用于进行文档项之间的比较和关系判断。
 
-**方法**：
-- \_\_eq\_\_(self, other): 检查两个对象是否相等
-- has_ans_relation(now_a, now_b): 判断两个节点之间是否存在祖先关系
-- get_travel_list(self): 获取对象及其子对象的列表
-- check_depth(self): 计算对象的深度
-- find_min_ances(node_a, node_b): 查找两个节点的最小公共祖先节点
-- parse_tree_path(self, now_path): 解析对象的路径
-- get_file_name(self): 获取对象所在的文件名
-- get_full_name(self): 获取对象的完整名称
-- find(self, recursive_file_path): 根据路径查找对象
-- print_recursive(self, indent=0, print_content=False): 递归打印对象及其子对象的信息
+**注意**：在使用DocItem类时，需要注意以下几点：
+- 需要正确设置item_type属性，以指明文档项的类型。
+- 需要正确设置obj_name属性，以指明文档项的名称。
+- 需要正确设置item_status属性，以指明文档项的状态。
 
-请注意：
-- DocItem是一个类，用于表示文档项。
-- 每个文档项都有不同的属性和方法，用于描述和操作文档项的信息。
-- 可以根据需要使用这些属性和方法来处理文档项的相关操作。
-- 请根据具体情况使用适当的方法来操作文档项。
-### _class_function __eq__(self, other)
-**__eq__**: __eq__函数的作用是比较两个对象是否相等。
-**parameters**: 该函数有一个参数other，表示要比较的另一个对象。
-**Code Description**: 该函数用于比较两个对象是否相等。首先，函数会检查other是否是DocItem类的实例，如果不是，则直接返回False。然后，函数会逐个比较两个对象的item_type和obj_name属性是否相等，如果有不相等的情况，则返回False。最后，函数会比较两个对象的get_full_name()方法的返回值是否相等，如果相等，则返回True，否则返回False。
-
-**Note**: 该函数适用于判断两个对象是否相等，可以用于对象的比较操作。
-
-**Output Example**: 假设有两个对象obj1和obj2，它们的item_type和obj_name属性分别为type1和name1，type2和name2，并且它们的get_full_name()方法的返回值分别为"obj1/full_name1"和"obj2/full_name2"。那么，调用obj1.__eq__(obj2)的返回值为False。
-### _class_function has_ans_relation(now_a, now_b)
-**has_ans_relation**: has_ans_relation函数的功能是判断两个节点是否存在祖先关系，并返回更早的节点。
-**parameters**: 这个函数有两个参数：
-- now_a: DocItem类型，表示当前节点A。
-- now_b: DocItem类型，表示当前节点B。
-**Code Description**: 这个函数首先判断节点B是否在节点A的树路径上，如果是，则返回节点B。接着判断节点A是否在节点B的树路径上，如果是，则返回节点A。如果两个节点之间不存在祖先关系，则返回None。
-**Note**: 使用这个函数时需要注意以下几点：
-- 参数now_a和now_b必须是DocItem类型的对象。
-- 函数返回的结果可能是节点A或节点B，或者是None。
-**Output Example**: 假设节点A的树路径为[节点1, 节点2, 节点3]，节点B的树路径为[节点4, 节点5, 节点2, 节点3]，则函数的返回值为节点2。
-### _class_function get_travel_list(self)
-**get_travel_list**: get_travel_list函数的功能是获取当前节点及其所有子节点的列表。
-**参数**: 该函数没有参数。
-**代码描述**: 该函数通过递归调用获取当前节点及其所有子节点的列表，并将其存储在now_list中，最后返回now_list。
-**代码分析**: 
-- 首先，创建一个列表now_list，将当前节点self添加到列表中。
-- 然后，遍历当前节点的所有子节点，对每个子节点调用get_travel_list函数，并将返回的列表与now_list相加，更新now_list。
-- 最后，返回now_list作为结果。
-
-**注意**: 
-- 该函数是一个递归函数，通过递归调用获取当前节点及其所有子节点的列表。
-- 该函数只能在DocItem对象中调用。
-
-**输出示例**: 
-假设当前节点self有两个子节点child1和child2，且child1有一个子节点grandchild1，child2有一个子节点grandchild2。则调用get_travel_list函数的结果为[now_list, child1, grandchild1, child2, grandchild2]。
-### _class_function check_depth(self)
-**check_depth**: check_depth函数的功能是计算当前节点的深度。
-
-**参数**: 该函数没有参数。
-
-**代码说明**: check_depth函数首先判断当前节点是否有子节点，如果没有子节点，则将当前节点的深度设置为0，并返回深度值。如果有子节点，则遍历所有子节点，并递归调用每个子节点的check_depth函数，获取子节点的深度值。然后将子节点的最大深度值加1，作为当前节点的深度值。最后返回当前节点的深度值。
-
-**注意**: 
-- 该函数是一个递归函数，会遍历整个节点树。
-- 该函数需要在节点树构建完成后调用，否则可能无法正确计算深度。
-
-**输出示例**: 
-假设当前节点为根节点，且有两个子节点，其中一个子节点有两个子节点，另一个子节点没有子节点。调用check_depth函数后，返回的深度值为2。
-### _class_function find_min_ances(node_a, node_b)
-**find_min_ances**: find_min_ances函数的功能是找到两个节点的最小公共祖先。
-**parameters**: find_min_ances函数的参数有两个，分别是node_a和node_b，它们的类型都是DocItem。
-**Code Description**: find_min_ances函数的代码逻辑如下：
-1. 首先，初始化变量pos为0。
-2. 接下来，使用断言语句判断node_a和node_b的tree_path的第一个元素是否相等，如果不相等则会触发断言错误。
-3. 然后，进入一个无限循环。
-4. 在循环中，将pos的值加1。
-5. 判断node_a和node_b的tree_path在pos位置上的元素是否相等，如果不相等，则返回node_a的tree_path在pos-1位置上的元素作为最小公共祖先。
-**Note**: 使用该函数时需要保证传入的参数node_a和node_b都是DocItem类型的对象，并且它们的tree_path属性是有效的。
-**Output Example**: 假设node_a的tree_path为[1, 2, 3, 4]，node_b的tree_path为[1, 2, 5, 6]，则函数的返回值为2。
-### _class_function parse_tree_path(self, now_path)
-**parse_tree_path**: parse_tree_path函数的作用是将当前路径添加到now_path列表中，并遍历子节点，递归调用parse_tree_path函数。
-
-**参数**: 
-- self: 类的实例对象
-- now_path: 当前路径列表
-
-**代码描述**:
-parse_tree_path函数用于构建树的路径。它接受一个当前路径列表now_path作为参数，并将当前节点self添加到路径列表中。然后，它遍历子节点字典，对每个子节点递归调用parse_tree_path函数，将当前路径作为参数传递给子节点。
-
-**代码分析**:
-1. 将当前节点self添加到路径列表now_path中，形成新的路径self.tree_path。
-2. 遍历子节点字典self.children.items()，其中key为子节点的键，child为子节点的值。
-3. 对每个子节点child，调用child.parse_tree_path(self.tree_path)进行递归调用，将当前路径self.tree_path作为参数传递给子节点。
-
-**注意**:
-- parse_tree_path函数用于构建树的路径，通过递归调用实现了树的遍历。
-- 在调用parse_tree_path函数之前，需要确保当前路径now_path已经包含了父节点的路径信息。
-### _class_function get_file_name(self)
-**get_file_name**: get_file_name函数的功能是获取文件名。
-
-**参数**: 无
-
-**代码描述**: 该函数用于获取文件名。首先调用get_full_name函数获取完整路径，然后通过split函数将路径按照".py"进行分割，取分割后的第一个元素（即文件名），再将文件名加上".py"后缀作为返回值。
-
-**注意**: 该函数适用于从完整路径中提取文件名。
-
-**输出示例**: 假设完整路径为"repo_agent/doc_meta_info.py"，则调用get_file_name函数的返回值为"doc_meta_info.py"。
-### _class_function get_full_name(self)
-**get_full_name**: 获取从下到上所有的obj名字
-**parameters**: 无
-**Code Description**: 该函数用于获取从下到上所有的obj名字。如果当前对象没有父对象，则直接返回当前对象的名字。否则，通过遍历父对象链，将每个对象的名字添加到一个列表中，然后使用"/"将列表中的名字连接起来作为返回值。
-
-该函数的实现逻辑如下：
-1. 首先判断当前对象是否有父对象，如果没有，则直接返回当前对象的名字。
-2. 创建一个空列表name_list用于存储所有的obj名字。
-3. 初始化一个变量now为当前对象。
-4. 进入循环，循环条件为now不为None。
-5. 在循环中，将当前对象的名字添加到name_list列表的开头。
-6. 将当前对象的父对象赋值给now，更新循环条件。
-7. 循环结束后，去除name_list列表的第一个元素（即当前对象的名字），然后使用"/"将列表中的名字连接起来作为返回值。
-
-**Note**: 该函数适用于获取对象的完整路径，可以用于构建项目的层级结构或者查找对象的位置信息。
-
-**Output Example**: 假设当前对象的名字为obj1，父对象的名字为obj2，父对象的父对象的名字为obj3，则调用get_full_name函数的返回值为"obj3/obj2/obj1"。
-### _class_function find(self, recursive_file_path)
-**find**: find函数的功能是根据给定的路径列表从repo根节点中找到对应的文件，并返回该文件的DocItem对象，如果找不到则返回None。
-**参数**: 
-- recursive_file_path: 一个包含路径列表的参数，用于指定要查找的文件的路径。
+**输出示例**：以下是一个可能的代码返回值的示例：
+```python
+DocItem: DocItem, 0 children
+```
+### _function __eq__(self, other)
+**__eq__**: __eq__函数的作用是判断两个对象是否相等。
+**参数**：
+- self: 当前对象
+- other: 与当前对象进行比较的另一个对象
 
 **代码描述**：
-find函数首先使用assert语句检查当前对象的item_type属性是否为DocItemType._repo，如果不是，则会抛出异常。然后，函数使用一个while循环来遍历recursive_file_path列表中的每个路径。在每次循环中，函数会检查当前路径是否存在于当前节点的子节点中，如果不存在，则返回None。如果存在，则将当前节点更新为子节点，并继续下一个路径的遍历。当遍历完所有路径后，函数返回最后一个节点。
+该函数首先检查other是否是DocItem类的实例，如果不是，则返回False。然后，它会逐个比较当前对象和other的item_type和obj_name属性，如果它们不相等，则返回False。最后，它会调用get_full_name函数获取当前对象和other的完整名字，并比较它们是否相等。如果相等，则返回True，否则返回False。
 
 **注意**：
-- find函数需要在DocItem对象上调用。
-- find函数要求当前对象的item_type属性必须为DocItemType._repo。
-- find函数返回一个Optional[DocItem]类型的对象，表示找到的文件的DocItem对象，如果找不到则返回None。
+- 该函数返回一个布尔值，表示两个对象是否相等。
 
 **输出示例**：
-```
-<DocItem object>
-```
-### _class_function print_recursive(self, indent, print_content)
-**print_recursive**: print_recursive函数的功能是递归打印repo对象。
-**参数**: 
-- indent: 打印时的缩进量，默认为0。
-- print_content: 是否打印内容，默认为False。
-**代码描述**: 这个函数首先定义了一个内部函数print_indent，用于生成打印时的缩进字符串。然后通过调用print_indent函数打印当前对象的类型和名称。如果当前对象有子对象，则打印子对象的数量。接着，对每个子对象，调用子对象的print_recursive函数进行递归打印，同时将缩进量加1。
-**注意**: 这个函数依赖于DocItem类的定义，需要确保DocItem类已经被正确导入。
-**输出示例**: 
-假设当前对象的类型为DocItem._dir，名称为"dir"，并且有2个子对象，那么打印的结果可能是：
-```
-|-dir: dir, 2 children
-  |-file: file1
-  |-file: file2
-```
-#### _sub_function print_indent(indent)
-**print_indent**: print_indent函数的功能是根据给定的缩进级别打印相应的缩进字符串。
-**参数**: 这个函数的参数是indent，表示缩进级别，默认值为0。
-**代码描述**: 这个函数首先判断缩进级别是否为0，如果是0则返回空字符串。如果不是0，则根据缩进级别生成相应的缩进字符串，每个缩进级别对应两个空格，并在最后加上一个"|-"
-**注意**: 使用这段代码时需要注意传入的缩进级别应为非负整数。
-**输出示例**: 假设传入的缩进级别为3，那么函数的返回值为"      |-"
-## _function find_all_referencer(repo_path, variable_name, file_path, line_number, column_number, in_file_only)
-**find_all_referencer**: find_all_referencer函数的作用是在给定的代码文件中查找特定变量的引用位置。
-**参数**: find_all_referencer函数接受以下参数：
-- repo_path：代码仓库的路径
-- variable_name：要查找引用的变量名
-- file_path：代码文件的路径
-- line_number：变量名所在行号
-- column_number：变量名所在列号
-- in_file_only（可选）：是否只在当前文件内查找引用，默认为False
-
-**代码描述**: find_all_referencer函数首先使用jedi库创建一个Script对象，该对象表示代码文件。然后，根据参数in_file_only的值，使用get_references方法获取变量的引用位置。如果in_file_only为True，则只在当前文件内查找引用；否则，在整个代码仓库中查找引用。接下来，函数过滤出变量名为variable_name的引用，并返回它们的位置。最后，函数将引用位置的相对路径、行号和列号组成的列表返回。
-
-**注意**: 在函数执行过程中，如果发生异常，函数会打印错误信息和相关参数，并返回一个空列表作为结果。
-
-**输出示例**: 
-假设在代码文件中存在以下引用关系：
-- 引用位置1：文件路径为"repo_agent/doc_meta_info.py"，行号为10，列号为20
-- 引用位置2：文件路径为"repo_agent/doc_meta_info.py"，行号为15，列号为30
-
-调用find_all_referencer函数，传入参数repo_path="repo_agent"，variable_name="var"，file_path="doc_meta_info.py"，line_number=5，column_number=10，in_file_only=False，将返回以下结果：
-[("doc_meta_info.py", 10, 20), ("doc_meta_info.py", 15, 30)]
-## _class MetaInfo
-**MetaInfo**: MetaInfo的功能是管理仓库的元信息。
-
-**属性**：
-- repo_path: 仓库的路径
-- document_version: 文档的版本号，用于记录文档的更新状态
-- target_repo_hierarchical_tree: 仓库的文件结构
-- white_list: 白名单，用于指定需要处理的对象列表
-- in_generation_process: 是否在文档生成过程中
-- checkpoint_lock: 用于保证多线程安全的锁
-
-**方法**：
-- init_from_project_path(project_abs_path: str) -> MetaInfo: 从仓库路径初始化MetaInfo对象
-- from_checkpoint_path(checkpoint_dir_path: str) -> MetaInfo: 从已有的元信息目录中读取MetaInfo对象
-- checkpoint(self, target_dir_path: str, flash_reference_relation=False): 将MetaInfo保存到指定目录
-- print_task_list(self, item_list): 打印待处理任务列表
-- get_all_files(self) -> List[DocItem]: 获取所有的文件节点
-- find_obj_with_lineno(self, file_node, start_line_num) -> DocItem: 根据行号查找对应的对象
-- parse_reference(self): 解析引用关系
-- get_task_manager(self, now_node: DocItem, task_available_func: Callable = None) -> TaskManager: 获取任务管理器
-- get_topology(self, task_available_func = None) -> TaskManager: 计算拓扑顺序
-- _map(self, deal_func: Callable): 对所有节点进行操作
-- load_doc_from_older_meta(self, older_meta: MetaInfo): 从旧版本的元信息中加载文档
-- from_project_hierarchy_path(repo_path: str) -> MetaInfo: 从项目层次结构路径中加载MetaInfo对象
-- to_hierarchy_json(self, flash_reference_relation = False): 将MetaInfo对象转换为层次结构JSON
-- from_project_hierarchy_json(project_hierarchy_json) -> MetaInfo: 从项目层次结构JSON中加载MetaInfo对象
-
-请注意：
-- MetaInfo用于管理仓库的元信息，包括仓库路径、文档版本、文件结构等。
-- 可以通过初始化、从已有的元信息目录中读取、保存到指定目录等方法来操作MetaInfo对象。
-- 可以解析引用关系、计算拓扑顺序、加载文档等操作。
-- 可以根据需要使用这些方法来处理仓库的元信息和文档生成过程。
-- 请根据具体情况使用适当的方法来操作MetaInfo对象。
-
-**DocItem**: DocItem的功能是定义了一个类，用于表示文档项。
-
-**属性**：
-- item_type: 文档项的类型
-- item_status: 文档项的状态
-- obj_name: 对象的名字
-- md_content: 存储不同版本的文档内容
-- content: 原本存储的信息
-- children: 子对象
-- father: 父对象
-- depth: 对象的深度
-- tree_path: 对象的路径
-- max_reference_ansce: 最大的引用祖先节点
-- reference_who: 引用了哪些对象
-- who_reference_me: 被哪些对象引用
-- reference_who_name_list: 引用了哪些对象的名字
-- who_reference_me_name_list: 被哪些对象引用的名字
-- multithread_task_id: 多线程中的任务ID
-
-**方法**：
-- \_\_eq\_\_(self, other): 检查两个对象是否相等
-- has_ans_relation(now_a, now_b): 判断两个节点之间是否存在祖先关系
-- get_travel_list(self): 获取对象及其子对象的列表
-- check_depth(self): 计算对象的深度
-- find_min_ances(node_a, node_b): 查找两个节点的最小公共祖先节点
-- parse_tree_path(self, now_path): 解析对象的路径
-- get_file_name(self): 获取对象所在的文件名
-- get_full_name(self): 获取对象的完整名称
-- find(self, recursive_file_path): 根据路径查找对象
-- print_recursive(self, indent=0, print_content=False): 递归打印
-### _class_function init_from_project_path(project_abs_path)
-**init_from_project_path**: init_from_project_path函数的功能是从一个仓库路径中初始化MetaInfo对象。
-**参数**: 
-- project_abs_path: 仓库的绝对路径
-
-**代码描述**:
-init_from_project_path函数首先将传入的project_abs_path赋值给变量project_abs_path。然后，函数使用logger记录日志，表示正在从project_abs_path初始化一个新的meta-info。接下来，函数创建一个FileHandler对象file_handler，用于处理文件的读写操作。然后，函数调用file_handler的generate_overall_structure方法生成整个仓库的结构，并将结果赋值给变量repo_structure。接下来，函数调用MetaInfo类的from_project_hierarchy_json方法，根据repo_structure生成一个新的MetaInfo对象metainfo。然后，函数将project_abs_path赋值给metainfo的repo_path属性。最后，函数返回metainfo对象。
-
-**注意**:
-- 在使用init_from_project_path函数时，需要传入仓库的绝对路径作为参数。
-
-**输出示例**:
-```python
-<MetaInfo object>
-```
-### _class_function from_checkpoint_path(checkpoint_dir_path)
-**from_checkpoint_path**: from_checkpoint_path函数的功能是从已有的metainfo dir里面读取metainfo。
-
-**参数**： 
-- checkpoint_dir_path: metainfo文件夹的路径
-
-**代码描述**:
-from_checkpoint_path函数首先根据checkpoint_dir_path和".project_hierarchy.json"拼接出项目层级结构的JSON文件路径project_hierarchy_json_path。然后，函数使用open函数打开project_hierarchy_json_path文件，并使用json.load函数将文件内容解析为project_hierarchy_json。
-
-接下来，函数调用MetaInfo.from_project_hierarchy_json函数，将project_hierarchy_json作为参数传入，生成metainfo对象metainfo。
-
-然后，函数根据checkpoint_dir_path和"meta-info.json"拼接出meta-info.json文件路径，并使用open函数打开该文件。函数使用json.load函数将文件内容解析为meta_data。
-
-接下来，函数将meta_data中的"repo_path"、"doc_version"和"in_generation_process"分别赋值给metainfo的repo_path、document_version和in_generation_process属性。
-
-最后，函数使用logger.info函数输出日志信息，表示从checkpoint_dir_path加载meta-info，并返回metainfo对象。
-
-**注意**:
-- from_checkpoint_path函数的功能是从已有的metainfo dir里面读取metainfo。
-- 函数会根据checkpoint_dir_path拼接出项目层级结构的JSON文件路径，并读取该文件内容。
-- 函数会调用MetaInfo.from_project_hierarchy_json函数生成metainfo对象。
-- 函数会根据meta-info.json文件的内容更新metainfo对象的属性。
-- 函数会输出日志信息表示加载meta-info，并返回metainfo对象。
-
-**输出示例**:
-```
-<MetaInfo对象>
-```
-### _class_function checkpoint(self, target_dir_path, flash_reference_relation)
-**checkpoint**: checkpoint函数的功能是将MetaInfo保存到指定的目录中。
-
-**参数**:
-- target_dir_path: 一个字符串，表示保存MetaInfo的目标目录的路径。
-- flash_reference_relation（可选）：一个布尔值，表示是否将最新的双向引用关系写回到meta文件中。默认为False。
-
-**代码描述**:
-该函数用于将MetaInfo保存到指定的目录中。具体的代码逻辑如下：
-1. 使用checkpoint_lock进行线程同步。
-2. 使用logger记录将要保存MetaInfo的目标目录路径。
-3. 如果目标目录不存在，则创建目标目录。
-4. 调用to_hierarchy_json函数将层级结构转换为JSON格式，并将结果保存到".project_hierarchy.json"文件中。
-5. 将MetaInfo的相关信息保存到"meta-info.json"文件中。
-
-**注意**:
-- 如果需要获取最新的双向引用关系并写回到meta文件中，可以将flash_reference_relation参数设置为True。
-- 该函数依赖于to_hierarchy_json函数的实现，需要确保该函数的正确性和可用性。
-
-**输出示例**:
-假设目标repo的层级结构如下：
-- file1
-  - obj1
-  - obj2
-- file2
-  - obj3
-  - obj4
-
-调用checkpoint函数后，将在指定的目录中保存MetaInfo。保存的文件内容示例如下：
-.project_hierarchy.json:
-```python
-{
-    "file1": {
-        "obj1": {
-            "name": "obj1",
-            "type": "type1",
-            "md_content": "content1",
-            "item_status": "status1",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file1"
-        },
-        "obj2": {
-            "name": "obj2",
-            "type": "type2",
-            "md_content": "content2",
-            "item_status": "status2",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file1"
-        }
-    },
-    "file2": {
-        "obj3": {
-            "name": "obj3",
-            "type": "type3",
-            "md_content": "content3",
-            "item_status": "status3",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file2"
-        },
-        "obj4": {
-            "name": "obj4",
-            "type": "type4",
-            "md_content": "content4",
-            "item_status": "status4",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file2"
-        }
-    }
-}
-```
-
-meta-info.json:
-```python
-{
-    "repo_path": "repo_path",
-    "doc_version": "document_version",
-    "in_generation_process": "in_generation_process"
-}
-```
-### _class_function print_task_list(self, item_list)
-**print_task_list**: print_task_list函数的功能是打印任务列表。
-**参数**: 这个函数的参数是item_list，表示任务列表。
-**代码描述**: 这个函数首先导入了prettytable模块，然后创建了一个名为task_table的表格，表格的列名分别是"task_id"、"Doc Generation Reason"和"Path"。接着，函数使用一个循环遍历item_list中的每个元素，并将元素的属性值添加到task_table中。最后，函数打印出"Remain tasks to be done"和task_table的内容。
-**注意**: 这个函数依赖于prettytable模块，使用之前需要确保该模块已经安装。
-### _class_function get_all_files(self)
-**get_all_files**: get_all_files函数的功能是获取所有的file节点。
+假设当前对象的item_type为"type1"，obj_name为"name1"，get_full_name函数返回的结果为"A/type1/name1"，other对象的item_type为"type1"，obj_name为"name1"，get_full_name函数返回的结果为"A/type1/name1"。则调用__eq__函数后，返回的结果为True。
+### _function has_ans_relation(now_a, now_b)
+**has_ans_relation**: has_ans_relation函数的功能是判断两个节点是否存在祖先关系，并返回更早的节点。
+**参数**：这个函数的参数如下：
+· now_a: DocItem类型，表示第一个节点。
+· now_b: DocItem类型，表示第二个节点。
+**代码描述**：这个函数首先判断now_b是否在now_a的树路径上，如果是，则返回now_b。接着判断now_a是否在now_b的树路径上，如果是，则返回now_a。如果两个节点之间不存在祖先关系，则返回None。
+这个函数主要用于判断两个节点之间是否存在祖先关系，并返回更早的节点。在代码中，首先判断now_b是否在now_a的树路径上，如果是，则说明now_b是now_a的祖先节点，直接返回now_b。接着判断now_a是否在now_b的树路径上，如果是，则说明now_a是now_b的祖先节点，直接返回now_a。如果两个节点之间不存在祖先关系，则返回None。
+这个函数在项目中被repo_agent/doc_meta_info.py/MetaInfo/parse_reference/walk_file对象调用。在调用过程中，首先获取所有引用了now_obj的位置列表reference_list。然后对于每个引用位置，获取引用位置所在的文件referencer_file_ral_path，并通过该路径在目标仓库的层次树中找到对应的节点referencer_file_item。如果找不到对应的节点，则记录日志并继续处理下一个引用位置。如果找到了对应的节点，则通过引用位置的行号和列号在该节点中找到对应的节点referencer_node。接着调用has_ans_relation函数判断now_obj和referencer_node之间是否存在祖先关系。如果不存在祖先关系，则将now_obj添加到referencer_node的引用列表reference_who中，并将referencer_node添加到now_obj的被引用列表who_reference_me中。最后，返回引用计数ref_count。
+**注意**：在判断两个节点之间是否存在祖先关系时，只考虑直接祖先关系，不考虑祖先节点之间的引用关系。
+**输出示例**：返回更早的节点，或者返回None。
+### _function get_travel_list(self)
+**get_travel_list**: get_travel_list函数的功能是获取当前对象及其所有子对象的列表。
+**参数**：该函数没有参数。
+**代码描述**：该函数通过递归遍历当前对象的所有子对象，将它们添加到一个列表中，并返回该列表。
+在代码中，首先创建一个名为now_list的列表，将当前对象添加到该列表中。然后，通过遍历当前对象的children属性，获取每个子对象，并调用子对象的get_travel_list函数，将返回的列表与now_list合并。最后，返回now_list作为结果。
+**注意**：在使用该函数时，需要确保当前对象及其子对象的结构是正确的，否则可能会导致遍历结果不准确。
+**输出示例**：[obj1, obj2, obj3, ...]
+### _function check_depth(self)
+**check_depth**: check_depth函数的功能是计算树中每个节点的深度。
 
 **参数**：该函数没有参数。
 
-**代码描述**：该函数通过遍历目标repo的层级树，找到所有类型为file的节点，并将其存储在一个列表中返回。
+**代码描述**：该函数首先判断当前节点是否为叶子节点，即是否没有子节点。如果是叶子节点，则将节点的深度设置为0，并返回深度值。如果不是叶子节点，则遍历所有子节点，递归调用check_depth函数计算子节点的深度，并找到最大的子节点深度。然后将当前节点的深度设置为最大子节点深度加1，并返回深度值。
 
-具体的代码逻辑如下：
-1. 创建一个空列表files，用于存储所有的file节点。
-2. 定义一个内部函数walk_tree，用于递归遍历树的节点。
-3. 在walk_tree函数中，首先判断当前节点的类型是否为file，如果是，则将该节点添加到files列表中。
-4. 然后遍历当前节点的所有子节点，对每个子节点调用walk_tree函数进行递归遍历。
-5. 在get_all_files函数中，调用walk_tree函数，并将目标repo的根节点作为参数传入。
-6. 最后，返回存储了所有file节点的列表files。
+在项目中，该函数被以下对象调用：
+- repo_agent/doc_meta_info.py/MetaInfo/from_project_hierarchy_json
 
-**注意**：该函数依赖于目标repo的层级树结构，需要确保目标repo的层级树已经构建完成。
+在调用对象的代码中，首先创建了一个名为target_meta_info的MetaInfo对象。然后通过遍历project_hierarchy_json中的文件名和文件内容，解析文件的层次结构和内容，并构建树形结构。在构建树形结构的过程中，调用了check_depth函数来计算每个节点的深度。
 
-**输出示例**：假设目标repo的层级树中存在3个file节点，分别为file1、file2和file3，那么调用get_all_files函数后，将返回一个包含这3个file节点的列表。
+**注意**：在调用check_depth函数之前，需要先构建树形结构。
 
-```python
-[DocItem(file1), DocItem(file2), DocItem(file3)]
+**输出示例**：假设树的结构如下所示，节点的深度已经计算出来：
 ```
-#### _sub_function walk_tree(now_node)
-**walk_tree**: walk_tree函数的功能是遍历树形结构的节点，并将文件节点添加到文件列表中。
-**参数**: now_node - 当前节点
-**代码描述**: walk_tree函数接受一个当前节点作为参数。如果当前节点的类型为文件节点，则将该节点添加到文件列表中。然后，对当前节点的所有子节点递归调用walk_tree函数。通过递归调用，walk_tree函数可以遍历整个树形结构，并将所有文件节点添加到文件列表中。
-**注意**: 该函数的目的是遍历树形结构的节点，并将文件节点添加到文件列表中。在调用该函数之前，需要确保树形结构的根节点已经被设置为now_node。
-### _class_function find_obj_with_lineno(self, file_node, start_line_num)
-**find_obj_with_lineno**: find_obj_with_lineno函数的功能是在给定的文件节点和起始行号中查找对象。
-**参数**：该函数接受以下参数：
-- self: 对象本身
-- file_node: 文件节点，表示要查找的文件
-- start_line_num: 起始行号，表示要查找的行号
+full_repo (depth=0)
+├── dir1 (depth=1)
+│   ├── file1 (depth=2)
+│   ├── file2 (depth=2)
+│   └── file3 (depth=2)
+└── dir2 (depth=1)
+    ├── file4 (depth=2)
+    └── file5 (depth=2)
+```
+则check_depth函数的返回值为每个节点的深度值。例如，full_repo节点的深度为0，dir1和dir2节点的深度为1，file1、file2、file3、file4和file5节点的深度为2。
+### _function find_min_ances(node_a, node_b)
+**find_min_ances**: find_min_ances函数的功能是查找两个DocItem对象的最小公共祖先。
+**parameters**: 该函数的参数如下：
+· node_a: DocItem类型，表示第一个节点。
+· node_b: DocItem类型，表示第二个节点。
+**Code Description**: 该函数通过比较两个节点的tree_path属性来查找它们的最小公共祖先。首先，函数会初始化一个变量pos为0，然后使用断言语句来确保两个节点的tree_path的第一个元素相等。接下来，函数进入一个无限循环，每次循环pos加1。在每次循环中，函数会判断两个节点的tree_path在当前位置pos的元素是否相等，如果不相等，则返回node_a的tree_path在pos-1位置的元素，即为最小公共祖先。
+**Note**: 使用该函数时需要确保传入的两个节点都是有效的DocItem对象，并且它们的tree_path属性是正确的。
+**Output Example**: 假设node_a的tree_path为[1, 2, 3, 4]，node_b的tree_path为[1, 2, 5, 6]，则函数的返回值为2，表示最小公共祖先为2。
+### _function parse_tree_path(self, now_path)
+**parse_tree_path**: parse_tree_path函数的作用是将当前路径添加到树路径中，并递归调用子节点的parse_tree_path函数。
 
-**代码描述**：该函数通过遍历文件节点及其子节点，查找与给定起始行号匹配的对象。具体步骤如下：
-1. 初始化now_node为file_node。
-2. 当now_node的子节点数量大于0时，执行以下循环：
-   - 设置find_qualify_child为False。
-   - 遍历now_node的子节点，对于每个子节点执行以下操作：
-     - 断言子节点的content不为None。
-     - 如果子节点的code_start_line小于等于start_line_num且code_end_line大于等于start_line_num，则将now_node更新为该子节点，并将find_qualify_child设置为True。
-     - 如果找到合格的子节点，则跳出循环。
-   - 如果没有找到合格的子节点，则返回now_node。
-3. 返回now_node。
+**参数**：这个函数的参数。
+· now_path：当前路径，是一个列表。
 
-**注意**：在查找过程中，函数会根据给定的起始行号找到与之匹配的对象。如果找到合格的子节点，则将now_node更新为该子节点，并继续查找其子节点。如果没有找到合格的子节点，则返回当前节点。
+**代码描述**：parse_tree_path函数首先将当前路径添加到树路径中，然后遍历子节点，递归调用子节点的parse_tree_path函数。
 
-**输出示例**：假设file_node是一个文件节点，start_line_num是一个起始行号，函数将返回与起始行号匹配的对象。
-### _class_function parse_reference(self)
-**parse_reference**: parse_reference函数的功能是双向提取所有引用关系。
-**parameters**: 该函数没有参数。
-**Code Description**: parse_reference函数的代码逻辑如下：
-1. 首先，调用get_all_files函数获取所有的文件节点。
-2. 然后，根据白名单的设置，获取白名单上的文件名和对象名。
-3. 对于每个文件节点，遍历其子节点，并调用walk_file函数。
-4. 在walk_file函数中，首先判断当前对象是否在白名单上，如果不在，则跳过当前对象。
-5. 然后，调用find_all_referencer函数查找当前对象的引用位置。
-6. 对于每个引用位置，获取引用者的文件路径和行号，并根据路径找到引用者的节点。
-7. 如果当前对象和引用者之间不存在祖先关系，则将引用者添加到当前对象的引用列表中，并将当前对象添加到引用者的被引用列表中。
-8. 如果引用者的最大引用祖先节点为空，则将当前对象作为最大引用祖先节点。
-9. 否则，判断当前对象和引用者的最小公共祖先节点是否在引用者的最大引用祖先节点的路径上，如果是，则将最小公共祖先节点作为最大引用祖先节点。
-10. 统计引用的数量。
-11. 对于当前对象的每个子对象，递归调用walk_file函数。
-12. 对于每个文件节点的每个子节点，递归调用walk_file函数。
-**Note**: 使用parse_reference函数时需要注意以下几点：
+在项目中，parse_tree_path函数被以下对象调用：
+
+- repo_agent/doc_meta_info.py/MetaInfo/from_project_hierarchy_json
+
+在这个函数中，首先创建了一个MetaInfo对象target_meta_info，并设置了根节点target_repo_hierarchical_tree。然后遍历项目层次结构的json文件，解析文件的层次关系。首先解析文件的路径，根据路径逐级创建目录节点，并设置父子关系。然后解析文件的内容，创建对应的DocItem对象，并设置父子关系。接下来，寻找可能的父节点，并设置父子关系。最后，根据节点的内容设置节点的类型。
+
+在解析完项目层次结构后，调用了target_meta_info.target_repo_hierarchical_tree.parse_tree_path函数，将当前路径设置为空列表，并递归调用子节点的parse_tree_path函数。最后，调用了target_meta_info.target_repo_hierarchical_tree.check_depth函数，检查树的深度。
+
+**注意**：在使用parse_tree_path函数时，需要注意传入正确的当前路径参数。
+### _function get_file_name(self)
+**get_file_name**: get_file_name函数的作用是获取文件的名称。
+
+**参数**：
+- self: 当前对象
+
+**代码描述**：
+该函数首先调用了get_full_name函数来获取从下到上所有的对象名字。然后，通过将文件名中的".py"替换为".py"来获取文件的名称，并将其作为函数的返回值。
+
+**注意**：
+- 该函数只返回文件的名称，不包括其他信息。
+
+**输出示例**：
+假设当前对象的名字为"obj_name"，则调用get_file_name函数后，返回的结果为"obj_name.py"。
+### _function get_full_name(self)
+**get_full_name**: 获取从下到上所有的obj名字
+
+**参数**：
+- self: 当前对象
+
+**代码描述**：
+该函数用于获取从下到上所有的对象名字。如果当前对象没有父节点，则直接返回当前对象的名字。否则，通过遍历父节点链，将每个节点的名字添加到一个列表中，并最终返回以"/"分隔的字符串形式。
+
+**输出示例**：
+假设当前对象的名字为"obj_name"，并且存在父节点A和B，其中A是B的父节点。则调用get_full_name函数后，返回的结果为"A/obj_name"。
+
+请注意：
+- 该函数只返回对象的名字，不包括其他信息。
+- 如果当前对象没有父节点，则直接返回当前对象的名字。
+- 返回的结果是一个以"/"分隔的字符串形式。
+### _function find(self, recursive_file_path)
+**find**: find函数的功能是根据给定的路径列表从repo根节点中找到对应的文件，并返回该文件的DocItem对象，如果找不到则返回None。
+
+**参数**：
+- recursive_file_path: 一个包含路径列表的参数，表示要查找的文件的路径。
+
+**代码说明**：
+该函数首先使用assert语句检查当前对象的item_type是否为DocItemType._repo，如果不是则会抛出异常。然后，函数使用while循环遍历recursive_file_path列表中的每个路径元素，并通过判断当前路径元素是否存在于当前节点的子节点中来进行路径的遍历。如果路径元素不存在于子节点中，则返回None；否则，将当前节点更新为子节点，并继续遍历下一个路径元素。当遍历完所有路径元素后，函数返回最终的节点对象。
+
+**注意**：
+- find函数用于从repo根节点中根据给定的路径列表查找对应的文件。
+- 函数会检查当前对象的item_type是否为DocItemType._repo，如果不是则会抛出异常。
+- 函数使用while循环遍历路径列表中的每个路径元素，并通过判断当前路径元素是否存在于当前节点的子节点中来进行路径的遍历。
+- 如果路径元素不存在于子节点中，则返回None；否则，将当前节点更新为子节点，并继续遍历下一个路径元素。
+- 当遍历完所有路径元素后，函数返回最终的节点对象。
+
+**输出示例**：
+```
+<DocItem object at 0x7f9a4a3a3c10>
+```
+### _function print_recursive(self, indent, print_content)
+**print_recursive**: print_recursive函数的功能是递归打印repo对象。
+
+**参数**：
+- self: 当前对象的实例
+- indent: 缩进量，默认为0
+- print_content: 是否打印内容，默认为False
+
+**代码描述**：
+print_recursive函数首先定义了一个内部函数print_indent，用于根据缩进量indent生成相应的缩进字符串。然后，函数根据当前对象的类型和名称，使用print_indent函数生成缩进字符串，并打印出对象的类型和名称。如果当前对象有子对象，则打印出子对象的数量。接下来，函数通过遍历子对象的字典，递归调用print_recursive函数，将缩进量增加1，并传递print_content参数。
+
+在调用该函数的代码中，首先调用print_indent函数生成缩进字符串，并打印出当前对象的类型和名称。然后，根据子对象的数量，打印出子对象的数量或者换行。接下来，通过遍历子对象的字典，递归调用print_recursive函数，将缩进量增加1，并传递print_content参数。
+
+**注意**：
+- 该函数依赖于DocItem类中的属性和方法，确保在调用该函数之前已经正确设置了相关属性和方法。
+
+**输出示例**：
+- 如果当前对象有子对象，则打印出子对象的数量。
+- 如果当前对象没有子对象，则只打印出当前对象的类型和名称。
+- 递归打印出所有子对象的类型和名称。
+#### _function print_indent(indent)
+**print_indent**: print_indent函数的功能是根据给定的缩进级别打印相应的缩进字符串。
+**参数**：该函数的参数如下：
+· indent：整数类型，表示缩进级别，默认值为0。
+**代码描述**：该函数根据给定的缩进级别打印相应的缩进字符串。如果缩进级别为0，则返回空字符串。否则，返回由两个空格乘以缩进级别再加上"|-"组成的字符串。
+**注意**：在使用该函数时，需要注意传入的缩进级别应为非负整数。
+**输出示例**：假设传入的缩进级别为3，则该函数的返回值为"      |-".
+## _function find_all_referencer(repo_path, variable_name, file_path, line_number, column_number, in_file_only)
+**find_all_referencer**: find_all_referencer函数的功能是在给定的代码位置查找所有引用了指定变量的位置。
+
+**参数**：
+- repo_path：代码仓库的路径。
+- variable_name：要查找的变量名。
+- file_path：代码文件的路径。
+- line_number：变量名所在的行号。
+- column_number：变量名所在的列号。
+- in_file_only（可选）：是否只在当前文件内查找，默认为False。
+
+**代码描述**：
+find_all_referencer函数通过使用jedi库来解析代码，并查找所有引用了指定变量的位置。首先，它使用给定的repo_path和file_path构建一个jedi.Script对象。然后，它根据in_file_only参数的值来确定是否只在当前文件内查找引用。如果in_file_only为True，则使用get_references方法并指定scope为"file"来获取当前文件内的引用；否则，使用get_references方法获取所有引用。接下来，它过滤出变量名为variable_name的引用，并返回它们的位置。最后，它将引用的位置转换为相对于repo_path的相对路径，并排除掉与给定的line_number和column_number相同的位置，然后返回结果。
+
+在项目中的调用情况如下：
+该函数被repo_agent/doc_meta_info.py/MetaInfo/parse_reference/walk_file对象调用。在调用过程中，首先根据white_list_obj_names和now_obj.obj_name的值来确定是否只在当前文件内查找引用。然后，调用find_all_referencer函数来获取引用列表。对于每个引用，它会根据引用的相对路径找到对应的文件项，并根据引用的行号找到对应的节点。然后，它会判断当前节点与引用节点之间是否存在祖先关系，如果不存在，则将它们之间建立引用关系。最后，它会遍历当前节点的子节点，并递归调用walk_file函数。
+
+**注意**：
+- find_all_referencer函数依赖于jedi库，需要确保已经安装了该库。
+- 在调用find_all_referencer函数时，需要提供正确的参数值，以确保能够正确地找到引用的位置。
+
+**输出示例**：
+假设在代码文件中存在以下引用：
+- 引用1：文件路径为"repo_agent/doc_meta_info.py"，行号为10，列号为5
+- 引用2：文件路径为"repo_agent/doc_meta_info.py"，行号为15，列号为8
+
+调用find_all_referencer函数后，返回的结果可能如下所示：
+[("doc_meta_info.py", 10, 5), ("doc_meta_info.py", 15, 8)]
+## _class MetaInfo
+Doc has not been generated...
+### _function init_from_project_path(project_abs_path)
+Doc has not been generated...
+### _function from_checkpoint_path(checkpoint_dir_path)
+**from_checkpoint_path**: from_checkpoint_path函数的功能是从已有的metainfo dir里面读取metainfo。
+
+**参数**：
+- checkpoint_dir_path: metainfo目录的路径。
+
+**代码描述**：
+from_checkpoint_path函数首先根据checkpoint_dir_path和".project_hierarchy.json"拼接出项目层次结构的json文件的路径。然后，函数使用open函数打开该文件，并使用json.load函数将文件内容加载为project_hierarchy_json。
+
+接下来，函数调用MetaInfo.from_project_hierarchy_json函数，将project_hierarchy_json作为参数，构建MetaInfo对象metainfo。
+
+然后，函数根据os.path.join函数将checkpoint_dir_path和"meta-info.json"拼接出meta-info.json文件的路径。接着，函数使用open函数打开该文件，并使用json.load函数将文件内容加载为meta_data。
+
+接下来，函数将meta_data中的"repo_path"赋值给metainfo的repo_path属性，将meta_data中的"doc_version"赋值给metainfo的document_version属性，将meta_data中的"in_generation_process"赋值给metainfo的in_generation_process属性。
+
+最后，函数使用logger.info函数输出日志信息，表示从checkpoint_dir_path加载meta-info，并返回metainfo对象。
+
+**注意**：
+- from_checkpoint_path函数用于从已有的metainfo dir里面读取metainfo。
+- 函数首先根据checkpoint_dir_path和".project_hierarchy.json"拼接出项目层次结构的json文件的路径，并加载文件内容。
+- 函数调用MetaInfo.from_project_hierarchy_json函数，将project_hierarchy_json作为参数，构建MetaInfo对象metainfo。
+- 函数根据os.path.join函数将checkpoint_dir_path和"meta-info.json"拼接出meta-info.json文件的路径，并加载文件内容。
+- 函数将meta_data中的"repo_path"赋值给metainfo的repo_path属性，将meta_data中的"doc_version"赋值给metainfo的document_version属性，将meta_data中的"in_generation_process"赋值给metainfo的in_generation_process属性。
+- 函数使用logger.info函数输出日志信息，表示从checkpoint_dir_path加载meta-info。
+- 函数返回metainfo对象。
+
+**输出示例**：
+```
+<MetaInfo object at 0x7f9a4a3a3c10>
+```
+### _function checkpoint(self, target_dir_path, flash_reference_relation)
+**checkpoint**: checkpoint函数的功能是将MetaInfo保存到指定的目录下。
+
+**参数**：
+- target_dir_path: 保存MetaInfo的目标目录路径
+- flash_reference_relation: 是否将最新的双向引用关系写回到meta文件中，默认为False
+
+**代码描述**：
+该函数用于将MetaInfo保存到指定的目录下。首先，获取锁对象checkpoint_lock，确保在保存MetaInfo的过程中不会被其他线程干扰。然后，使用logger记录保存MetaInfo的目标目录路径。如果目标目录不存在，则创建该目录。接下来，调用to_hierarchy_json函数将层级树转换为JSON格式的字典。将转换后的层级树以JSON格式写入到目标目录下的".project_hierarchy.json"文件中。然后，将MetaInfo的相关信息以JSON格式写入到目标目录下的"meta-info.json"文件中，包括repo_path、doc_version和in_generation_process等字段。
+
+**注意**：
+- 该函数需要在MetaInfo类的实例上调用。
+- target_dir_path参数指定了保存MetaInfo的目标目录路径。
+- flash_reference_relation参数默认为False，如果设置为True，则会将最新的双向引用关系写回到meta文件中。
+
+**输出示例**：
+假设保存MetaInfo的目标目录路径为"/path/to/target_dir"，调用checkpoint函数后，将在目标目录下生成".project_hierarchy.json"和"meta-info.json"两个文件，内容如下：
+.project_hierarchy.json：
+```python
+{
+    "file1": [
+        {
+            "name": "node1",
+            "type": "type1",
+            "md_content": "content1",
+            "item_status": "status1"
+        },
+        {
+            "name": "node2",
+            "type": "type2",
+            "md_content": "content2",
+            "item_status": "status2"
+        }
+    ],
+    "file2": [
+        {
+            "name": "node3",
+            "type": "type3",
+            "md_content": "content3",
+            "item_status": "status3"
+        },
+        {
+            "name": "node4",
+            "type": "type4",
+            "md_content": "content4",
+            "item_status": "status4"
+        }
+    ]
+}
+```
+meta-info.json：
+```python
+{
+    "repo_path": "/path/to/repo",
+    "doc_version": "1.0",
+    "in_generation_process": False
+}
+```
+
+**注意**：
+以上示例中的内容仅为示意，实际生成的文件内容根据具体情况而定。
+### _function print_task_list(self, task_dict)
+**print_task_list**: print_task_list函数的功能是打印任务列表。
+
+**参数**：
+- task_dict: 任务字典，类型为Dict[Task]。
+
+**代码描述**：
+print_task_list函数通过遍历任务字典中的任务信息，将任务标识、文档生成原因、路径和依赖关系等信息以表格的形式打印出来。首先，函数创建一个PrettyTable对象task_table，用于存储任务列表的表格。然后，通过遍历任务字典中的每个任务，获取任务的标识task_id和任务信息task_info。接着，将任务的依赖列表中的任务标识转换为字符串，并将其存储在remain_str变量中。如果remain_str的长度超过20个字符，函数会截取前8个字符、后8个字符，并在中间加上省略号。最后，将任务的标识、文档生成原因、路径和依赖关系等信息添加到task_table中。最后，函数通过调用print函数将task_table打印出来。
+
+**注意**：
+- task_dict参数是一个字典，其中键为任务标识，值为任务对象。
+- 任务对象的属性包括任务标识、依赖列表、额外信息和状态等。
+- 任务的依赖列表中的任务对象必须在任务字典中存在，否则会引发异常。
+- 打印的任务列表以表格的形式展示，方便查看任务的相关信息。
+
+此外，print_task_list函数被其他对象调用，用于打印任务列表。在项目中，print_task_list函数被Runner类的run方法和first_generate方法调用。通过调用print_task_list函数，可以将任务字典中的任务信息打印出来，以便查看任务的相关信息。
+
+在Runner类的run方法中，首先检测是否需要进行文档更新。如果文档版本为空，表示需要进行首次生成文档的过程。在首次生成文档的过程中，会调用print_task_list函数打印任务列表。然后，根据任务列表生成文档，并更新文档版本。如果文档版本不为空，表示需要进行文档更新的过程。在文档更新的过程中，会调用print_task_list函数打印任务列表。然后，根据任务列表生成文档，并更新文档版本。
+
+在Runner类的first_generate方法中，首先初始化任务列表。然后，调用print_task_list函数打印任务列表。接着，根据任务列表生成文档，并更新文档版本。
+
+**注意**：
+- Runner类的run方法和first_generate方法是文档更新的入口方法。
+- 在文档更新的过程中，会调用print_task_list函数打印任务列表，以便查看任务的相关信息。
+### _function get_all_files(self)
+**get_all_files**: 获取所有的file节点
+
+**参数**：无
+
+**代码描述**：该函数用于获取所有的file节点。它通过遍历目标repo的层级树，将所有类型为file的节点添加到一个列表中，并返回该列表。
+
+**注意**：在使用该函数时，需要注意以下几点：
+- 该函数需要在MetaInfo类的实例上调用。
+- 该函数不接受任何参数。
+
+**输出示例**：以下是一个可能的代码返回值的示例：
+```python
+[DocItem: DocItem, 0 children, DocItem: DocItem, 0 children, ...]
+```
+#### _function walk_tree(now_node)
+**walk_tree**: walk_tree函数的功能是遍历树形结构。
+
+**parameters**:
+- now_node: 当前节点，表示当前遍历的节点。
+
+**Code Description**:
+walk_tree函数是一个递归函数，用于遍历树形结构。它接受一个参数now_node，表示当前遍历的节点。首先，函数会判断当前节点的类型是否为文件类型（DocItemType._file），如果是文件类型，则将当前节点添加到文件列表files中。然后，函数会遍历当前节点的所有子节点，并对每个子节点调用walk_tree函数，实现递归遍历。
+
+**Note**:
+- walk_tree函数是一个递归函数，用于遍历树形结构。
+- 函数会判断当前节点的类型是否为文件类型，如果是文件类型，则将当前节点添加到文件列表中。
+- 函数会遍历当前节点的所有子节点，并对每个子节点调用walk_tree函数，实现递归遍历。
+### _function find_obj_with_lineno(self, file_node, start_line_num)
+**find_obj_with_lineno**: find_obj_with_lineno函数的功能是在给定的文件节点中查找具有指定起始行号的对象。
+
+**参数**：
+- file_node: DocItem类型，表示文件节点。
+- start_line_num: int类型，表示起始行号。
+
+**代码描述**：
+该函数通过遍历文件节点及其子节点，查找具有指定起始行号的对象。函数首先将当前节点设置为文件节点，然后进入循环，直到当前节点没有子节点为止。在循环中，函数遍历当前节点的子节点，检查子节点的代码起始行号和结束行号是否包含了指定的起始行号。如果找到了符合条件的子节点，将当前节点更新为该子节点，并标记找到了合格的子节点。如果没有找到合格的子节点，则返回当前节点。
+
+**注意**：
+- 在使用该函数时，需要确保file_node参数是一个有效的文件节点。
+- 函数假设文件节点及其子节点的代码起始行号和结束行号是按照从小到大的顺序排列的。
+
+**输出示例**：
+以下是一个可能的代码返回值的示例：
+```python
+DocItem: DocItem, 0 children
+```
+### _function parse_reference(self)
+**parse_reference**: parse_reference函数的作用是双向提取所有引用关系。
+
+**参数**：
+- self: 当前对象
+
+**代码描述**：
+该函数首先调用了get_all_files函数来获取所有的file节点。然后，根据是否存在白名单，将白名单中的文件名和对象名分别存储在white_list_file_names和white_list_obj_names中。接下来，通过遍历file_nodes列表，对每个文件节点进行处理。在处理过程中，首先获取文件的全名，并检查是否在白名单中。如果存在白名单且当前文件不在白名单中，则跳过该文件。然后，定义了一个名为walk_file的内部函数，用于在文件内遍历所有变量。在walk_file函数中，首先判断是否存在白名单，并且当前对象不在白名单中，则将in_file_only标记为True。接下来，调用find_all_referencer函数，根据当前对象的信息查找所有的引用者。对于每个引用者，获取其文件路径，并在目标repo的层级树中查找对应的节点。如果找到了引用者的节点，则判断当前对象和引用者之间是否存在引用关系。如果不存在，则将引用关系添加到相应的节点中，并更新引用计数。最后，对当前对象的子节点递归调用walk_file函数。在处理完所有文件节点后，函数执行结束。
+
+**注意**：
 - 该函数依赖于get_all_files函数和find_all_referencer函数。
-- 在函数执行过程中，会根据白名单的设置和引用关系的判断来提取引用关系。
-- 函数返回的结果是引用关系的统计数量。
-**Output Example**: 假设白名单上的文件名为["file1.py", "file2.py"]，对象名为["obj1", "obj2"]，文件节点的子节点包含对象A和对象B，对象A引用了对象B，则函数的返回值为1。
-### _class_function get_task_manager(self, now_node, task_available_func)
-**get_task_manager**: get_task_manager函数的功能是根据拓扑引用关系获取任务管理器。
+- 如果存在白名单，只会处理白名单中的文件和对象。
+- 函数执行过程中会更新节点的引用关系和引用计数。
 
-**参数**: 
-- now_node: 当前节点的DocItem对象。
-- task_available_func: 可调用对象，用于判断任务是否可用，默认为None。
+**输出示例**：
+假设目标repo中存在文件A和文件B，其中文件A引用了文件B中的某个对象。调用parse_reference函数后，会输出类似以下的结果：
+```
+parsing bidirectional reference: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+#### _function walk_file(now_obj)
+**walk_file**: walk_file函数的功能是在文件内遍历所有变量。
 
-**代码描述**: 
-get_task_manager函数首先获取当前节点及其子节点的列表doc_items。然后，根据白名单过滤doc_items，得到过滤后的列表。接着，根据深度对doc_items进行排序，得到按深度排序的列表items_by_depth。
+**参数**：
+- now_obj: DocItem类型，表示当前对象。
 
-接下来，创建一个空列表deal_items和一个任务管理器task_manager。然后，创建一个进度条bar，用于显示拓扑任务列表的解析进度。
+**代码描述**：
+walk_file函数是一个递归函数，用于在文件内遍历所有变量。函数首先通过nonlocal关键字将ref_count和white_list_file_names变量声明为非局部变量。然后，函数根据white_list_obj_names和now_obj.obj_name的值判断是否只在当前文件内查找引用。如果white_list_obj_names不为空且now_obj.obj_name不在white_list_obj_names中，则将in_file_only标志设置为True，表示只在当前文件内查找引用。接下来，函数调用find_all_referencer函数来获取引用列表。对于每个引用位置，函数首先获取引用位置所在的文件referencer_file_ral_path，并通过该路径在目标仓库的层次树中找到对应的节点referencer_file_item。如果找不到对应的节点，则记录日志并继续处理下一个引用位置。如果找到了对应的节点，则通过引用位置的行号和列号在该节点中找到对应的节点referencer_node。然后，函数调用DocItem.has_ans_relation函数判断now_obj和referencer_node之间是否存在祖先关系。如果不存在祖先关系，则将now_obj添加到referencer_node的引用列表reference_who中，并将referencer_node添加到now_obj的被引用列表who_reference_me中。最后，函数通过递归调用walk_file函数遍历当前节点的子节点。
 
-在循环中，遍历items_by_depth列表，找到当前深度最小的节点target_item。然后，计算target_item的依赖任务ID列表item_denp_task_ids，包括子节点和引用者的任务ID。接着，根据任务可用性函数task_available_func判断target_item是否可用，如果可用，则将target_item添加到任务管理器task_manager中，并返回任务ID。然后，将target_item添加到deal_items列表中，并从items_by_depth列表中移除。最后，更新进度条。
+**注意**：
+- walk_file函数是一个递归函数，用于在文件内遍历所有变量。
+- 函数根据white_list_obj_names和now_obj.obj_name的值判断是否只在当前文件内查找引用。
+- 函数调用find_all_referencer函数来获取引用列表，并根据引用的相对路径和行号找到对应的节点。
+- 函数调用DocItem.has_ans_relation函数判断now_obj和referencer_node之间是否存在祖先关系，并建立引用关系。
+- 函数通过递归调用walk_file函数遍历当前节点的子节点。
+### _function get_task_manager(self, now_node, task_available_func)
+**get_task_manager**: get_task_manager函数的功能是获取任务管理器对象。
 
-循环结束后，返回任务管理器task_manager。
+**参数**：
+- now_node: 当前节点对象，类型为DocItem。
+- task_available_func: 任务可用性函数，类型为函数。
 
-**注意**: 
-- get_task_manager函数根据拓扑引用关系获取任务管理器。
-- 可以通过now_node参数指定当前节点的DocItem对象。
-- 可以通过task_available_func参数指定任务可用性函数，用于判断任务是否可用。
-- 任务管理器是一个TaskManager对象，用于管理任务的添加、获取和标记完成等操作。
+**代码描述**：
+get_task_manager函数首先根据当前节点对象调用now_node.get_travel_list()方法获取文档项的遍历列表doc_items。然后，根据白名单列表self.white_list对doc_items进行过滤，只保留在白名单中的文档项。
 
-**输出示例**:
+接下来，get_task_manager函数创建一个空列表deal_items和一个TaskManager对象task_manager。然后，使用tqdm库创建一个进度条bar，用于显示解析拓扑任务列表的进度。
+
+在while循环中，get_task_manager函数遍历doc_items列表，找到一个相对遵守程度最好的文档项target_item。在遍历过程中，根据文档项的子节点和引用关系计算最佳中断级别min_break_level和目标文档项target_item。
+
+如果min_break_level不等于-1，则打印"circle-reference: choose second best, break-level={min_break_level}"。然后，遍历target_item的子节点和引用关系，获取依赖任务的ID列表item_denp_task_ids。接下来，根据任务可用性函数task_available_func判断目标文档项是否可用，如果可用，则调用task_manager.add_task方法添加任务，并将任务ID赋值给目标文档项的multithread_task_id属性。最后，将目标文档项添加到deal_items列表中，并从doc_items列表中移除。
+
+循环结束后，get_task_manager函数返回task_manager对象。
+
+**注意**：
+- get_task_manager函数根据当前节点对象获取文档项的遍历列表，并根据白名单过滤文档项。
+- 在遍历文档项列表时，根据文档项的子节点和引用关系计算最佳中断级别，并选择相对遵守程度最好的文档项。
+- 在添加任务时，需要根据任务可用性函数判断目标文档项是否可用。
+- 在多线程环境下使用TaskManager时，需要注意对任务的操作需要使用线程锁进行线程安全的操作。
+
+**输出示例**：
 ```python
 task_manager = get_task_manager(now_node, task_available_func)
 ```
-
-#### _sub_function in_white_list(item)
-**in_white_list**: in_white_list函数的功能是判断给定的文档项是否在白名单中。
-
-**参数**: 
-- item: DocItem类型的参数，表示待判断的文档项。
-
-**代码描述**: 该函数通过遍历白名单中的每个元素，判断给定的文档项的文件名和id_text是否与白名单中的元素匹配。如果匹配成功，则返回True；否则返回False。
-
-**注意**: 该函数适用于判断文档项是否在白名单中。
-
-**输出示例**: 假设白名单中有一个元素，其file_path为"repo_agent/doc_meta_info.py"，id_text为"MetaInfo"，现有一个文档项的文件名为"repo_agent/doc_meta_info.py"，obj_name为"MetaInfo"，则调用in_white_list函数的返回值为True。
-### _class_function get_topology(self, task_available_func)
-**get_topology**: get_topology函数的功能是计算repo中所有对象的拓扑顺序。
-
-**参数**: 
-- task_available_func: 可调用对象，用于判断任务是否可用，默认为None。
-
-**代码描述**: 
-get_topology函数首先调用self.parse_reference()函数解析引用关系。然后根据拓扑引用关系获取任务管理器task_manager。接下来，返回任务管理器task_manager。
-
-**注意**: 
-- get_topology函数会调用self.parse_reference()函数和self.get_task_manager()函数。
-- 可以通过task_available_func参数指定任务可用性函数。
-- 任务管理器是一个TaskManager对象，用于管理任务的添加、获取和标记完成等操作。
-
-**输出示例**:
-```python
-task_manager = self.get_task_manager(self.target_repo_hierarchical_tree,task_available_func=task_available_func)
-```
-
-请注意:
-- 该函数会计算repo中所有对象的拓扑顺序，并返回一个任务管理器。
-- 任务管理器可以根据任务的依赖关系来确定任务的执行顺序。
-- 可以通过task_available_func参数指定任务的可用性函数，用于判断任务是否可用。
-- 函数的返回值是一个TaskManager对象，可以用于管理任务的添加、获取和标记完成等操作。
-### _class_function _map(self, deal_func)
-**_map**: _map函数的功能是将所有节点进行同一个操作。
-**参数**: 
-- deal_func: Callable类型，表示要对每个节点执行的操作函数。
-
-**代码说明**:
-_map函数是一个递归函数，用于对目标对象的所有节点进行同一个操作。它接受一个deal_func参数，该参数是一个可调用对象，表示要对每个节点执行的操作函数。
-
-_map函数内部定义了一个名为travel的内部函数，用于遍历目标对象的节点。travel函数接受一个名为now_item的参数，表示当前遍历到的节点。在travel函数中，首先调用deal_func函数对当前节点进行操作，然后遍历当前节点的所有子节点，并递归调用travel函数对每个子节点进行操作。
-
-最后，_map函数调用travel函数，传入目标对象的根节点self.target_repo_hierarchical_tree作为参数，从根节点开始遍历整个对象树。
-
-**注意**: 
-- _map函数会对目标对象的所有节点进行操作，可以根据具体需求来定义deal_func函数来处理每个节点的操作。
-- _map函数是一个递归函数，会遍历目标对象的所有子节点，因此需要确保目标对象的结构是正确的，否则可能导致无限递归或其他错误。
-- 在使用_map函数时，需要传入一个合适的deal_func函数来执行具体的操作，确保操作的正确性和有效性。
-### _class_function load_doc_from_older_meta(self, older_meta)
-**load_doc_from_older_meta**: load_doc_from_older_meta函数的功能是从旧版本的MetaInfo中加载文档。
-
-**parameters**: 
-- older_meta: MetaInfo类型的参数，表示旧版本的、已经生成文档的meta info。
-
-**Code Description**: 
-load_doc_from_older_meta函数的代码逻辑如下：
-1. 首先，记录日志信息，表示正在合并来自旧版本MetaInfo的文档。
-2. 获取目标仓库的层次树的根节点。
-3. 定义一个名为find_item的函数，用于在新版本的meta中查找原来的某个对象。
-4. 定义一个名为travel的函数，用于遍历旧版本的meta中的每个对象，并将文档信息合并到新版本的meta中。
-5. 在travel函数中，调用find_item函数查找当前旧版本对象在新版本中的对应对象。
-6. 如果找不到对应对象，则回退到上一级。
-7. 如果找到对应对象，则将旧版本对象的文档内容和状态更新到新版本对象中。
-8. 如果旧版本对象的源码内容发生了修改，则将新版本对象的状态设置为"code_changed"。
-9. 对于旧版本对象的每个子对象，递归调用travel函数。
-10. 调用parse_reference函数，解析新版本的双向引用关系。
-11. 定义一个名为travel2的函数，用于遍历旧版本的meta中的每个对象，并观察引用者是否发生了变化。
-12. 在travel2函数中，调用find_item函数查找当前旧版本对象在新版本中的对应对象。
-13. 如果找不到对应对象，则回退到上一级。
-14. 如果找到对应对象，则比较新版本对象的引用者列表和旧版本对象的引用者列表是否相同。
-15. 如果引用者列表发生了变化，并且新版本对象的状态为"doc_up_to_date"，则根据变化情况更新新版本对象的状态。
-16. 对于旧版本对象的每个子对象，递归调用travel2函数。
-
-**Note**: 使用load_doc_from_older_meta函数时需要注意以下几点：
-- 该函数依赖于MetaInfo类和DocItem类。
-- 函数的主要功能是将旧版本的文档信息合并到新版本的meta中。
-- 函数会根据旧版本对象的源码是否被修改以及引用者是否发生变化来更新新版本对象的状态。
-- 函数没有返回值。
-
-**Output Example**: 无返回值。
-#### _sub_function travel(now_older_item)
-**travel**: travel函数的功能是在新版的meta中查找是否能找到原来的某个文档项。
-
-**参数**：now_older_item: DocItem类型，表示当前要查找的文档项。
-
-**代码描述**：travel函数首先调用find_item函数，传入当前要查找的文档项，以在新版的meta中查找是否能找到原来的文档项。如果找到了文档项，则将新版的文档内容和状态更新到原来的文档项中。接着，travel函数会检查源码是否被修改了。如果源码被修改了，则将文档项的状态设置为"code_changed"。然后，travel函数会递归调用自身，传入当前文档项的子对象，以便在子对象中继续查找是否能找到原来的文档项。
-
-**注意**：在调用travel函数之前，需要确保find_item函数已经被定义，并且root_item变量已经赋值为根节点。
-
-**输出示例**：假设当前文档项的名字为"item1"，父节点的子对象中存在名字为"item1"的子对象，则返回该子对象。否则返回None。
-#### _sub_function find_item(now_item)
-**find_item**: find_item函数的功能是在新版的meta中查找是否能找到原来的某个文档项。
-
-**参数**：now_item: DocItem类型，表示当前要查找的文档项。
-
-**代码描述**：find_item函数首先判断当前文档项是否为根节点，如果是根节点则直接返回根节点。然后递归调用find_item函数，传入当前文档项的父节点，直到找到根节点或者找不到父节点为止。如果找到了父节点，则判断当前文档项的名字是否在父节点的子对象中，如果在则返回该子对象，否则返回None。
-
-**注意**：在调用find_item函数之前，需要确保root_item变量已经赋值为根节点。
-
-**输出示例**：假设当前文档项的名字为"item1"，父节点的子对象中存在名字为"item1"的子对象，则返回该子对象。否则返回None。
-#### _sub_function travel2(now_older_item)
-**travel2**: travel2函数的功能是在新版的meta中查找是否能找到原来的某个文档项。
-
-**参数**：now_older_item: DocItem类型，表示当前要查找的文档项。
-
-**代码描述**：travel2函数首先调用find_item函数，传入当前要查找的文档项，以在新版的meta中查找是否能找到原来的文档项。如果找到了文档项，则判断该文档项引用的人是否发生了变化。通过比较新版文档项引用的人和旧版文档项引用的人，判断是否有新的引用者或者曾经引用该文档项的对象不再引用它。如果有新的引用者，则将文档项的状态设置为"add_new_referencer"；如果曾经引用该文档项的对象不再引用它，则将文档项的状态设置为"referencer_not_exist"。然后，遍历当前文档项的子对象，对每个子对象递归调用travel2函数，以处理子对象及其子对象的情况。
-
-**注意**：在调用travel2函数之前，需要确保find_item函数已经定义并且root_item变量已经赋值为根节点。
-
-**输出示例**：假设当前文档项的名字为"item1"，在新版的meta中找到了原来的文档项，并且该文档项引用的人发生了变化，则返回文档项的状态为"add_new_referencer"。
-
-### _class_function from_project_hierarchy_path(repo_path)
-**from_project_hierarchy_path**: from_project_hierarchy_path函数的功能是根据项目层级结构的路径生成MetaInfo对象。
-
-**参数**: 
-- repo_path: 项目的路径
-
-**代码描述**:
-from_project_hierarchy_path函数首先根据repo_path和".project_hierarchy.json"拼接出项目层级结构的JSON文件路径project_hierarchy_json_path。然后，函数使用logger记录日志，提示正在解析该文件路径。接下来，函数使用os.path.exists检查project_hierarchy_json_path是否存在，如果不存在则抛出NotImplementedError异常。
-
-然后，函数使用open函数打开project_hierarchy_json_path文件，并使用json.load函数加载文件内容到project_hierarchy_json变量中。接下来，函数调用MetaInfo对象的from_project_hierarchy_json方法，传入project_hierarchy_json作为参数，生成并返回一个新的MetaInfo对象。
-
-**注意**:
-- from_project_hierarchy_path函数根据项目层级结构的路径生成MetaInfo对象。
-- 函数会检查项目层级结构的JSON文件是否存在，如果不存在则抛出异常。
-- 函数会加载项目层级结构的JSON文件内容，并调用MetaInfo对象的from_project_hierarchy_json方法生成MetaInfo对象。
-
-**输出示例**:
-```
-<MetaInfo对象>
-```
-### _class_function to_hierarchy_json(self, flash_reference_relation)
-**to_hierarchy_json**: to_hierarchy_json函数的功能是将层级结构转换为JSON格式。
-
-**参数**: 
-- flash_reference_relation（可选）：一个布尔值，表示是否将最新的双向引用关系写回到meta文件中。默认为False。
-
-**代码描述**: 
-该函数用于将层级结构转换为JSON格式。它首先获取所有的file节点，然后遍历每个file节点及其子节点，将节点的相关信息存储在一个字典中。最后，将所有的字典组成一个层级结构的JSON对象并返回。
-
-具体的代码逻辑如下：
-1. 创建一个空字典hierachy_json，用于存储层级结构的JSON对象。
-2. 调用get_all_files函数获取所有的file节点，并将结果存储在file_item_list列表中。
-3. 遍历file_item_list列表，对每个file节点及其子节点进行处理。
-4. 创建一个空字典file_hierarchy_content，用于存储每个file节点及其子节点的相关信息。
-5. 定义一个内部函数walk_file，用于递归遍历每个file节点及其子节点。
-6. 在walk_file函数中，首先将当前节点的相关信息存储在file_hierarchy_content字典中。
-7. 如果flash_reference_relation为True，则将最新的双向引用关系写回到meta文件中。
-8. 将当前节点的父节点的名字存储在file_hierarchy_content字典中的"parent"键中。
-9. 遍历当前节点的所有子节点，对每个子节点调用walk_file函数进行递归遍历。
-10. 在file_item_list列表中，将每个file节点及其子节点的相关信息存储在hierachy_json字典中。
-11. 返回层级结构的JSON对象hierachy_json。
-
-**注意**: 
-- 如果需要获取最新的双向引用关系并写回到meta文件中，可以将flash_reference_relation参数设置为True。
-- 该函数依赖于get_all_files函数和其他相关函数的实现，需要确保这些函数的正确性和可用性。
-
-**输出示例**: 
-假设目标repo的层级结构如下：
-- file1
-  - obj1
-  - obj2
-- file2
-  - obj3
-  - obj4
-
-调用to_hierarchy_json函数后，将返回一个层级结构的JSON对象，示例如下：
-```python
-{
-    "file1": {
-        "obj1": {
-            "name": "obj1",
-            "type": "type1",
-            "md_content": "content1",
-            "item_status": "status1",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file1"
-        },
-        "obj2": {
-            "name": "obj2",
-            "type": "type2",
-            "md_content": "content2",
-            "item_status": "status2",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file1"
-        }
-    },
-    "file2": {
-        "obj3": {
-            "name": "obj3",
-            "type": "type3",
-            "md_content": "content3",
-            "item_status": "status3",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file2"
-        },
-        "obj4": {
-            "name": "obj4",
-            "type": "type4",
-            "md_content": "content4",
-            "item_status": "status4",
-            "who_reference_me": [],
-            "reference_who": [],
-            "parent": "file2"
-        }
-    }
-}
-```
-#### _sub_function walk_file(now_obj)
-**walk_file**: walk_file函数的功能是遍历文件对象及其子对象，并将它们的信息存储到file_hierarchy_content字典中。
-
-**参数**: 
-- now_obj: 当前的文档项对象。
-
-**代码说明**: walk_file函数首先将当前文档项对象的信息存储到file_hierarchy_content字典中，包括对象的名称、类型、md_content、item_status等。然后，如果flash_reference_relation为True，将当前对象引用的其他对象和引用当前对象的对象的完整名称存储到file_hierarchy_content字典中。接下来，判断当前对象的父对象是否为文件类型，如果不是，则将父对象的名称存储到file_hierarchy_content字典中的parent字段中。最后，遍历当前对象的子对象，并递归调用walk_file函数。
-
-**注意**: 
-- walk_file函数用于遍历文件对象及其子对象，并将它们的信息存储到file_hierarchy_content字典中。
-- file_hierarchy_content字典用于存储文件对象及其子对象的信息。
-- 如果flash_reference_relation为True，则会将当前对象引用的其他对象和引用当前对象的对象的完整名称存储到file_hierarchy_content字典中。
-- walk_file函数是一个递归函数，会遍历当前对象的子对象，并对每个子对象调用walk_file函数。
-
-**输出示例**: 无
-
-请注意:
-- 该函数是一个递归函数，用于遍历文件对象及其子对象。
-- 可以根据需要使用该函数来处理文件对象及其子对象的信息。
-- 请根据具体情况使用适当的参数来调用该函数。
-### _class_function from_project_hierarchy_json(project_hierarchy_json)
-**from_project_hierarchy_json**: from_project_hierarchy_json函数的功能是根据项目层级结构的JSON数据生成MetaInfo对象。
-**参数**: 
-- project_hierarchy_json: 项目层级结构的JSON数据
-
-**代码描述**:
-from_project_hierarchy_json函数首先创建一个空的MetaInfo对象target_meta_info。然后，它遍历project_hierarchy_json中的每个文件名和文件内容。对于每个文件，函数首先检查文件是否存在，如果不存在则跳过该文件。然后，函数检查文件是否为空，如果为空则跳过该文件。
-
-接下来，函数将文件名拆分为递归文件路径，并初始化now_structure为target_meta_info的根节点target_repo_hierarchical_tree。然后，函数使用while循环遍历递归文件路径中的每个路径。在每次循环中，函数检查当前路径是否存在于now_structure的子节点中。如果不存在，则创建一个新的DocItem对象，并将其添加到now_structure的子节点中。如果存在，则将now_structure更新为当前子节点，并继续下一个路径的遍历。循环结束后，函数创建一个新的DocItem对象，并将其添加到now_structure的子节点中。
-
-接下来，函数使用assert语句检查file_content的类型是否为字典。然后，函数定义了一个名为parse_one_item的内部函数，用于递归解析文件内容。parse_one_item函数首先检查key是否存在于item_reflection中，如果存在则跳过该项。然后，函数检查value中的父节点是否为None，如果不为None，则递归调用parse_one_item函数解析父节点。接下来，函数根据key、value和item_reflection创建一个新的DocItem对象，并将其添加到item_reflection中。然后，函数根据value中的其他属性更新新创建的DocItem对象。最后，函数根据value的类型更新新创建的DocItem对象的item_type属性。
-
-接下来，函数使用item_reflection中的信息更新target_meta_info的树结构。如果value的父节点不为None，则将新创建的DocItem对象添加到父节点的子节点中，并更新父节点和新创建的DocItem对象之间的关系。否则，将新创建的DocItem对象添加到文件节点的子节点中，并更新文件节点和新创建的DocItem对象之间的关系。
-
-最后，函数调用target_meta_info的parse_tree_path方法解析树结构的路径，并调用check_depth方法计算树结构的深度。最后，函数返回target_meta_info对象。
-
-**注意**:
-- from_project_hierarchy_json函数根据项目层级结构的JSON数据生成MetaInfo对象。
-- 函数会遍历项目层级结构的JSON数据，解析文件名和文件内容，并构建相应的树结构。
-- 函数会根据文件内容的类型和属性更新相应的DocItem对象。
-- 函数会根据文件内容的父节点关系更新树结构的层级关系。
-- 函数会解析树结构的路径，并计算树结构的深度。
-
-**输出示例**:
-```
-<MetaInfo object>
-```
-#### _sub_function parse_one_item(key, value, item_reflection)
-**parse_one_item**: parse_one_item函数的功能是解析一个项目。
+#### _function in_white_list(item)
+**in_white_list**: in_white_list函数的功能是判断一个DocItem对象是否在白名单中。
 
 **参数**：
-- key: 项目的键
-- value: 项目的值
-- item_reflection: 项目的反射信息
+- item: DocItem对象，需要判断是否在白名单中。
 
 **代码描述**：
-parse_one_item函数用于递归解析一个项目。它首先检查项目是否已经在item_reflection中存在，如果存在则直接返回。然后，它判断项目是否有父节点，如果有父节点，则先解析父节点。接下来，它根据项目的键、值和md_content创建一个DocItem对象，并将其添加到item_reflection中。如果项目的类型是ClassDef，则将其item_type设置为_class；如果项目的类型是FunctionDef，则根据父节点的类型设置item_type为_class_function或_sub_function。然后，它将项目添加到父节点的children中，并设置项目的父节点。最后，它根据项目的一些属性值，如item_status、reference_who和who_reference_me，更新DocItem对象的属性。
+该函数通过遍历白名单中的每个元素，判断传入的DocItem对象的文件名和id_text是否与白名单中的元素匹配。如果匹配成功，则返回True；否则，返回False。
 
 **注意**：
-- parse_one_item函数用于递归解析一个项目。
-- 项目的键和值用于创建DocItem对象，并将其添加到item_reflection中。
-- 根据项目的类型和父节点的类型，设置DocItem对象的item_type。
-- 项目的属性值用于更新DocItem对象的属性。
+- 该函数依赖于DocItem类的get_file_name和obj_name属性。
+- 在使用该函数时，需要确保传入的item参数是一个有效的DocItem对象。
 
 **输出示例**：
-无
+以下是一个可能的代码返回值的示例：
+```python
+True
+```
+### _function get_topology(self, task_available_func)
+**get_topology**: get_topology函数的功能是计算repo中所有对象的拓扑顺序。
+
+**参数**：
+- self: 当前对象
+- task_available_func: 任务可用性函数，用于判断任务是否可用。
+
+**代码描述**：
+get_topology函数首先调用self.parse_reference()方法，解析所有对象的引用关系。然后，根据self.target_repo_hierarchical_tree和task_available_func参数调用self.get_task_manager()方法，获取任务管理器对象task_manager。
+
+在函数内部，通过调用self.parse_reference()方法解析所有对象的引用关系，以便后续计算拓扑顺序。然后，根据self.target_repo_hierarchical_tree和task_available_func参数调用self.get_task_manager()方法，获取任务管理器对象task_manager。get_task_manager方法会根据当前节点对象获取文档项的遍历列表，并根据白名单过滤文档项。在遍历文档项列表时，根据文档项的子节点和引用关系计算最佳中断级别，并选择相对遵守程度最好的文档项。在添加任务时，需要根据任务可用性函数判断目标文档项是否可用。最后，get_task_manager方法返回task_manager对象。
+
+最后，get_topology函数返回task_manager对象。
+
+**注意**：
+- 在调用get_task_manager方法时，需要传入self.target_repo_hierarchical_tree和task_available_func参数。
+- 在多线程环境下使用TaskManager时，需要注意对任务的操作需要使用线程锁进行线程安全的操作。
+
+**输出示例**：
+```python
+task_manager = self.get_task_manager(self.target_repo_hierarchical_tree, task_available_func=task_available_func)
+```
+
+### _function _map(self, deal_func)
+**_map**: _map函数的功能是将所有节点进行同一个操作。
+
+**参数**：这个函数的参数。
+· deal_func: 一个可调用对象，表示要对每个节点执行的操作。
+
+**代码说明**：这个函数的作用是对目标仓库的层级树中的每个节点执行相同的操作。函数内部定义了一个名为travel的嵌套函数，用于遍历树中的每个节点。travel函数接受一个参数now_item，表示当前节点。在travel函数内部，首先调用deal_func函数对当前节点进行操作。然后，使用for循环遍历当前节点的所有子节点，并递归调用travel函数对每个子节点进行操作。最后，函数调用travel函数，传入目标仓库的层级树的根节点self.target_repo_hierarchical_tree，从根节点开始遍历整个树。
+
+**注意**：使用该函数时，需要传入一个可调用对象deal_func，表示要对每个节点执行的操作。在deal_func函数中，可以对每个节点进行自定义的操作。
+#### _function travel(now_item)
+**travel**: travel函数的功能是对当前的DocItem对象进行处理，并遍历其所有子对象进行相同的处理。
+
+**参数**：travel函数接受一个DocItem类型的参数now_item，表示当前的文档项。
+
+**代码描述**：travel函数首先调用deal_func函数对当前的now_item进行处理。然后，通过遍历now_item的所有子对象，对每个子对象递归调用travel函数，实现对整个文档树的遍历处理。
+
+**注意**：在使用travel函数时，需要注意以下几点：
+- 需要正确传入now_item参数，以指明当前的文档项。
+- travel函数会对当前的文档项及其所有子对象进行处理，可以根据实际需求在deal_func函数中定义相应的处理逻辑。
+
+**输出示例**：以下是travel函数的一个可能的输出示例：
+```python
+DocItem: DocItem, 0 children
+```
+
+请注意：
+- 生成的文档内容应该是准确的、清晰的，并且不包含任何猜测或不准确的描述。
+- 请使用专业的语言和术语来编写文档，以确保读者能够准确理解代码的功能和使用方法。
+### _function load_doc_from_older_meta(self, older_meta)
+**load_doc_from_older_meta**: load_doc_from_older_meta函数的作用是从旧版本的MetaInfo中加载文档。
+
+**参数**：
+- older_meta: 旧版本的MetaInfo对象，已经生成了文档。
+
+**代码描述**：
+该函数首先使用logger记录日志，提示正在合并来自旧版本MetaInfo的文档。然后，获取目标repo的层级树的根节点，并定义了一个名为find_item的内部函数，用于在新版本的meta中查找原来的某个对象。在find_item函数中，首先判断当前节点是否为根节点，如果是，则返回根节点。然后，递归调用find_item函数，查找当前节点的父节点。如果父节点不存在，则返回None。如果当前节点的对象名存在于父节点的子节点中，则返回对应的子节点。如果找不到对应的子节点，则返回None。
+
+接下来，定义了一个名为travel的内部函数，用于遍历旧版本的meta中的节点，并将文档信息合并到新版本的meta中。在travel函数中，首先调用find_item函数，根据旧版本的节点信息查找对应的新版本的节点。如果找不到对应的节点，则跳过该节点。然后，将旧版本节点的文档内容和状态更新到新版本节点中。如果旧版本节点的内容中存在code_content，并且与新版本节点的内容中的code_content不相等，则将新版本节点的状态设置为code_changed。
+
+接下来，对旧版本节点的子节点递归调用travel函数，以处理所有子节点。
+
+travel函数执行完毕后，调用self.parse_reference()函数，解析当前对象的双向引用关系。
+
+然后，定义了一个名为travel2的内部函数，用于遍历旧版本的meta中的节点，并观察引用关系是否发生变化。在travel2函数中，首先调用find_item函数，根据旧版本的节点信息查找对应的新版本的节点。如果找不到对应的节点，则跳过该节点。然后，比较新版本节点引用的对象和旧版本节点引用的对象是否发生变化。如果发生变化且新版本节点的状态为doc_up_to_date，则根据变化情况更新新版本节点的状态。如果新版本节点的引用者包含旧版本节点的引用者，则将新版本节点的状态设置为referencer_not_exist。否则，将新版本节点的状态设置为add_new_referencer。
+
+最后，对旧版本节点的子节点递归调用travel2函数，以处理所有子节点。
+
+**注意**：
+- 该函数依赖于MetaInfo对象和DocItem对象。
+- 函数执行过程中会更新节点的文档信息和状态。
+- 函数执行过程中会解析双向引用关系，并观察引用关系是否发生变化。
+
+**输出示例**：
+假设旧版本的meta中存在节点A和节点B，其中节点A引用了节点B。调用load_doc_from_older_meta函数后，会将节点A的文档信息合并到新版本的meta中，并更新节点A和节点B的状态。假设节点A的文档内容发生了变化，节点A的状态将被设置为code_changed。最终，新版本的meta中的节点状态如下：
+- 节点A：code_changed
+- 节点B：doc_up_to_date
+#### _function find_item(now_item)
+**find_item**: find_item函数的功能是在新版的meta中查找是否能找到原来的某个东西。
+
+**参数**：
+- now_item: DocItem类型，表示当前要查找的文档项。
+
+**代码描述**：
+find_item函数是一个递归函数，用于在新版的meta中查找是否能找到原来的某个东西。函数首先判断当前要查找的文档项是否为根节点，如果是，则直接返回根节点。接着，函数递归调用自身，传入当前文档项的父节点，并将返回结果赋值给father_find_result。如果father_find_result为空，则说明在新版的meta中找不到原来的文档项，函数返回None。如果father_find_result不为空，则继续判断当前文档项的名称是否在father_find_result的子节点中。如果在子节点中找到了当前文档项的名称，则返回该子节点；否则，返回None。
+
+**注意**：
+- 在使用find_item函数时，需要注意传入正确的参数类型和值。
+- 函数的返回值可能为None，表示在新版的meta中找不到原来的文档项。
+
+**输出示例**：
+以下是一个可能的代码返回值的示例：
+```python
+DocItem: DocItem, 0 children
+```
+#### _function travel(now_older_item)
+**travel**: travel函数的功能是在新版的meta中寻找源码是否被修改的信息。
+
+**参数**：
+- now_older_item: DocItem类型，表示当前要寻找的文档项。
+
+**代码描述**：
+travel函数是一个递归函数，用于在新版的meta中寻找源码是否被修改的信息。函数首先调用find_item函数，传入当前要寻找的文档项，并将返回结果赋值给result_item。如果result_item为空，则说明在新版文件中找不到原来的文档项，函数直接返回。接着，函数将now_older_item的md_content和item_status赋值给result_item的相应属性。然后，函数判断now_older_item的content字典中是否包含"code_content"键。如果包含，则进一步判断result_item的content字典中是否也包含"code_content"键，并且判断now_older_item的content["code_content"]是否等于result_item的content["code_content"]。如果不相等，则说明源码被修改了，将result_item的item_status设置为DocItemStatus.code_changed。最后，函数遍历now_older_item的所有子节点，并递归调用自身，传入子节点作为参数。
+
+**注意**：
+- 在使用travel函数时，需要注意传入正确的参数类型和值。
+- travel函数会修改result_item的md_content和item_status属性。
+- travel函数会根据源码是否被修改来更新result_item的item_status属性。
+
+**输出示例**：
+以下是一个可能的代码返回值的示例：
+```python
+DocItem: DocItem, 0 children
+```
+#### _function travel2(now_older_item)
+**travel2**: travel2函数的功能是在新版的meta中查找给定的文档项。
+
+**参数**：
+- now_older_item: DocItem类型，表示当前要查找的文档项。
+
+**代码描述**：
+travel2函数是一个递归函数，用于在新版的meta中查找给定的文档项。函数首先调用find_item函数，传入当前要查找的文档项now_older_item，并将返回结果赋值给result_item。如果result_item为空，则说明在新版的meta中找不到原来的文档项，函数直接返回。接着，函数判断result_item引用的人是否发生了变化。首先，将result_item引用的人的名字存储在new_reference_names列表中，将now_older_item引用的人的名字存储在old_reference_names列表中。然后，通过比较new_reference_names和old_reference_names的差异，以及result_item的状态是否为DocItemStatus.doc_up_to_date，来判断result_item的状态是否需要更新。如果new_reference_names是old_reference_names的子集，并且result_item的状态为DocItemStatus.doc_up_to_date，则将result_item的状态更新为DocItemStatus.referencer_not_exist；否则，将result_item的状态更新为DocItemStatus.add_new_referencer。最后，函数遍历now_older_item的所有子节点，并递归调用travel2函数，传入子节点作为参数。
+
+**注意**：
+- 在使用travel2函数时，需要传入正确的参数类型和值。
+- 函数的返回值为None，表示在新版的meta中找不到给定的文档项。
+
+**输出示例**：
+以下是一个可能的代码返回值的示例：
+```python
+None
+```
+### _function from_project_hierarchy_path(repo_path)
+**from_project_hierarchy_path**: from_project_hierarchy_path函数的功能是根据项目层次结构的json文件构建MetaInfo对象。
+
+**参数**：
+- repo_path: 仓库路径，表示项目的根目录。
+
+**代码描述**：
+from_project_hierarchy_path函数首先根据repo_path和".project_hierarchy.json"拼接出项目层次结构的json文件路径。然后，函数使用logger记录日志，提示正在解析的文件路径。接下来，函数判断项目层次结构的json文件是否存在，如果不存在则抛出NotImplementedError异常。
+
+然后，函数使用open函数打开项目层次结构的json文件，并使用json.load函数加载文件内容，得到project_hierarchy_json对象。
+
+接下来，函数调用MetaInfo.from_project_hierarchy_json函数，将project_hierarchy_json作为参数传入，构建并返回MetaInfo对象。
+
+**注意**：
+- from_project_hierarchy_path函数用于根据项目层次结构的json文件构建MetaInfo对象。
+- 函数会根据repo_path和".project_hierarchy.json"拼接出项目层次结构的json文件路径。
+- 函数会使用logger记录日志，提示正在解析的文件路径。
+- 函数会判断项目层次结构的json文件是否存在，如果不存在则抛出NotImplementedError异常。
+- 函数会使用open函数打开项目层次结构的json文件，并使用json.load函数加载文件内容，得到project_hierarchy_json对象。
+- 函数会调用MetaInfo.from_project_hierarchy_json函数，将project_hierarchy_json作为参数传入，构建并返回MetaInfo对象。
+
+**输出示例**：
+```
+<MetaInfo object at 0x7f9a4a3a3c10>
+```
+### _function to_hierarchy_json(self, flash_reference_relation)
+**to_hierarchy_json**: to_hierarchy_json函数的功能是将层级树转换为JSON格式的字典。
+
+**参数**：
+- self: 当前对象
+- flash_reference_relation: 是否将最新的双向引用关系写回到meta文件中，默认为False
+
+**代码描述**：
+该函数用于将层级树转换为JSON格式的字典。首先，获取所有的file节点，并遍历每个file节点。然后，定义一个内部函数walk_file，用于遍历每个file节点的子节点。在walk_file函数中，将每个节点的相关信息添加到一个临时的JSON对象中，包括节点的名称、类型、Markdown内容和状态。如果flash_reference_relation为True，则还会将节点的双向引用关系和特殊引用类型添加到JSON对象中。最后，将临时的JSON对象添加到file_hierarchy_content列表中。接着，遍历每个file节点的子节点，并调用walk_file函数。将每个file节点的名称和file_hierarchy_content列表添加到hierachy_json字典中。最后，返回hierachy_json字典。
+
+**注意**：
+- 该函数需要在MetaInfo类的实例上调用。
+- flash_reference_relation参数默认为False，如果设置为True，则会将最新的双向引用关系写回到meta文件中。
+- 返回的结果是一个层级树转换后的JSON格式的字典。
+
+**输出示例**：
+假设层级树中存在两个file节点，分别为"file1"和"file2"，其中"file1"的子节点为"node1"和"node2"，"file2"的子节点为"node3"和"node4"。调用to_hierarchy_json函数后，返回的结果为：
+```python
+{
+    "file1": [
+        {
+            "name": "node1",
+            "type": "type1",
+            "md_content": "content1",
+            "item_status": "status1"
+        },
+        {
+            "name": "node2",
+            "type": "type2",
+            "md_content": "content2",
+            "item_status": "status2"
+        }
+    ],
+    "file2": [
+        {
+            "name": "node3",
+            "type": "type3",
+            "md_content": "content3",
+            "item_status": "status3"
+        },
+        {
+            "name": "node4",
+            "type": "type4",
+            "md_content": "content4",
+            "item_status": "status4"
+        }
+    ]
+}
+```
+#### _function walk_file(now_obj)
+**walk_file**: walk_file函数的功能是遍历文件。
+
+**参数**：
+- now_obj: 当前对象
+
+**代码描述**：
+该函数用于遍历文件，并将文件的相关信息存储到file_hierarchy_content列表中。具体步骤如下：
+1. 首先，将当前对象的content属性赋值给temp_json_obj变量。
+2. 然后，将当前对象的obj_name赋值给temp_json_obj字典的"name"键。
+3. 接着，将当前对象的item_type属性通过调用to_str函数转换为字符串形式，并将其赋值给temp_json_obj字典的"type"键。
+4. 将当前对象的md_content属性赋值给temp_json_obj字典的"md_content"键。
+5. 将当前对象的item_status属性的名称赋值给temp_json_obj字典的"item_status"键。
+6. 如果flash_reference_relation为True，则将当前对象的who_reference_me属性中每个对象的get_full_name()返回值存储到temp_json_obj字典的"who_reference_me"键中。
+7. 同样地，将当前对象的reference_who属性中每个对象的get_full_name()返回值存储到temp_json_obj字典的"reference_who"键中。
+8. 将当前对象的special_reference_type属性赋值给temp_json_obj字典的"special_reference_type"键。
+9. 将temp_json_obj添加到file_hierarchy_content列表中。
+10. 遍历当前对象的children属性，对每个子对象递归调用walk_file函数。
+
+**注意**：
+- 在使用该函数时，需要确保传入的参数是DocItem类型的对象。
+- 如果flash_reference_relation为True，则会将当前对象的引用关系信息存储到temp_json_obj字典中。
+
+**输出示例**：
+假设当前对象的content属性为{"key": "value"}，obj_name属性为"obj_name"，item_type属性为DocItemType._class_function，md_content属性为["md_content1", "md_content2"]，item_status属性为DocItemStatus.doc_has_not_been_generated，who_reference_me属性为[DocItem1, DocItem2]，reference_who属性为[DocItem3, DocItem4]，special_reference_type属性为True，flash_reference_relation属性为True，则调用walk_file函数后，file_hierarchy_content列表的内容为[{"key": "value", "name": "obj_name", "type": "FunctionDef", "md_content": ["md_content1", "md_content2"], "item_status": "doc_has_not_been_generated", "who_reference_me": ["DocItem1", "DocItem2"], "reference_who": ["DocItem3", "DocItem4"], "special_reference_type": True}]。
+
+请注意：
+- 该函数会修改file_hierarchy_content列表的内容。
+- 该函数会递归调用自身，直到遍历完所有的子对象。
+### _function from_project_hierarchy_json(project_hierarchy_json)
+**from_project_hierarchy_json**: from_project_hierarchy_json函数的功能是根据项目层次结构的json文件构建MetaInfo对象。
+
+**参数**：
+- project_hierarchy_json: 项目层次结构的json文件，包含了文件名和文件内容的信息。
+
+**代码描述**：
+from_project_hierarchy_json函数首先创建了一个名为target_meta_info的MetaInfo对象，该对象表示整个仓库的层次结构。然后，通过遍历project_hierarchy_json中的文件名和文件内容，解析文件的层次关系和内容，并构建树形结构。
+
+在解析文件的层次关系时，函数首先判断文件是否存在于仓库中，如果不存在则跳过该文件。然后，根据文件的路径逐级创建目录节点，并设置父子关系。接下来，根据文件的内容创建对应的DocItem对象，并设置父子关系。在创建DocItem对象时，函数根据内容的类型将其类型设置为相应的类型，如类、函数等。
+
+接下来，函数寻找可能的父节点，并设置父子关系。对于每个DocItem对象，函数遍历所有其他DocItem对象，判断是否存在父子关系。如果存在父子关系，则将当前对象的父节点设置为可能的父节点，并将当前对象添加到父节点的子节点中。
+
+最后，函数调用target_meta_info.target_repo_hierarchical_tree.parse_tree_path函数，将当前路径设置为空列表，并递归调用子节点的parse_tree_path函数。然后，函数调用target_meta_info.target_repo_hierarchical_tree.check_depth函数，计算树中每个节点的深度。
+
+最后，函数返回target_meta_info对象，表示整个仓库的层次结构。
+
+**注意**：
+- from_project_hierarchy_json函数用于根据项目层次结构的json文件构建MetaInfo对象。
+- 函数会遍历项目层次结构的json文件，解析文件的层次关系和内容，并构建树形结构。
+- 函数会判断文件是否存在于仓库中，如果不存在则跳过该文件。
+- 函数会根据文件的路径逐级创建目录节点，并设置父子关系。
+- 函数会根据文件的内容创建对应的DocItem对象，并设置父子关系。
+- 函数会寻找可能的父节点，并设置父子关系。
+- 函数会调用target_meta_info.target_repo_hierarchical_tree.parse_tree_path函数，将当前路径设置为空列表，并递归调用子节点的parse_tree_path函数。
+- 函数会调用target_meta_info.target_repo_hierarchical_tree.check_depth函数，计算树中每个节点的深度。
+- 函数返回target_meta_info对象，表示整个仓库的层次结构。
+
+**输出示例**：
+```
+<MetaInfo object at 0x7f9a4a3a3c10>
+```
+#### _sub_function code_contain(item, other_item)
+**code_contain**: code_contain函数的功能是判断一个代码块是否包含另一个代码块。
+
+**参数**：这个函数有两个参数。
+- item: 表示一个代码块的对象。
+- other_item: 表示另一个代码块的对象。
+
+**代码描述**：这个函数通过比较两个代码块的起始行和结束行来判断它们之间的包含关系。具体的代码逻辑如下：
+- 如果other_item的结束行等于item的结束行，并且other_item的起始行等于item的起始行，那么返回False，表示两个代码块完全相同，不包含关系。
+- 如果other_item的结束行小于item的结束行，或者other_item的起始行大于item的起始行，那么返回False，表示other_item不包含item。
+- 如果以上条件都不满足，则返回True，表示other_item包含item。
+
+**注意**：在使用这个函数时，需要确保传入的参数item和other_item是有效的代码块对象，并且这两个对象的起始行和结束行都是合理的。
+
+**输出示例**：假设item的起始行为3，结束行为7，other_item的起始行为5，结束行为9，那么调用code_contain(item, other_item)的返回值为True，表示other_item包含item。

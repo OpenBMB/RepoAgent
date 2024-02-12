@@ -22,7 +22,7 @@ def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
     if doc_item.item_status == DocItemStatus.doc_up_to_date:
         return False
     rel_file_path = doc_item.get_full_name()
-    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]:
+    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]: #暂时不生成file及以上的doc
         return False
     doc_item = doc_item.father
     while doc_item:
@@ -32,7 +32,8 @@ def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
                 rel_file_path.startswith(ignore_item) for ignore_item in ignore_list
             ):
                 return False
-            return True
+            else:
+                return True
         doc_item = doc_item.father
     return False
 
@@ -144,6 +145,10 @@ class Runner:
 
         if not self.meta_info.in_generation_process:
             self.meta_info.in_generation_process = True
+            logger.info("Init a new task-list")
+        else:
+            logger.info("Load from an existing task-list")
+        # self.meta_info.print_task_list(task_manager.task_dict)      
 
         try:
             task_manager.sync_func = self.markdown_refresh
@@ -293,13 +298,8 @@ class Runner:
         ignore_list = CONFIG.get("ignore_list", [])
         check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
 
-        task_manager = self.meta_info.get_task_manager(
-            self.meta_info.target_repo_hierarchical_tree,
-            task_available_func=check_task_available_func,
-        )
-        self.meta_info.print_task_list(
-            [cont.extra_info for cont in task_manager.task_dict.values()]
-        )
+        task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
+        self.meta_info.print_task_list(task_manager.task_dict)
 
         task_manager.sync_func = self.markdown_refresh
         threads = [
