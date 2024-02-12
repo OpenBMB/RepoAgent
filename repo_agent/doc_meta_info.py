@@ -25,6 +25,7 @@ class EdgeType(Enum):
 
 @unique
 class DocItemType(Enum):
+    # 对可能的对象文档类型进行定义（分不同细粒度）
     _repo = auto()  # 根节点，需要生成readme
     _dir = auto()
     _file = auto()
@@ -113,20 +114,38 @@ class DocItem:
 
     @staticmethod
     def has_ans_relation(now_a: DocItem, now_b: DocItem):
-        """node之间是否是祖先关系，有的话返回更早的节点"""
+        """Check if there is an ancestor relationship between two nodes and return the earlier node if exists.
+
+        Args:
+            now_a (DocItem): The first node.
+            now_b (DocItem): The second node.
+
+        Returns:
+            DocItem or None: The earlier node if an ancestor relationship exists, otherwise None.
+        """
         if now_b in now_a.tree_path:
             return now_b
         if now_a in now_b.tree_path:
             return now_a
         return None
 
+
     def get_travel_list(self):
-        now_list = [self]
-        for _, child in self.children.items():
-            now_list = now_list + child.get_travel_list()
-        return now_list
+            """
+            Returns a list of all nodes in the tree, including the current node and its children.
+            """
+            now_list = [self]
+            for _, child in self.children.items():
+                now_list = now_list + child.get_travel_list()
+            return now_list
 
     def check_depth(self):
+        """
+        Recursively calculates the depth of the node in the tree.
+
+        Returns:
+            int: The depth of the node.
+        """
         if len(self.children) == 0:
             self.depth = 0
             return self.depth
@@ -139,6 +158,16 @@ class DocItem:
 
     @staticmethod
     def find_min_ances(node_a: DocItem, node_b: DocItem):
+        """
+        Find the minimum ancestor between two DocItems.
+
+        Args:
+            node_a (DocItem): The first DocItem.
+            node_b (DocItem): The second DocItem.
+
+        Returns:
+            The minimum ancestor between node_a and node_b.
+        """
         pos = 0
         assert node_a.tree_path[pos] == node_b.tree_path[pos]
         while True:
@@ -147,6 +176,15 @@ class DocItem:
                 return node_a.tree_path[pos - 1]
 
     def parse_tree_path(self, now_path):
+        """
+        Recursively parses the tree path by appending the current node to the given path.
+
+        Args:
+            now_path (list): The current path in the tree.
+
+        Returns:
+            None
+        """
         self.tree_path = now_path + [self]
         for key, child in self.children.items():
             child.parse_tree_path(self.tree_path)
@@ -156,20 +194,32 @@ class DocItem:
         return full_name.split(".py")[0] + ".py"
 
     def get_full_name(self):
-        """获取从下到上所有的obj名字"""
-        if self.father == None:
-            return self.obj_name
-        name_list = []
-        now = self
-        while now != None:
-            name_list = [now.obj_name] + name_list
-            now = now.father
+            """获取从下到上所有的obj名字
 
-        name_list = name_list[1:]
-        return "/".join(name_list)
+            Returns:
+                str: 从下到上所有的obj名字，以斜杠分隔
+            """
+            if self.father == None:
+                return self.obj_name
+            name_list = []
+            now = self
+            while now != None:
+                name_list = [now.obj_name] + name_list
+                now = now.father
+
+            name_list = name_list[1:]
+            return "/".join(name_list)
 
     def find(self, recursive_file_path: list) -> Optional[DocItem]:
-        """从repo根节点根据path_list找到对应的文件, 否则返回False"""
+        """
+        从repo根节点根据path_list找到对应的文件, 否则返回False
+
+        Args:
+            recursive_file_path (list): The list of file paths to search for.
+
+        Returns:
+            Optional[DocItem]: The corresponding file if found, otherwise None.
+        """
         assert self.item_type == DocItemType._repo
         pos = 0
         now = self
@@ -222,8 +272,8 @@ def find_all_referencer(
         ]
     except Exception as e:
         # 打印错误信息和相关参数
-        print(f"Error occurred: {e}")
-        print(
+        logger.info(f"Error occurred: {e}")
+        logger.info(
             f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}"
         )
         return []
@@ -280,6 +330,13 @@ class MetaInfo:
         return metainfo
 
     def checkpoint(self, target_dir_path: str, flash_reference_relation=False):
+        """
+        Save the MetaInfo object to the specified directory.
+
+        Args:
+            target_dir_path (str): The path to the target directory where the MetaInfo will be saved.
+            flash_reference_relation (bool, optional): Whether to include flash reference relation in the saved MetaInfo. Defaults to False.
+        """
         with self.checkpoint_lock:
             logger.info(f"will save MetaInfo at {target_dir_path}")
             if not os.path.exists(target_dir_path):
@@ -427,6 +484,20 @@ class MetaInfo:
     def get_task_manager(
         self, now_node: DocItem, task_available_func: Callable = None
     ) -> TaskManager:
+        """
+        Returns a TaskManager object based on the provided DocItem.
+
+        Args:
+            now_node (DocItem): The current DocItem to generate the TaskManager for.
+            task_available_func (Callable, optional): A function that determines if a task is available. Defaults to None.
+
+        Returns:
+            TaskManager: The generated TaskManager object.
+
+        Raises:
+            None
+
+        """
         """先写一个退化的版本，只考虑拓扑引用关系"""
         doc_items = now_node.get_travel_list()
         if self.white_list != None:
