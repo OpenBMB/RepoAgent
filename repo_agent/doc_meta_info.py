@@ -10,9 +10,12 @@ import time
 from prettytable import PrettyTable
 import os
 import json
-from loguru import logger
+from repo_agent.log import logger
 import jedi
 from tqdm import tqdm
+from repo_agent.config import CONFIG
+from repo_agent.file_handler import FileHandler
+from repo_agent.multi_task_dispatch import TaskManager
 
 from config import CONFIG
 from file_handler import FileHandler
@@ -20,20 +23,21 @@ from multi_task_dispatch import TaskManager, Task
 
 @unique
 class EdgeType(Enum):
-    reference_edge = auto() #一个obj引用另一个obj
-    subfile_edge = auto() # 一个 文件/文件夹 属于一个文件夹
-    file_item_edge = auto() #一个 obj 属于一个文件
+    reference_edge = auto()  # 一个obj引用另一个obj
+    subfile_edge = auto()  # 一个 文件/文件夹 属于一个文件夹
+    file_item_edge = auto()  # 一个 obj 属于一个文件
 
 
 @unique
 class DocItemType(Enum):
-    _repo = auto() #根节点，需要生成readme
+    # 对可能的对象文档类型进行定义（分不同细粒度）
+    _repo = auto()  # 根节点，需要生成readme
     _dir = auto()
     _file = auto()
     _class = auto()
     _class_function = auto()
-    _function = auto() #文件内的常规function
-    _sub_function = auto() #function内的定义的subfunction
+    _function = auto()  # 文件内的常规function
+    _sub_function = auto()  # function内的定义的subfunction
     _global_var = auto()
 
     def to_str(self):
@@ -60,20 +64,23 @@ class DocItemType(Enum):
             color = Fore.RED
         return color + self.name + Style.RESET_ALL
 
-    def get_edge_type(from_item_type: DocItemType, to_item_type: DocItemType) -> EdgeType:
+    def get_edge_type(
+        from_item_type: DocItemType, to_item_type: DocItemType
+    ) -> EdgeType:
         pass
+
 
 @unique
 class DocItemStatus(Enum):
-    doc_up_to_date = auto() #无需生成文档
-    doc_has_not_been_generated = auto() #文档还未生成，需要生成
-    code_changed = auto() #源码被修改了，需要改文档
-    add_new_referencer = auto() #添加了新的引用者
-    referencer_not_exist = auto() #曾经引用他的obj被删除了，或者不再引用他了
+    doc_up_to_date = auto()  # 无需生成文档
+    doc_has_not_been_generated = auto()  # 文档还未生成，需要生成
+    code_changed = auto()  # 源码被修改了，需要改文档
+    add_new_referencer = auto()  # 添加了新的引用者
+    referencer_not_exist = auto()  # 曾经引用他的obj被删除了，或者不再引用他了
 
 
 @dataclass
-class DocItem():
+class DocItem:
     item_type: DocItemType = DocItemType._class_function
     item_status: DocItemStatus = DocItemStatus.doc_has_not_been_generated
 
@@ -83,11 +90,11 @@ class DocItem():
     md_content: List[str] = field(default_factory=list) #存储不同版本的doc
     content: Dict[Any,Any] = field(default_factory=dict) #原本存储的信息
 
-    children: Dict[str, DocItem] = field(default_factory=dict) #子对象
+    children: Dict[str, DocItem] = field(default_factory=dict)  # 子对象
     father: Any[DocItem] = None
 
     depth: int = 0
-    tree_path: List[DocItem] = field(default_factory=list) #一整条链路，从root开始
+    tree_path: List[DocItem] = field(default_factory=list)  # 一整条链路，从root开始
     max_reference_ansce: Any[DocItem] = None
 
     reference_who: List[DocItem] = field(default_factory=list) #他引用了谁
@@ -98,7 +105,7 @@ class DocItem():
     who_reference_me_name_list: List[str] = field(default_factory=list) #谁引用了他，这个可能是老版本的
 
 
-    multithread_task_id: int = -1 #在多线程中的task_id
+    multithread_task_id: int = -1  # 在多线程中的task_id
 
     def __eq__(self, other) -> bool:
         # 检查other是否是MyCustomClass的实例
@@ -110,16 +117,24 @@ class DocItem():
             return False
         return self.get_full_name() == other.get_full_name()
 
-
     @staticmethod
     def has_ans_relation(now_a: DocItem, now_b: DocItem):
-        """node之间是否是祖先关系，有的话返回更早的节点"""
+        """Check if there is an ancestor relationship between two nodes and return the earlier node if exists.
+
+        Args:
+            now_a (DocItem): The first node.
+            now_b (DocItem): The second node.
+
+        Returns:
+            DocItem or None: The earlier node if an ancestor relationship exists, otherwise None.
+        """
         if now_b in now_a.tree_path:
             return now_b
         if now_a in now_b.tree_path:
             return now_a
         return None
-    
+
+
     def get_travel_list(self):
         '''按照先序遍历的顺序，根节点在第一个'''
         now_list = [self]
@@ -128,7 +143,12 @@ class DocItem():
         return now_list
     
     def check_depth(self):
-        """根节点depth最大"""
+        """
+        Recursively calculates the depth of the node in the tree.
+
+        Returns:
+            int: The depth of the node.
+        """
         if len(self.children) == 0:
             self.depth = 0
             return self.depth
@@ -139,10 +159,18 @@ class DocItem():
         self.depth = max_child_depth + 1
         return self.depth
 
-
-    
     @staticmethod
     def find_min_ances(node_a: DocItem, node_b: DocItem):
+        """
+        Find the minimum ancestor between two DocItems.
+
+        Args:
+            node_a (DocItem): The first DocItem.
+            node_b (DocItem): The second DocItem.
+
+        Returns:
+            The minimum ancestor between node_a and node_b.
+        """
         pos = 0
         assert node_a.tree_path[pos] == node_b.tree_path[pos]
         while True:
@@ -151,6 +179,15 @@ class DocItem():
                 return node_a.tree_path[pos - 1]
 
     def parse_tree_path(self, now_path):
+        """
+        Recursively parses the tree path by appending the current node to the given path.
+
+        Args:
+            now_path (list): The current path in the tree.
+
+        Returns:
+            None
+        """
         self.tree_path = now_path + [self]
         for key, child in self.children.items():
             child.parse_tree_path(self.tree_path)
@@ -158,22 +195,33 @@ class DocItem():
     def get_file_name(self):
         full_name = self.get_full_name()
         return full_name.split(".py")[0] + ".py"
-    def get_full_name(self): 
-        """获取从下到上所有的obj名字"""
-        if self.father == None:
-            return self.obj_name
-        name_list = []
-        now = self
-        while now != None:
-            name_list = [now.obj_name] + name_list
-            now = now.father
-        
-        name_list = name_list[1:]
-        return "/".join(name_list)
-    
-    
+
+    def get_full_name(self):
+            """获取从下到上所有的obj名字
+
+            Returns:
+                str: 从下到上所有的obj名字，以斜杠分隔
+            """
+            if self.father == None:
+                return self.obj_name
+            name_list = []
+            now = self
+            while now != None:
+                name_list = [now.obj_name] + name_list
+                now = now.father
+
+            name_list = name_list[1:]
+            return "/".join(name_list)
+
     def find(self, recursive_file_path: list) -> Optional[DocItem]:
-        """从repo根节点根据path_list找到对应的文件, 否则返回False
+        """
+        从repo根节点根据path_list找到对应的文件, 否则返回False
+
+        Args:
+            recursive_file_path (list): The list of file paths to search for.
+
+        Returns:
+            Optional[DocItem]: The corresponding file if found, otherwise None.
         """
         assert self.item_type == DocItemType._repo
         pos = 0
@@ -185,47 +233,64 @@ class DocItem():
             pos += 1
         return now
 
-    def print_recursive(self, indent=0, print_content = False):
-        """递归打印repo对象
-        """
+    def print_recursive(self, indent=0, print_content=False):
+        """递归打印repo对象"""
+
         def print_indent(indent=0):
             if indent == 0:
                 return ""
-            return "  "*indent+"|-"
-        print(print_indent(indent) + f"{self.item_type.print_self()}: {self.obj_name}",end="")
-        if len(self.children) > 0 :
+            return "  " * indent + "|-"
+
+        print(
+            print_indent(indent) + f"{self.item_type.print_self()}: {self.obj_name}",
+            end="",
+        )
+        if len(self.children) > 0:
             print(f", {len(self.children)} children")
         else:
             print()
         for child_name, child in self.children.items():
-            child.print_recursive(indent=indent+1, print_content=print_content)
+            child.print_recursive(indent=indent + 1, print_content=print_content)
 
 
-
-def find_all_referencer(repo_path, variable_name, file_path, line_number, column_number, in_file_only=False):
+def find_all_referencer(
+    repo_path, variable_name, file_path, line_number, column_number, in_file_only=False
+):
     """复制过来的之前的实现"""
     script = jedi.Script(path=os.path.join(repo_path, file_path))
 
     try:
         if in_file_only:
-            references = script.get_references(line=line_number, column=column_number, scope="file")
+            references = script.get_references(
+                line=line_number, column=column_number, scope="file"
+            )
         else:
             references = script.get_references(line=line_number, column=column_number)
         # 过滤出变量名为 variable_name 的引用，并返回它们的位置
         variable_references = [ref for ref in references if ref.name == variable_name]
-        return [(os.path.relpath(ref.module_path, repo_path), ref.line, ref.column) for ref in variable_references if not (ref.line == line_number and ref.column == column_number)]
+        return [
+            (os.path.relpath(ref.module_path, repo_path), ref.line, ref.column)
+            for ref in variable_references
+            if not (ref.line == line_number and ref.column == column_number)
+        ]
     except Exception as e:
         # 打印错误信息和相关参数
-        print(f"Error occurred: {e}")
-        print(f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}")
+        logger.info(f"Error occurred: {e}")
+        logger.info(
+            f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}"
+        )
         return []
 
 
 @dataclass
-class MetaInfo():
+class MetaInfo:
     repo_path: str = ""
-    document_version: str = "" #随时间变化，""代表没完成，否则对应一个目标仓库的commit hash
-    target_repo_hierarchical_tree: DocItem = field(default_factory="Docitem") #整个repo的文件结构
+    document_version: str = (
+        ""  # 随时间变化，""代表没完成，否则对应一个目标仓库的commit hash
+    )
+    target_repo_hierarchical_tree: DocItem = field(
+        default_factory="Docitem"
+    )  # 整个repo的文件结构
     white_list: Any[List] = None
 
     in_generation_process: bool = False
@@ -235,42 +300,58 @@ class MetaInfo():
     @staticmethod
     def init_from_project_path(project_abs_path: str) -> MetaInfo:
         """从一个仓库path中初始化metainfo"""
-        project_abs_path = CONFIG['repo_path']
+        project_abs_path = CONFIG["repo_path"]
         logger.info(f"initializing a new meta-info from {project_abs_path}")
         file_handler = FileHandler(project_abs_path, None)
         repo_structure = file_handler.generate_overall_structure()
         metainfo = MetaInfo.from_project_hierarchy_json(repo_structure)
         metainfo.repo_path = project_abs_path
         return metainfo
-    
+
     @staticmethod
     def from_checkpoint_path(checkpoint_dir_path: str) -> MetaInfo:
-        """从已有的metainfo dir里面读取metainfo
-        """
-        project_hierarchy_json_path = os.path.join(checkpoint_dir_path, ".project_hierarchy.json")
-        
-        with open(project_hierarchy_json_path,'r', encoding="utf-8") as reader:
+        """从已有的metainfo dir里面读取metainfo"""
+        project_hierarchy_json_path = os.path.join(
+            checkpoint_dir_path, "project_hierarchy.json"
+        )
+
+        with open(project_hierarchy_json_path, "r", encoding="utf-8") as reader:
             project_hierarchy_json = json.load(reader)
-        metainfo = MetaInfo.from_project_hierarchy_json(project_hierarchy_json)        
-        
-        with open(os.path.join(checkpoint_dir_path, "meta-info.json"),'r', encoding="utf-8") as reader:
+        metainfo = MetaInfo.from_project_hierarchy_json(project_hierarchy_json)
+
+        with open(
+            os.path.join(checkpoint_dir_path, "meta-info.json"), "r", encoding="utf-8"
+        ) as reader:
             meta_data = json.load(reader)
             metainfo.repo_path = meta_data["repo_path"]
             metainfo.document_version = meta_data["doc_version"]
             metainfo.in_generation_process = meta_data["in_generation_process"]
 
-        logger.info(f"loading meta-info from {checkpoint_dir_path}, document-version=\"{metainfo.document_version}\"")
-        return metainfo   
+        logger.info(
+            f'loading meta-info from {checkpoint_dir_path}, document-version="{metainfo.document_version}"'
+        )
+        return metainfo
 
     def checkpoint(self, target_dir_path: str, flash_reference_relation=False):
+        """
+        Save the MetaInfo object to the specified directory.
+
+        Args:
+            target_dir_path (str): The path to the target directory where the MetaInfo will be saved.
+            flash_reference_relation (bool, optional): Whether to include flash reference relation in the saved MetaInfo. Defaults to False.
+        """
         with self.checkpoint_lock:
             logger.info(f"will save MetaInfo at {target_dir_path}")
             if not os.path.exists(target_dir_path):
                 os.makedirs(target_dir_path)
-            now_hierarchy_json = self.to_hierarchy_json(flash_reference_relation=flash_reference_relation)
-            with open(os.path.join(target_dir_path, ".project_hierarchy.json"), "w") as writer:
+            now_hierarchy_json = self.to_hierarchy_json(
+                flash_reference_relation=flash_reference_relation
+            )
+            with open(
+                os.path.join(target_dir_path, "project_hierarchy.json"), "w"
+            ) as writer:
                 json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
-            
+
             with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
                 meta = {
                     "repo_path": self.repo_path,
@@ -294,11 +375,13 @@ class MetaInfo():
     def get_all_files(self) -> List[DocItem]:
         """获取所有的file节点"""
         files = []
+
         def walk_tree(now_node):
             if now_node.item_type == DocItemType._file:
                 files.append(now_node)
             for _, child in now_node.children.items():
                 walk_tree(child)
+
         walk_tree(self.target_repo_hierarchical_tree)
         return files
 
@@ -312,22 +395,25 @@ class MetaInfo():
             find_qualify_child = False
             for _, child in now_node.children.items():
                 assert child.content != None
-                if child.content["code_start_line"] <= start_line_num and child.content["code_end_line"] >= start_line_num:
+                if (
+                    child.content["code_start_line"] <= start_line_num
+                    and child.content["code_end_line"] >= start_line_num
+                ):
                     now_node = child
                     find_qualify_child = True
                     break
-            if not find_qualify_child: 
+            if not find_qualify_child:
                 return now_node
         return now_node
 
-            
-
     def parse_reference(self):
-        """双向提取所有引用关系
-        """
+        """双向提取所有引用关系"""
         file_nodes = self.get_all_files()
 
-        white_list_file_names, white_list_obj_names = [], [] #如果指定白名单，只处理白名单上的双向引用关系
+        white_list_file_names, white_list_obj_names = (
+            [],
+            [],
+        )  # 如果指定白名单，只处理白名单上的双向引用关系
         if self.white_list != None:
             white_list_file_names = [cont["file_path"] for cont in self.white_list]
             white_list_obj_names = [cont["id_text"] for cont in self.white_list]
@@ -335,15 +421,19 @@ class MetaInfo():
         for file_node in tqdm(file_nodes, desc="parsing bidirectional reference"):
             ref_count = 0
             rel_file_path = file_node.get_full_name()
-            if white_list_file_names != [] and (file_node.get_file_name() not in white_list_file_names): #如果有白名单，只parse白名单里的对象
+            if white_list_file_names != [] and (
+                file_node.get_file_name() not in white_list_file_names
+            ):  # 如果有白名单，只parse白名单里的对象
                 continue
 
             def walk_file(now_obj: DocItem):
                 """在文件内遍历所有变量"""
                 nonlocal ref_count, white_list_file_names
                 in_file_only = False
-                if white_list_obj_names != [] and (now_obj.obj_name not in white_list_obj_names):
-                    in_file_only = True #作为加速，如果有白名单，白名单obj同文件夹下的也parse，但是只找同文件内的引用
+                if white_list_obj_names != [] and (
+                    now_obj.obj_name not in white_list_obj_names
+                ):
+                    in_file_only = True  # 作为加速，如果有白名单，白名单obj同文件夹下的也parse，但是只找同文件内的引用
 
                 reference_list = find_all_referencer(
                     repo_path=self.repo_path,
@@ -353,13 +443,15 @@ class MetaInfo():
                     column_number=now_obj.content["name_column"],
                     in_file_only=in_file_only,
                 )
-                for referencer_pos in reference_list: #对于每个引用
+                for referencer_pos in reference_list:  # 对于每个引用
                     referencer_file_ral_path = referencer_pos[0]
                     # print(f"find {now_obj.get_full_name()} -> {referencer_file_ral_path}")
                     referencer_file_item = self.target_repo_hierarchical_tree.find(referencer_file_ral_path.split("/"))
                     if referencer_file_item == None:
                         # import pdb; pdb.set_trace()
-                        logger.info(f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo")
+                        logger.info(
+                            f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo"
+                        )
                         continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
 
@@ -383,7 +475,7 @@ class MetaInfo():
                 for _, child in now_obj.children.items():
                     walk_file(child)
 
-            for _,child in file_node.children.items():
+            for _, child in file_node.children.items():
                 walk_file(child)
             # logger.info(f"find {ref_count} refer-relation in {file_node.get_full_name()}")
     
@@ -393,11 +485,16 @@ class MetaInfo():
         """
         doc_items = now_node.get_travel_list()
         if self.white_list != None:
+
             def in_white_list(item: DocItem):
                 for cont in self.white_list:
-                    if item.get_file_name() == cont["file_path"] and item.obj_name == cont["id_text"]:
+                    if (
+                        item.get_file_name() == cont["file_path"]
+                        and item.obj_name == cont["id_text"]
+                    ):
                         return True
                 return False
+
             doc_items = list(filter(in_white_list, doc_items))
         doc_items = list(filter(task_available_func, doc_items))
         doc_items = sorted(doc_items, key=lambda x: x.depth) #叶子节点在前面
@@ -443,9 +540,11 @@ class MetaInfo():
             for referenced_item in target_item.reference_who:
                 if referenced_item.multithread_task_id in task_manager.task_dict.keys():
                     item_denp_task_ids.append(referenced_item.multithread_task_id)
-            item_denp_task_ids = list(set(item_denp_task_ids)) #去重
+            item_denp_task_ids = list(set(item_denp_task_ids))  # 去重
             if task_available_func == None or task_available_func(target_item):
-                task_id = task_manager.add_task(dependency_task_id=item_denp_task_ids,extra=target_item)
+                task_id = task_manager.add_task(
+                    dependency_task_id=item_denp_task_ids, extra=target_item
+                )
                 target_item.multithread_task_id = task_id
             deal_items.append(target_item)
             doc_items.remove(target_item)
@@ -457,26 +556,30 @@ class MetaInfo():
         """计算repo中所有对象的拓扑顺序
         """
         self.parse_reference()
-        task_manager = self.get_task_manager(self.target_repo_hierarchical_tree,task_available_func=task_available_func)
+        task_manager = self.get_task_manager(
+            self.target_repo_hierarchical_tree, task_available_func=task_available_func
+        )
         return task_manager
-    
+
     def _map(self, deal_func: Callable):
         """将所有节点进行同一个操作"""
+
         def travel(now_item: DocItem):
             deal_func(now_item)
             for _, child in now_item.children.items():
                 travel(child)
+
         travel(self.target_repo_hierarchical_tree)
 
     def load_doc_from_older_meta(self, older_meta: MetaInfo):
-        """older_meta是老版本的、已经生成doc的meta info
-        """
+        """older_meta是老版本的、已经生成doc的meta info"""
         logger.info("merge doc from an older version of metainfo")
         root_item = self.target_repo_hierarchical_tree
+
         def find_item(now_item: DocItem) -> Optional[DocItem]:
             """新版的meta中能不能找到原来的某个东西"""
             nonlocal root_item
-            if now_item.father == None: #根节点永远能找到
+            if now_item.father == None:  # 根节点永远能找到
                 return root_item
             father_find_result = find_item(now_item.father)
             if not father_find_result:
@@ -485,10 +588,9 @@ class MetaInfo():
                 return father_find_result.children[now_item.obj_name]
             return None
 
-
-        def travel(now_older_item: DocItem): #只寻找源码是否被修改的信息
+        def travel(now_older_item: DocItem):  # 只寻找源码是否被修改的信息
             result_item = find_item(now_older_item)
-            if not result_item: #新版文件中找不到原来的item，就回退
+            if not result_item:  # 新版文件中找不到原来的item，就回退
                 # print(f"return: {now_older_item.get_full_name()}")
                 return
             result_item.md_content = now_older_item.md_content
@@ -497,48 +599,57 @@ class MetaInfo():
             #     import pdb; pdb.set_trace()
             if "code_content" in now_older_item.content.keys():
                 assert "code_content" in result_item.content.keys()
-                if now_older_item.content["code_content"] != result_item.content["code_content"]: #源码被修改了
+                if (
+                    now_older_item.content["code_content"]
+                    != result_item.content["code_content"]
+                ):  # 源码被修改了
                     result_item.item_status = DocItemStatus.code_changed
 
             for _, child in now_older_item.children.items():
                 travel(child)
+
         travel(older_meta.target_repo_hierarchical_tree)
 
         """接下来，parse现在的双向引用，观察谁的引用者改了"""
-        self.parse_reference() 
+        self.parse_reference()
 
         def travel2(now_older_item: DocItem):
             result_item = find_item(now_older_item)
-            if not result_item: #新版文件中找不到原来的item，就回退
+            if not result_item:  # 新版文件中找不到原来的item，就回退
                 return
             """result_item引用的人是否变化了"""
-            new_reference_names = [name.get_full_name() for name in result_item.who_reference_me]
+            new_reference_names = [
+                name.get_full_name() for name in result_item.who_reference_me
+            ]
             old_reference_names = now_older_item.who_reference_me_name_list
 
-            if not (set(new_reference_names) == set(old_reference_names)) and (result_item.item_status == DocItemStatus.doc_up_to_date):
-                if set(new_reference_names) <= set(old_reference_names): #旧的referencer包含新的referencer
+            if not (set(new_reference_names) == set(old_reference_names)) and (
+                result_item.item_status == DocItemStatus.doc_up_to_date
+            ):
+                if set(new_reference_names) <= set(
+                    old_reference_names
+                ):  # 旧的referencer包含新的referencer
                     result_item.item_status = DocItemStatus.referencer_not_exist
                 else:
                     result_item.item_status = DocItemStatus.add_new_referencer
             for _, child in now_older_item.children.items():
                 travel2(child)
-        travel2(older_meta.target_repo_hierarchical_tree)
 
+        travel2(older_meta.target_repo_hierarchical_tree)
 
     @staticmethod
     def from_project_hierarchy_path(repo_path: str) -> MetaInfo:
-        """project_hierarchy_json全是压平的文件，递归的文件目录都在最终的key里面, 把他转换到我们的数据结构
-        """
-        project_hierarchy_json_path = os.path.join(repo_path, ".project_hierarchy.json")
+        """project_hierarchy_json全是压平的文件，递归的文件目录都在最终的key里面, 把他转换到我们的数据结构"""
+        project_hierarchy_json_path = os.path.join(repo_path, "project_hierarchy.json")
         logger.info(f"parsing from {project_hierarchy_json_path}")
         if not os.path.exists(project_hierarchy_json_path):
             raise NotImplementedError("怪")
-        
-        with open(project_hierarchy_json_path,'r', encoding="utf-8") as reader:
+
+        with open(project_hierarchy_json_path, "r", encoding="utf-8") as reader:
             project_hierarchy_json = json.load(reader)
         return MetaInfo.from_project_hierarchy_json(project_hierarchy_json)
-    
-    def to_hierarchy_json(self, flash_reference_relation = False):
+
+    def to_hierarchy_json(self, flash_reference_relation=False):
         """
         如果flash_reference_relation=True,则会将最新的双向引用关系写回到meta文件中
         """
@@ -564,7 +675,7 @@ class MetaInfo():
                 for _, child in now_obj.children.items():
                     walk_file(child)
 
-            for _,child in file_item.children.items():
+            for _, child in file_item.children.items():
                 walk_file(child)
             hierachy_json[file_item.get_full_name()] = file_hierarchy_content
         return hierachy_json
@@ -573,8 +684,7 @@ class MetaInfo():
     def from_project_hierarchy_json(project_hierarchy_json) -> MetaInfo:
         target_meta_info = MetaInfo(
             # repo_path=repo_path,
-            target_repo_hierarchical_tree=DocItem( #根节点
-                
+            target_repo_hierarchical_tree=DocItem(  # 根节点
                 item_type=DocItemType._repo,
                 obj_name="full_repo",
             )
@@ -582,10 +692,10 @@ class MetaInfo():
 
         for file_name, file_content in tqdm(project_hierarchy_json.items(),desc="parsing parent relationship"): 
             # 首先parse file archi
-            if not os.path.exists(os.path.join(CONFIG['repo_path'],file_name)):
+            if not os.path.exists(os.path.join(CONFIG["repo_path"], file_name)):
                 logger.info(f"deleted content: {file_name}")
                 continue
-            elif os.path.getsize(os.path.join(CONFIG['repo_path'],file_name)) == 0:
+            elif os.path.getsize(os.path.join(CONFIG["repo_path"], file_name)) == 0:
                 logger.info(f"blank content: {file_name}")
                 continue
 
@@ -599,7 +709,9 @@ class MetaInfo():
                         md_content="",
                         obj_name=recursive_file_path[pos],
                     )
-                    now_structure.children[recursive_file_path[pos]].father = now_structure
+                    now_structure.children[
+                        recursive_file_path[pos]
+                    ].father = now_structure
                 now_structure = now_structure.children[recursive_file_path[pos]]
                 pos += 1
             if recursive_file_path[-1] not in now_structure.children.keys():
@@ -607,8 +719,8 @@ class MetaInfo():
                     item_type=DocItemType._file,
                     obj_name=recursive_file_path[-1],
                 )
-                now_structure.children[recursive_file_path[pos]].father = now_structure 
-        
+                now_structure.children[recursive_file_path[pos]].father = now_structure
+
             # 然后parse file内容
             assert type(file_content) == list
             file_item = target_meta_info.target_repo_hierarchical_tree.find(recursive_file_path)
@@ -680,6 +792,7 @@ class MetaInfo():
         target_meta_info.target_repo_hierarchical_tree.parse_tree_path(now_path=[])
         target_meta_info.target_repo_hierarchical_tree.check_depth()
         return target_meta_info
+
 
 if __name__ == "__main__":
     repo_path = "/Users/yeyn/data/git_repos/AutoPDB/"

@@ -1,22 +1,24 @@
 # FileHandler 类，实现对文件的读写操作，这里的文件包括markdown文件和python文件
 # repo_agent/file_handler.py
 import git
-import os,json
+import os, json
 import ast
 from tqdm import tqdm
 import threading
 from typing import Dict
-from config import CONFIG
-from loguru import logger
-from utils.gitignore_checker import GitignoreChecker
+from repo_agent.config import CONFIG
+from repo_agent.log import logger
+from repo_agent.utils.gitignore_checker import GitignoreChecker
 
 
 # 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
     def __init__(self, repo_path, file_path):
-        self.file_path = file_path # 这里的file_path是相对于仓库根目录的路径
+        self.file_path = file_path  # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierarchy = os.path.join(repo_path, CONFIG['project_hierarchy'], ".project_hierarchy.json")
+        self.project_hierarchy = os.path.join(
+            repo_path, CONFIG["project_hierarchy"], "project_hierarchy.json"
+        )
 
     def read_file(self):
         """
@@ -27,7 +29,7 @@ class FileHandler:
         """
         abs_file_path = os.path.join(self.repo_path, self.file_path)
 
-        with open(abs_file_path, 'r', encoding='utf-8') as file:
+        with open(abs_file_path, "r", encoding="utf-8") as file:
             content = file.read()
         return content
 
@@ -55,23 +57,29 @@ class FileHandler:
         code_info['code_end_line'] = end_line
         code_info['params'] = params
 
-        with open(os.path.join(self.repo_path, file_path if file_path != None else self.file_path), 'r', encoding='utf-8') as code_file:
+        with open(
+            os.path.join(
+                self.repo_path, file_path if file_path != None else self.file_path
+            ),
+            "r",
+            encoding="utf-8",
+        ) as code_file:
             lines = code_file.readlines()
-            code_content = ''.join(lines[start_line-1:end_line])
+            code_content = "".join(lines[start_line - 1 : end_line])
             # 获取对象名称在第一行代码中的位置
-            name_column = lines[start_line-1].find(code_name)
+            name_column = lines[start_line - 1].find(code_name)
             # 判断代码中是否有return字样
-            if 'return' in code_content:
+            if "return" in code_content:
                 have_return = True
-            else:  
+            else:
                 have_return = False
-            
-            code_info['have_return'] = have_return
+
+            code_info["have_return"] = have_return
             # # 使用 json.dumps 来转义字符串，并去掉首尾的引号
             # code_info['code_content'] = json.dumps(code_content)[1:-1]
-            code_info['code_content'] = code_content
-            code_info['name_column'] = name_column
-                
+            code_info["code_content"] = code_content
+            code_info["name_column"] = name_column
+
         return code_info
 
     def write_file(self, file_path, content):
@@ -83,15 +91,14 @@ class FileHandler:
             content (str): The content to be written to the file.
         """
         # 确保file_path是相对路径
-        if file_path.startswith('/'):
+        if file_path.startswith("/"):
             # 移除开头的 '/'
             file_path = file_path[1:]
-            
+
         abs_file_path = os.path.join(self.repo_path, file_path)
         os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
-        with open(abs_file_path, 'w', encoding='utf-8') as file:
+        with open(abs_file_path, "w", encoding="utf-8") as file:
             file.write(content)
-
 
     def get_modified_file_versions(self):
         """
@@ -104,7 +111,7 @@ class FileHandler:
 
         # Read the file in the current working directory (current version)
         current_version_path = os.path.join(self.repo_path, self.file_path)
-        with open(current_version_path, 'r', encoding='utf-8') as file:
+        with open(current_version_path, "r", encoding="utf-8") as file:
             current_version = file.read()
 
         # Get the file version from the last commit (previous version)
@@ -113,13 +120,15 @@ class FileHandler:
         if commits:
             commit = commits[0]
             try:
-                previous_version = (commit.tree / self.file_path).data_stream.read().decode('utf-8')
+                previous_version = (
+                    (commit.tree / self.file_path).data_stream.read().decode("utf-8")
+                )
             except KeyError:
                 previous_version = None  # The file may be newly added and not present in previous commits
 
         return current_version, previous_version
-        
-    def get_end_lineno(self,node):
+
+    def get_end_lineno(self, node):
         """
         Get the end line number of a given node.
 
@@ -129,12 +138,12 @@ class FileHandler:
         Returns:
             int: The end line number of the node. Returns -1 if the node does not have a line number.
         """
-        if not hasattr(node, 'lineno'):
+        if not hasattr(node, "lineno"):
             return -1  # 返回-1表示此节点没有行号
 
         end_lineno = node.lineno
         for child in ast.iter_child_nodes(node):
-            child_end = getattr(child, 'end_lineno', None) or self.get_end_lineno(child)
+            child_end = getattr(child, "end_lineno", None) or self.get_end_lineno(child)
             if child_end > -1:  # 只更新当子节点有有效行号时
                 end_lineno = max(end_lineno, child_end)
         return end_lineno
@@ -191,7 +200,7 @@ class FileHandler:
                     (type(node).__name__, node.name, start_line, end_line, parameters)
                 )
         return functions_and_classes
-        
+
     def generate_file_structure(self, file_path):
         """
         Generates the file structure for the given file path.
@@ -201,7 +210,7 @@ class FileHandler:
 
         Returns:
             dict: A dictionary containing the file path and the generated file structure.
-        
+
         Output example:
         {
             "function_name": {
@@ -220,7 +229,7 @@ class FileHandler:
             }
         }
         """
-        with open(os.path.join(self.repo_path,file_path), 'r', encoding='utf-8') as f:
+        with open(os.path.join(self.repo_path, file_path), "r", encoding="utf-8") as f:
             content = f.read()
             structures = self.get_functions_and_classes(content)
             file_objects = [] #以列表的形式存储
@@ -230,7 +239,6 @@ class FileHandler:
                 file_objects.append(code_info)
 
         return file_objects
-    
 
     def generate_overall_structure(self) -> dict:
         """
@@ -240,18 +248,23 @@ class FileHandler:
             dict: A dictionary representing the structure of the repository.
         """
         repo_structure = {}
-        gitignore_checker = GitignoreChecker(directory=self.repo_path,
-                                            gitignore_path=os.path.join(self.repo_path, '.gitignore'))
+        gitignore_checker = GitignoreChecker(
+            directory=self.repo_path,
+            gitignore_path=os.path.join(self.repo_path, ".gitignore"),
+        )
         bar = tqdm(gitignore_checker.check_files_and_folders())
         for not_ignored_files in bar:
             try:
-                repo_structure[not_ignored_files] = self.generate_file_structure(not_ignored_files)
+                repo_structure[not_ignored_files] = self.generate_file_structure(
+                    not_ignored_files
+                )
             except Exception as e:
-                print(f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}")
+                print(
+                    f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}"
+                )
                 continue
             bar.set_description(f"generating repo structure: {not_ignored_files}")
         return repo_structure
-    
 
     def convert_to_markdown_file(self, file_path=None):
         """
@@ -262,11 +275,11 @@ class FileHandler:
 
         Returns:
             str: The content of the file in markdown format.
-        
+
         Raises:
             ValueError: If no file object is found for the specified file path in project_hierarchy.json.
         """
-        with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
+        with open(self.project_hierarchy, "r", encoding="utf-8") as f:
             json_data = json.load(f)
 
         if file_path is None:
@@ -276,7 +289,9 @@ class FileHandler:
         file_dict = json_data.get(file_path)
 
         if file_dict is None:
-            raise ValueError(f"No file object found for {self.file_path} in project_hierarchy.json")
+            raise ValueError(
+                f"No file object found for {self.file_path} in project_hierarchy.json"
+            )
 
         markdown = ""
         parent_dict = {}
@@ -294,13 +309,15 @@ class FileHandler:
             if level == 1 and current_parent is not None:
                 markdown += "***\n"
             current_parent = obj["name"]
-            params_str = ''
-            if obj['type'] in ['FunctionDef', 'AsyncFunctionDef']:
-                params_str = '()'
-                if obj['params']:
+            params_str = ""
+            if obj["type"] in ["FunctionDef", "AsyncFunctionDef"]:
+                params_str = "()"
+                if obj["params"]:
                     params_str = f"({', '.join(obj['params'])})"
             markdown += f"{'#' * level} {obj['type']} {obj['name']}{params_str}:\n"
-            markdown += f"{obj['md_content'][-1] if len(obj['md_content']) >0 else ''}\n"
+            markdown += (
+                f"{obj['md_content'][-1] if len(obj['md_content']) >0 else ''}\n"
+            )
         markdown += "***\n"
 
         return markdown
@@ -331,21 +348,20 @@ class FileHandler:
     #     for rel_file_path, file_dict in json_data.items():
     #         md_path = os.path.join(markdown_docs_path, rel_file_path.replace('.py', '.md'))
     #         markdown = self.convert_to_markdown_file(rel_file_path)
-            
+
     #         # 检查目录是否存在，如果不存在，就创建它
     #         os.makedirs(os.path.dirname(md_path), exist_ok=True)
 
     #         # 将markdown文档写入到Markdown_docs文件夹中
     #         with open(md_path, 'w', encoding='utf-8') as f:
     #             f.write(markdown)
-    
+
 
 if __name__ == "__main__":
-
     # 打开py文件读取源代码
     # file_handler = FileHandler('/path/to/repo', '/path/to/file.py')
 
-    file_handler = FileHandler(CONFIG['repo_path'], 'XAgent/engines/pipeline_old.py')
+    file_handler = FileHandler(CONFIG["repo_path"], "XAgent/engines/pipeline_old.py")
     # file_handler.generate_markdown_from_json()
     file_handler.convert_all_to_markdown_files_from_json()
     # code_content = file_handler.read_file()
