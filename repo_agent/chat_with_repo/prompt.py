@@ -2,6 +2,7 @@ from llama_index.llms import OpenAI
 from repo_agent.log import logger
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
 
+# logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 
 class TextAnalysisTool:
     def __init__(self, llm, db_path):
@@ -24,10 +25,17 @@ class TextAnalysisTool:
         return prompt
 
     def queryblock(self, message):
-        search_result = self.jsonsearch.search_in_json_nested(self.db_path, message)
-        if isinstance(search_result, dict):
-            search_result = search_result["code_content"]
-        return str(search_result)
+        search_result = self.jsonsearch.search_code_contents_by_name(self.db_path, message)
+        return search_result
+    
+    def list_to_markdown(self, search_result):
+        markdown_str = ""
+        # 遍历列表，将每个元素转换为Markdown格式的项
+        for index, content in enumerate(search_result, start=1):
+            # 添加到Markdown字符串中，每个项后跟一个换行符
+            markdown_str += f"{index}. {content}\n\n"
+        
+        return markdown_str
 
     def nerquery(self, message):
         query1 = """
@@ -39,9 +47,8 @@ class TextAnalysisTool:
         """
         query = f"Extract the most relevant class or function from the following{query1}input:\n{message}\nOutput:"
         response = self.llm.complete(query)
-        logger.debug(f"Input: {message}, Output: {response}")
+        # logger.debug(f"Input: {message}, Output: {response}")
         return response
-
 
 if __name__ == "__main__":
     api_base = "https://api.openai.com/v1"
