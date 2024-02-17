@@ -338,7 +338,7 @@ class ChatEngine:
 
             except Exception as e:
                 print(
-                    f"An unknown error occurred: {e}. Attempt {attempt + 1} of {max_attempts}"
+                    f"An unknown error occurred: {e}. \nAttempt {attempt + 1} of {max_attempts}"
                 )
                 # Retry after 10 seconds
                 time.sleep(10)

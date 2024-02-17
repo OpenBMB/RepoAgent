@@ -211,7 +211,7 @@ class Runner:
                 def to_markdown(item: DocItem, now_level: int) -> str:
                     markdown_content = ""
                     markdown_content += (
-                        "#" * now_level + f" {item.item_type.name} {item.obj_name}"
+                        "#" * now_level + f" {item.item_type.name[1:] if item.item_type.name.startswith('_') else item.item_type.name} {item.obj_name}"
                     )
                     if (
                         "params" in item.content.keys()
@@ -299,7 +299,11 @@ class Runner:
         check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
 
         task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
-        self.meta_info.print_task_list(task_manager.task_dict)
+        
+        if task_manager.all_success:
+            logger.info("No tasks in the queue, all documents are completed and up to date.")
+        else:
+            self.meta_info.print_task_list(task_manager.task_dict)
 
         task_manager.sync_func = self.markdown_refresh
         threads = [

@@ -15,11 +15,7 @@ import jedi
 from tqdm import tqdm
 from repo_agent.config import CONFIG
 from repo_agent.file_handler import FileHandler
-from repo_agent.multi_task_dispatch import TaskManager
-
-from config import CONFIG
-from file_handler import FileHandler
-from multi_task_dispatch import TaskManager, Task
+from repo_agent.multi_task_dispatch import TaskManager, Task
 
 @unique
 class EdgeType(Enum):
