@@ -61,7 +61,7 @@ default_completion_kwargs:
   request_timeout: 60
 
 repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy.json # 全局结构信息json文件的路径
+project_hierarchy: .project_hierarchy # 全局结构信息文件夹的路径
 Markdown_Docs_folder: Markdown_Docs # 目标存储库根目录中用于存储文档的文件夹
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # 通过在ignore_list中给出相对路径来忽略一些您不想为其生成文档的py文件或文件夹
 
@@ -126,12 +126,12 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 
 - [x] 对象间父子关系层级结构识别及维护
 - [x] 实现 Black commit
-- [ ] **Bi-direct reference** 构建双向引用拓扑结构
-- [ ] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问
+- [x] **Bi-direct reference** 构建双向引用拓扑结构
+- [x] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问
 - [ ] 通过全局文档信息自动生成仓库README.md文件
-- [ ] **多语言支持** 支持更多语言，如Java、C或C++等
+- [ ] **多编程语言支持** 支持更多编程语言，如Java、C或C++等
 - [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
-- [ ] 自动生成Gitbook等更佳的可视化效果
+- [x] 自动生成Gitbook等更佳的可视化效果
 
 # 🇺🇳 支持语言
 在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。

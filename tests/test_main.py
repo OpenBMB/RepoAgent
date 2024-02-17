@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, mock_open, MagicMock
-from repo_agent.chat_with_repo.chat_main import main
+from repo_agent.chat_with_repo.main import main
 
 class TestYourScript(unittest.TestCase):
 

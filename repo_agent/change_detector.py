@@ -1,15 +1,16 @@
-"""
-这个类需要处理文件的差异和变更检测，它可能会用到 FileHandler 类来访问文件系统。
-ChangeDetector 类的核心在于能够识别自上次提交以来文件的变更。
-"""
 import git
 import re, os
-from file_handler import FileHandler
+from repo_agent.file_handler import FileHandler
 import subprocess
-from config import CONFIG
+from repo_agent.config import CONFIG
 
 
 class ChangeDetector:
+    """
+    这个类需要处理文件的差异和变更检测，它可能会用到 FileHandler 类来访问文件系统。
+    ChangeDetector 类的核心在于能够识别自上次提交以来文件的变更。
+    """
+
     def __init__(self, repo_path):
         """
         Initializes a ChangeDetector object.
@@ -32,11 +33,10 @@ class ChangeDetector:
 
         Returns:
             dict: A dictionary of changed Python files, where the keys are the file paths and the values are booleans indicating whether the file is newly created or not.
-        
+
         """
         repo = self.repo
         staged_files = {}
-
         # Detect Staged Changes
         # Please note! The logic of the GitPython library is different from git. Here, the R=True parameter is used to reverse the version comparison logic.
         # In the GitPython library, repo.index.diff('HEAD') compares the staging area (index) as the new state with the original HEAD commit (old state). This means that if there is a new file in the current staging area, it will be shown as non-existent in HEAD, i.e., "deleted".
@@ -49,7 +49,6 @@ class ChangeDetector:
                 staged_files[diff.a_path] = is_new_file
 
         return staged_files
-
 
     def get_file_diff(self, file_path, is_new_file):
         """
@@ -114,8 +113,7 @@ class ChangeDetector:
                 line_number_change += 1
 
         return changed_lines
-    
-    
+
     # TODO: The key issue is that the changed line numbers correspond to the old function names (i.e., those removed) and the new function names (i.e., those added), and the current implementation does not handle this correctly.
     # We need a way to associate the changed line numbers with their function or class names before and after the change. One method is to build a mapping before processing changed_lines, which can map the names after the change back to the names before the change based on the line number.
     # Then, in the identify_changes_in_structure function, this mapping can be used to correctly identify the changed structure.
@@ -147,7 +145,7 @@ class ChangeDetector:
                     if start_line <= line_number <= end_line:
                         changes_in_structures[change_type].add((name, parent_structure))
         return changes_in_structures
-    
+
     # TODO:可能有错，需要单元测试覆盖； 可能有更好的实现方式
     def get_to_be_staged_files(self):
         """
@@ -165,7 +163,7 @@ class ChangeDetector:
         staged_files = [item.a_path for item in self.repo.index.diff("HEAD")]
         print(f"staged_files:{staged_files}")
 
-        project_hierarchy = CONFIG['project_hierarchy']
+        project_hierarchy = CONFIG["project_hierarchy"]
         # diffs是所有未暂存更改文件的列表。这些更改文件是相对于工作区（working directory）的，也就是说，它们是自上次提交（commit）以来在工作区发生的更改，但还没有被添加到暂存区（staging area）
         # 比如原本存在的md文件现在由于代码的变更发生了更新，就会标记为未暂存diff
         diffs = self.repo.index.diff(None)
@@ -178,47 +176,66 @@ class ChangeDetector:
         # 处理untrack_files中的内容
         for untracked_file in untracked_files:
             # 连接repo_path和untracked_file以获取完整的绝对路径
-            abs_untracked_file = os.path.join(self.repo_path, '/'+untracked_file)
+            abs_untracked_file = os.path.join(self.repo_path, "/" + untracked_file)
             # 获取相对于仓库根目录的相对路径
             rel_untracked_file = os.path.relpath(abs_untracked_file, self.repo_path)
             print(f"rel_untracked_file:{rel_untracked_file}")
 
             # 判断这个文件的类型：
-            if rel_untracked_file.endswith('.md'):
+            if rel_untracked_file.endswith(".md"):
                 # 把rel_untracked_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
-                rel_untracked_file = os.path.relpath(rel_untracked_file, CONFIG['Markdown_Docs_folder'])
-                corresponding_py_file = os.path.splitext(rel_untracked_file)[0] + '.py'
-                print(f"corresponding_py_file in untracked_files:{corresponding_py_file}")
+                rel_untracked_file = os.path.relpath(
+                    rel_untracked_file, CONFIG["Markdown_Docs_folder"]
+                )
+                corresponding_py_file = os.path.splitext(rel_untracked_file)[0] + ".py"
+                print(
+                    f"corresponding_py_file in untracked_files:{corresponding_py_file}"
+                )
                 if corresponding_py_file in staged_files:
                     # 如果是，那么就把这个md文件也加入到unstaged_files中
-                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), CONFIG['Markdown_Docs_folder'], rel_untracked_file))
+                    to_be_staged_files.append(
+                        os.path.join(
+                            self.repo_path.lstrip("/"),
+                            CONFIG["Markdown_Docs_folder"],
+                            rel_untracked_file,
+                        )
+                    )
             elif rel_untracked_file == project_hierarchy:
-                to_be_staged_files.append(rel_untracked_file) 
+                to_be_staged_files.append(rel_untracked_file)
 
         # 处理已追踪但是未暂存的内容
         unstaged_files = [diff.b_path for diff in diffs]
-        print(f"unstaged_files:{unstaged_files}") # 虽然是从根目录开始的，但是最前头缺少一个 ' / ' ，所以还是会被解析为相对路径
+        print(
+            f"unstaged_files:{unstaged_files}"
+        )  # 虽然是从根目录开始的，但是最前头缺少一个 ' / ' ，所以还是会被解析为相对路径
         for unstaged_file in unstaged_files:
             # 连接repo_path和unstaged_file以获取完整的绝对路径
-            abs_unstaged_file = os.path.join(self.repo_path, '/'+unstaged_file)
+            abs_unstaged_file = os.path.join(self.repo_path, "/" + unstaged_file)
             # 获取相对于仓库根目录的相对路径
             rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
             print(f"rel_unstaged_file:{rel_unstaged_file}")
             # 如果它是md文件
-            if unstaged_file.endswith('.md'):
+            if unstaged_file.endswith(".md"):
                 # 把rel_unstaged_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
-                rel_unstaged_file = os.path.relpath(rel_unstaged_file, CONFIG['Markdown_Docs_folder'])
-                corresponding_py_file = os.path.splitext(rel_unstaged_file)[0] + '.py'
+                rel_unstaged_file = os.path.relpath(
+                    rel_unstaged_file, CONFIG["Markdown_Docs_folder"]
+                )
+                corresponding_py_file = os.path.splitext(rel_unstaged_file)[0] + ".py"
                 print(f"corresponding_py_file:{corresponding_py_file}")
                 if corresponding_py_file in staged_files:
                     # 如果是，那么就把这个md文件也加入到unstaged_files中
-                    to_be_staged_files.append(os.path.join(self.repo_path.lstrip('/'), CONFIG['Markdown_Docs_folder'], rel_unstaged_file))
+                    to_be_staged_files.append(
+                        os.path.join(
+                            self.repo_path.lstrip("/"),
+                            CONFIG["Markdown_Docs_folder"],
+                            rel_unstaged_file,
+                        )
+                    )
             elif unstaged_file == project_hierarchy:
-                to_be_staged_files.append(unstaged_file) 
+                to_be_staged_files.append(unstaged_file)
 
         return to_be_staged_files
 
-    
     def add_unstaged_files(self):
         """
         Add unstaged files which meet the condition to the staging area.
@@ -228,10 +245,9 @@ class ChangeDetector:
             add_command = f'git -C {self.repo.working_dir} add "{file_path}"'
             subprocess.run(add_command, shell=True, check=True)
         return unstaged_files_meeting_conditions
-    
-    
-if __name__ == "__main__":
 
+
+if __name__ == "__main__":
     repo_path = "/path/to/your/repo/"
     change_detector = ChangeDetector(repo_path)
     changed_files = change_detector.get_staged_pys()

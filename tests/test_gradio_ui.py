@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from ..repo_agent.chat_with_repo.gradio_ui import GradioInterface  # Replace 'your_module' with the actual module name
+from ..repo_agent.chat_with_repo.gradio_interface import GradioInterface  # Replace 'your_module' with the actual module name
 
 class TestGradioInterface(unittest.TestCase):
 

@@ -1,4 +1,6 @@
 import json
+import sys
+from repo_agent.log import logger
 
 class JsonFileProcessor:
     def __init__(self, file_path):

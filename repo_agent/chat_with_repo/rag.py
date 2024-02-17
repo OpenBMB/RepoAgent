@@ -1,9 +1,9 @@
-from json_handle import JsonFileProcessor
-from vectordbs import ChromaManager
-from prompt import TextAnalysisTool
-from loguru import logger
-from llama_index import PromptTemplate 
-from llama_index.llms import OpenAI 
+from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
+from repo_agent.chat_with_repo.vectordb import ChromaManager
+from repo_agent.chat_with_repo.prompt import TextAnalysisTool
+from repo_agent.log import logger
+from llama_index import PromptTemplate
+from llama_index.llms import OpenAI
 
 # logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 

@@ -1,6 +1,13 @@
 import yaml
+import sys
 
-CONFIG = yaml.load(open('config.yml', 'r'), Loader=yaml.FullLoader)
+try:
+    CONFIG = yaml.load(open("config.yml", "r"), Loader=yaml.FullLoader)
+except FileNotFoundError:
+    print(
+        "The file does not exist! Maybe you forgot to rename config.yml.template to config.yml and update the essential content"
+    )
+    sys.exit(1)  # Exits the program
 
 language_mapping = {
     "en": "English",
@@ -27,5 +34,5 @@ language_mapping = {
     "he": "Hebrew",
     "th": "Thai",
     "hi": "Hindi",
-    "bn": "Bengali"
+    "bn": "Bengali",
 }
