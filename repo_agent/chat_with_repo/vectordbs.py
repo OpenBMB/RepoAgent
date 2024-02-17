@@ -17,7 +17,7 @@ class ChromaManager:
 
         # 获取所有集合的列表
         existing_collections = chroma_client.list_collections()
-        logger.debug(f"Questions: {existing_collections}")
+        # logger.debug(f"Questions: {existing_collections}")
 
         # 检查 "test" 集合是否存在
         if "test" in existing_collections:

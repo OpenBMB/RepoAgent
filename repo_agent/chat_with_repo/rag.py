@@ -15,7 +15,7 @@ class RepoAssistant:
         self.db_path = db_path
         self.md_contents = []
         self.llm = OpenAI(api_key=api_key, api_base=api_base,model="gpt-3.5-turbo-1106")
-        self.client = OpenAI(api_key=api_key, api_base=api_base,model="gpt-4-32k")
+        self.client = OpenAI(api_key=api_key, api_base=api_base,model="gpt-4-1106-preview")
         self.textanslys = TextAnalysisTool(self.llm,db_path)
         self.json_data = JsonFileProcessor(db_path)
         self.chroma_data = ChromaManager(api_key, api_base)
@@ -78,23 +78,12 @@ class RepoAssistant:
             response = self.client.complete(message_sys)
             content = response
             return content
-
-    def extract_and_format_documents(self, results):
-        formatted_documents = ""
-        for index, item in enumerate(results, start=1):
-            # 从每个字典中提取 'documents' 键的值
-            documents = item.get('documents', [[]])
-            
-            # 由于 'documents' 是一个列表的列表，我们需要提取第一个列表的元素
-            for doc in documents[0]:
-                formatted_documents += f"\n{index}: {doc}"
-        return formatted_documents
     
     def respond(self, message, instruction):
         # return answer
         prompt = self.textanslys.format_chat_prompt(message, instruction)
         questions = self.textanslys.keyword(prompt)
-        # logger.debug(f"Questions: {questions}")
+        logger.debug(f"Questions: {questions}")
         promptq = self.generate_queries(prompt,3)
         all_results = []
         all_ids = []
@@ -103,8 +92,9 @@ class RepoAssistant:
             all_results.append(query_result)
             all_ids.extend(query_result['ids'][0])
         
+        logger.debug(f"all_ids: {all_ids},{all_results}")
         unique_ids = [id for id in all_ids if all_ids.count(id) == 1]
-        # logger.debug(f"uniqueid: {unique_ids}")
+        logger.debug(f"uniqueid: {unique_ids}")
         unique_documents = []
         unique_code = []
         for result in all_results:
