@@ -14,6 +14,7 @@ from tqdm import tqdm
 from typing import List
 from functools import partial
 import subprocess
+import shutil  
 
 
 
@@ -189,6 +190,10 @@ class Runner:
     def markdown_refresh(self):
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
+            # 首先删除doc下所有内容，然后再重新写入
+            shutil.rmtree(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
+            os.mkdir(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
+
             file_item_list = self.meta_info.get_all_files()
             for file_item in tqdm(file_item_list):
 
