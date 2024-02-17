@@ -53,7 +53,7 @@ class RepoAssistant:
 
         return markdown_content
     def rag_ar(self, query, related_code, embedding_recall, project_name):
-            message_sys = f"""
+        message_sys = f"""
                 You are a helpful Repository-Level Software Q&A assistant. Your task is to answer users questions based on given information about a software repository, including related code and documents. 
 
                 Currently, you're in the {project_name} project. The user's question is:
@@ -75,9 +75,9 @@ class RepoAssistant:
 
                 Now, focusing on the user's query, and incorporating the given information to offer a specific, detailed, and professional answer IN THE SAME LANGUAGE AS the user's question.
             """
-            response = self.client.complete(message_sys)
-            content = response
-            return content
+        response = self.client.complete(message_sys)
+        content = response
+        return content
     
     def respond(self, message, instruction):
         # return answer
@@ -103,7 +103,7 @@ class RepoAssistant:
                     unique_documents.append(doc)
                     unique_code.append(code.get("code_content"))
         unique_code=self.textanslys.list_to_markdown(unique_code)
-        retrieved_documents=unique_documents
+        retrieved_documents = unique_documents
         # logger.debug(f"retrieveddocuments: {retrieved_documents}")
         response = self.rag(prompt,retrieved_documents)
         chunkrecall = self.list_to_markdown(retrieved_documents)
@@ -117,8 +117,8 @@ class RepoAssistant:
         # 确保 codey 是列表，如果不是，则将其转换为列表
         if not isinstance(codey, list):
             codey = [codey]
-        codex=codez+codey
-        codex=self.textanslys.list_to_markdown(codex)
+        codex = codez+codey
+        codex = self.textanslys.list_to_markdown(codex)
         bot_message = self.rag_ar(prompt,unique_code,retrieved_documents,"test")
         bot_message = str(bot_message) +'\n'+ str(self.textanslys.tree(bot_message))
         return message, bot_message,chunkrecall,questions,unique_code,codex
@@ -128,4 +128,4 @@ if __name__ == "__main__":
     api_base = ""
     db_path = ""
     log_file = ""
-    assistant = RepoAssistant(api_key, api_base, db_path,log_file)
+    assistant = RepoAssistant(api_key, api_base, db_path, log_file)

@@ -56,4 +56,4 @@ if __name__ == "__main__":
     log_file = "your_logfile_path"
     llm = OpenAI(api_key=api_key, api_base=api_base)
     db_path = "your_database_path"
-    test= TextAnalysisTool(llm,db_path)
+    test = TextAnalysisTool(llm, db_path)
