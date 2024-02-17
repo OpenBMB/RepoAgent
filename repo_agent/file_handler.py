@@ -4,8 +4,10 @@ import git
 import os, json
 import ast
 from tqdm import tqdm
+from colorama import Fore, Style
 import threading
 from typing import Dict
+from repo_agent.utils.meta_info_utils import fake_file_substring
 from repo_agent.config import CONFIG
 from repo_agent.log import logger
 from repo_agent.utils.gitignore_checker import GitignoreChecker
@@ -240,22 +242,41 @@ class FileHandler:
 
         return file_objects
 
-    def generate_overall_structure(self) -> dict:
-        """
-        Generate the overall structure of the repository.
-
-        Returns:
-            dict: A dictionary representing the structure of the repository.
+    def generate_overall_structure(self, file_path_reflections, jump_files) -> dict:
+        """获取目标仓库的文件情况，通过AST-walk获取所有对象等情况。
+        对于fake_files: 会把fake_files的内容单做真实文件内容进行AST-parse
+        对于jump_files: 不会parse，当做不存在
+        注意: 目标仓库的文件不能以fake_file_substring结尾
         """
         repo_structure = {}
         gitignore_checker = GitignoreChecker(
             directory=self.repo_path,
             gitignore_path=os.path.join(self.repo_path, ".gitignore"),
         )
+
+
         bar = tqdm(gitignore_checker.check_files_and_folders())
         for not_ignored_files in bar:
+            normal_file_names = not_ignored_files
+            if not_ignored_files in jump_files:
+                print(f"{Fore.LIGHTYELLOW_EX}[Unstaged AddFile] ignore this file: {Style.RESET_ALL}{normal_file_names}")
+                continue
+            elif not_ignored_files.endswith(fake_file_substring):
+                """如果某文件被删除但没有暂存，文件系统有fake_file但没有对应的原始文件"""
+                for k,v in file_path_reflections.items():
+                    if v == not_ignored_files and not os.path.exists(os.path.join(CONFIG["repo_path"], not_ignored_files)):
+                        print(f"{Fore.LIGHTYELLOW_EX}[Unstaged DeleteFile] load fake-file-content: {Style.RESET_ALL}{k}")
+                        normal_file_names = k #原来的名字
+                        break
+                if normal_file_names == not_ignored_files:
+                    continue
+
+            if not_ignored_files in file_path_reflections.keys():
+                not_ignored_files = file_path_reflections[not_ignored_files] #获取fake_file_path
+                print(f"{Fore.LIGHTYELLOW_EX}[Unstaged ChangeFile] load fake-file-content: {Style.RESET_ALL}{normal_file_names}")
+
             try:
-                repo_structure[not_ignored_files] = self.generate_file_structure(
+                repo_structure[normal_file_names] = self.generate_file_structure(
                     not_ignored_files
                 )
             except Exception as e:

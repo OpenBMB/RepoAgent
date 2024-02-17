@@ -13,6 +13,8 @@ import json
 from repo_agent.log import logger
 import jedi
 from tqdm import tqdm
+
+from repo_agent.utils.meta_info_utils import fake_file_substring
 from repo_agent.config import CONFIG
 from repo_agent.file_handler import FileHandler
 from repo_agent.multi_task_dispatch import TaskManager, Task
@@ -100,6 +102,7 @@ class DocItem:
     reference_who_name_list: List[str] = field(default_factory=list) #他引用了谁，这个可能是老版本
     who_reference_me_name_list: List[str] = field(default_factory=list) #谁引用了他，这个可能是老版本的
 
+    visited: bool = False
 
     multithread_task_id: int = -1  # 在多线程中的task_id
 
@@ -289,19 +292,25 @@ class MetaInfo:
     )  # 整个repo的文件结构
     white_list: Any[List] = None
 
+    fake_file_reflection: Dict[str, str] = field(default_factory=dict)
+    jump_files: List[str] = field(default_factory=list)
+    deleted_items_from_older_meta: List[List] = field(default_factory=list)
+
     in_generation_process: bool = False
 
     checkpoint_lock: threading.Lock = threading.Lock()
 
     @staticmethod
-    def init_from_project_path(project_abs_path: str) -> MetaInfo:
+    def init_meta_info(file_path_reflections, jump_files) -> MetaInfo:
         """从一个仓库path中初始化metainfo"""
         project_abs_path = CONFIG["repo_path"]
-        logger.info(f"initializing a new meta-info from {project_abs_path}")
+        print(f"{Fore.LIGHTRED_EX}Initializing MetaInfo: {Style.RESET_ALL}from {project_abs_path}")
         file_handler = FileHandler(project_abs_path, None)
-        repo_structure = file_handler.generate_overall_structure()
+        repo_structure = file_handler.generate_overall_structure(file_path_reflections, jump_files)
         metainfo = MetaInfo.from_project_hierarchy_json(repo_structure)
         metainfo.repo_path = project_abs_path
+        metainfo.fake_file_reflection = file_path_reflections
+        metainfo.jump_files = jump_files
         return metainfo
 
     @staticmethod
@@ -321,10 +330,13 @@ class MetaInfo:
             meta_data = json.load(reader)
             metainfo.repo_path = CONFIG["repo_path"]
             metainfo.document_version = meta_data["doc_version"]
+            metainfo.fake_file_reflection = meta_data["fake_file_reflection"]
+            metainfo.jump_files = meta_data["jump_files"]
             metainfo.in_generation_process = meta_data["in_generation_process"]
+            metainfo.deleted_items_from_older_meta = meta_data["deleted_items_from_older_meta"]
 
-        logger.info(
-            f'loading meta-info from {checkpoint_dir_path}, document-version="{metainfo.document_version}"'
+        print(
+            f"{Fore.CYAN}Loading MetaInfo:{Style.RESET_ALL} {checkpoint_dir_path}"
         )
         return metainfo
 
@@ -337,7 +349,7 @@ class MetaInfo:
             flash_reference_relation (bool, optional): Whether to include flash reference relation in the saved MetaInfo. Defaults to False.
         """
         with self.checkpoint_lock:
-            logger.info(f"will save MetaInfo at {target_dir_path}")
+            print(f"{Fore.GREEN}MetaInfo is Refreshed and Saved{Style.RESET_ALL}")
             if not os.path.exists(target_dir_path):
                 os.makedirs(target_dir_path)
             now_hierarchy_json = self.to_hierarchy_json(
@@ -352,6 +364,9 @@ class MetaInfo:
                 meta = {
                     "doc_version": self.document_version,
                     "in_generation_process": self.in_generation_process,
+                    "fake_file_reflection": self.fake_file_reflection,
+                    "jump_files": self.jump_files,
+                    "deleted_items_from_older_meta": self.deleted_items_from_older_meta,
                 }
                 json.dump(meta, writer, indent=2, ensure_ascii=False)
     
@@ -385,6 +400,7 @@ class MetaInfo:
         """每个DocItem._file，对于所有的行，建立他们对应的对象是谁
         一个行属于这个obj的范围，并且没法属于他的儿子的范围了"""
         now_node = file_node
+        # if 
         assert now_node != None
         while len(now_node.children) > 0:
             find_qualify_child = False
@@ -414,8 +430,17 @@ class MetaInfo:
             white_list_obj_names = [cont["id_text"] for cont in self.white_list]
 
         for file_node in tqdm(file_nodes, desc="parsing bidirectional reference"):
+            """检测一个文件内的所有引用信息，只能检测引用该文件内某个obj的其他内容。
+            1. 如果某个文件是jump-files，就不应该出现在这个循环里
+            2. 如果检测到的引用信息来源于一个有fake-file的文件，忽略这个引用
+            3. 如果检测到一个引用来源于fake-file,则认为他的母文件是原来的文件
+            """
+            assert not file_node.get_full_name().endswith(fake_file_substring)
+
             ref_count = 0
             rel_file_path = file_node.get_full_name()
+            assert rel_file_path not in self.jump_files
+
             if white_list_file_names != [] and (
                 file_node.get_file_name() not in white_list_file_names
             ):  # 如果有白名单，只parse白名单里的对象
@@ -440,16 +465,35 @@ class MetaInfo:
                 )
                 for referencer_pos in reference_list:  # 对于每个引用
                     referencer_file_ral_path = referencer_pos[0]
+                    if referencer_file_ral_path in self.fake_file_reflection.keys():
+                        """检测到的引用者来自于unstaged files，跳过该引用"""
+                        continue
                     # print(f"find {now_obj.get_full_name()} -> {referencer_file_ral_path}")
-                    referencer_file_item = self.target_repo_hierarchical_tree.find(referencer_file_ral_path.split("/"))
+                    target_file_hiera = referencer_file_ral_path.split("/")
+                    for file_hiera_id in range(len(target_file_hiera)):
+                        if target_file_hiera[file_hiera_id].endswith(fake_file_substring):
+                            prefix = "/".join(target_file_hiera[:file_hiera_id+1])
+                            find_in_reflection = False
+                            for real, fake in self.fake_file_reflection.items():
+                                if fake == prefix:
+                                    print(f"{Fore.BLUE}Find Reference in Fake-File: {Style.RESET_ALL}{referencer_file_ral_path} {Fore.BLUE}referred{Style.RESET_ALL} {now_obj.item_type.name} {now_obj.get_full_name()}")
+                                    target_file_hiera[file_hiera_id] = real
+                                    find_in_reflection = True
+                                    break
+                            assert find_in_reflection
+                            break
+
+                    referencer_file_item = self.target_repo_hierarchical_tree.find(target_file_hiera)
                     if referencer_file_item == None:
                         # import pdb; pdb.set_trace()
+
                         logger.info(
                             f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo"
                         )
                         continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
-
+                    # if now_obj.get_full_name() == "experiment1_gpt4_io.py/main":
+                    #     print(referencer_node.get_full_name())
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         if now_obj not in referencer_node.reference_who:
@@ -457,16 +501,7 @@ class MetaInfo:
                             referencer_node.special_reference_type.append(special_reference_type)
                             referencer_node.reference_who.append(now_obj)
                             now_obj.who_reference_me.append(referencer_node)
-                            # print(f"{referencer_node.get_full_name()} -> {now_obj.get_full_name()}, {special_reference_type}")
                             ref_count += 1
-                            # min_ances = DocItem.find_min_ances(referencer_node, now_obj)
-                            # if referencer_node.max_reference_ansce == None:
-                            #     referencer_node.max_reference_ansce = min_ances
-                            # else: #是否更大
-                            #     if min_ances in referencer_node.max_reference_ansce.tree_path:
-                            #         referencer_node.max_reference_ansce = min_ances
-                # e = time.time()
-                # print(f"遍历reference 用时: {e-s}")
                 for _, child in now_obj.children.items():
                     walk_file(child)
 
@@ -570,7 +605,7 @@ class MetaInfo:
         """older_meta是老版本的、已经生成doc的meta info"""
         logger.info("merge doc from an older version of metainfo")
         root_item = self.target_repo_hierarchical_tree
-
+        deleted_items = []
         def find_item(now_item: DocItem) -> Optional[DocItem]:
             """新版的meta中能不能找到原来的某个东西"""
             nonlocal root_item
@@ -580,13 +615,14 @@ class MetaInfo:
             if not father_find_result:
                 return None
             if now_item.obj_name in father_find_result.children.keys():
-                return father_find_result.children[now_item.obj_name]
+                result_item = father_find_result.children[now_item.obj_name]
+                return result_item
             return None
 
         def travel(now_older_item: DocItem):  # 只寻找源码是否被修改的信息
             result_item = find_item(now_older_item)
             if not result_item:  # 新版文件中找不到原来的item，就回退
-                # print(f"return: {now_older_item.get_full_name()}")
+                deleted_items.append([now_older_item.get_full_name(), now_older_item.item_type.name])
                 return
             result_item.md_content = now_older_item.md_content
             result_item.item_status = now_older_item.item_status
@@ -617,7 +653,8 @@ class MetaInfo:
                 name.get_full_name() for name in result_item.who_reference_me
             ]
             old_reference_names = now_older_item.who_reference_me_name_list
-
+            # if now_older_item.get_full_name() == "experiment1_gpt4_io.py/main":
+            #     import pdb; pdb.set_trace()
             if not (set(new_reference_names) == set(old_reference_names)) and (
                 result_item.item_status == DocItemStatus.doc_up_to_date
             ):
@@ -631,6 +668,8 @@ class MetaInfo:
                 travel2(child)
 
         travel2(older_meta.target_repo_hierarchical_tree)
+
+        self.deleted_items_from_older_meta = deleted_items
 
     @staticmethod
     def from_project_hierarchy_path(repo_path: str) -> MetaInfo:

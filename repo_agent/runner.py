@@ -1,7 +1,10 @@
 import threading
 import os, json
 import json
+import git
+import itertools
 from repo_agent.file_handler import FileHandler
+from repo_agent.utils.meta_info_utils import fake_file_substring
 from repo_agent.change_detector import ChangeDetector
 from repo_agent.project_manager import ProjectManager
 from repo_agent.chat_engine import ChatEngine
@@ -15,8 +18,65 @@ from typing import List
 from functools import partial
 import subprocess
 import shutil  
+from colorama import Fore, Style
 
 
+
+def make_fake_files():
+    """根据git status检测暂存区信息。如果有文件：
+    1. 新增文件，没有add。无视
+    2. 修改文件内容，没有add，原位置增加fake_file,内容是原本文件内容
+    3. 删除文件，没有add，原位置增加fake_file，内容是原本文件内容
+    """
+    delete_fake_files()
+    
+    repo = git.Repo(CONFIG["repo_path"])
+    unstaged_changes = repo.index.diff(None) #在git status里，但是有修改没提交
+    untracked_files = repo.untracked_files #在文件系统里，但没在git里的文件
+
+    jump_files = [] #这里面的内容不parse、不生成文档，并且引用关系也不计算他们
+    for file_name in untracked_files:
+        if file_name.endswith(".py") and (not file_name.endswith(fake_file_substring)):
+            jump_files.append(file_name)
+    for diff_file in unstaged_changes.iter_change_type('A'): #新增的、没有add的文件，都不处理
+        if diff_file.a_path.endswith(fake_file_substring):
+            logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
+            exit()
+        jump_files.append(diff_file.a_path)
+
+
+    file_path_reflections = {}
+    for diff_file in itertools.chain(unstaged_changes.iter_change_type('M'),unstaged_changes.iter_change_type('D')):  # 获取修改过的文件
+        if diff_file.a_path.endswith(fake_file_substring):
+            logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
+            exit()
+        now_file_path = diff_file.a_path #针对repo_path的相对路径
+        if now_file_path.endswith(".py"):
+            raw_file_content = diff_file.a_blob.data_stream.read().decode("utf-8")
+            fake_file_path = now_file_path[:-3] + fake_file_substring
+            with open(os.path.join(CONFIG["repo_path"],fake_file_path), "w") as writer:
+                writer.write(raw_file_content)
+            file_path_reflections[now_file_path] = fake_file_path #real指向fake
+            
+            print(f"{Fore.LIGHTMAGENTA_EX}[Add Fake-File with status ({diff_file.change_type})]: {Style.RESET_ALL}{now_file_path}")
+    return file_path_reflections, jump_files
+
+
+def delete_fake_files():
+    """在任务执行完成以后，删除所有的fake_file
+    """
+    def gci(filepath):
+        # 遍历filepath下所有文件，包括子目录
+        files = os.listdir(filepath)
+        for fi in files:
+            fi_d = os.path.join(filepath, fi)
+            if os.path.isdir(fi_d):
+                gci(fi_d)
+            elif fi_d.endswith(fake_file_substring):
+                print(f"{Fore.LIGHTRED_EX}[Remove Existing Fake-File]: {Style.RESET_ALL}{fi_d}")
+                os.remove(fi_d)
+                
+    gci(CONFIG["repo_path"])
 
 def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
     """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
@@ -64,7 +124,8 @@ class Runner:
         if not os.path.exists(
             os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
         ):
-            self.meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"])
+            file_path_reflections, jump_files = make_fake_files()
+            self.meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
             self.meta_info.checkpoint(
                 target_dir_path=os.path.join(
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
@@ -108,9 +169,9 @@ class Runner:
 
             ignore_list = CONFIG.get("ignore_list", [])
             if not need_to_generate(doc_item, ignore_list):
-                logger.info(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
+                print(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
             else:
-                logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...")
+                print(f" -- 正在生成文档 {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
                 file_handler = FileHandler(CONFIG["repo_path"], rel_file_path)
                 response_message = self.chat_engine.generate_doc(
                     doc_item=doc_item,
@@ -293,7 +354,8 @@ class Runner:
             1.新建的文件没有文档，因此metainfo merge后还是没有文档
             2.被删除的文件和obj，本来就不在新的meta里面，相当于文档被自动删除了
             3.只需要观察被修改的文件，以及引用关系需要被通知的文件去重新生成文档"""
-            new_meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"])
+            file_path_reflections, jump_files = make_fake_files()
+            new_meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
             new_meta_info.load_doc_from_older_meta(self.meta_info)
 
             self.meta_info = new_meta_info
@@ -305,10 +367,11 @@ class Runner:
 
         task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
         
+        for item_name, item_type in self.meta_info.deleted_items_from_older_meta:
+            print(f"{Fore.LIGHTMAGENTA_EX}[Dir/File/Obj Delete Dected]: {Style.RESET_ALL} {item_type} {item_name}")
+        self.meta_info.print_task_list(task_manager.task_dict)
         if task_manager.all_success:
             logger.info("No tasks in the queue, all documents are completed and up to date.")
-        else:
-            self.meta_info.print_task_list(task_manager.task_dict)
 
         task_manager.sync_func = self.markdown_refresh
         threads = [
@@ -335,6 +398,7 @@ class Runner:
         logger.info(f"Doc has been forwarded to the latest version")
 
         self.markdown_refresh()
+        delete_fake_files()
 
     def add_new_item(self, file_handler, json_data):
         """
@@ -537,8 +601,8 @@ class Runner:
                             changed_obj[0],
                             ref_obj["obj_referencer_list"],
                         )
-                        logger.info(
-                            f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档..."
+                        print(
+                            f"正在生成 {Fore.CYAN}{file_handler.file_path}{Style.RESET_ALL}中的{Fore.CYAN}{changed_obj[0]}{Style.RESET_ALL}对象文档."
                         )
                         futures.append(future)
 
@@ -599,6 +663,7 @@ class Runner:
 
 
 if __name__ == "__main__":
+
     runner = Runner()
 
     # runner.meta_info.target_repo_hierarchical_tree.print_recursive()
