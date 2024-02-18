@@ -646,7 +646,13 @@ class MetaInfo:
 
     def to_hierarchy_json(self, flash_reference_relation=False):
         """
-        如果flash_reference_relation=True,则会将最新的双向引用关系写回到meta文件中
+        Convert the document metadata to a hierarchical JSON representation.
+
+        Args:
+            flash_reference_relation (bool): If True, the latest bidirectional reference relations will be written back to the meta file.
+
+        Returns:
+            dict: A dictionary representing the hierarchical JSON structure of the document metadata.
         """
         hierachy_json = {}
         file_item_list = self.get_all_files()

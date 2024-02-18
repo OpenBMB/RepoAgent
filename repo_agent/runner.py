@@ -149,7 +149,7 @@ class Runner:
             logger.info("Init a new task-list")
         else:
             logger.info("Load from an existing task-list")
-        # self.meta_info.print_task_list(task_manager.task_dict)      
+        self.meta_info.print_task_list(task_manager.task_dict)      
 
         try:
             task_manager.sync_func = self.markdown_refresh
@@ -269,17 +269,17 @@ class Runner:
         """
 
         if self.meta_info.document_version == "":
-            # 根据document version自动检测是否仍在最初生成的process里
-            self.first_generate()
+            # 根据document version自动检测是否仍在最初生成的process里(是否为第一次生成)
+            self.first_generate() # 如果是第一次做文档生成任务，就通过first_generate生成所有文档
             self.meta_info.checkpoint(
                 target_dir_path=os.path.join(
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
                 ),
                 flash_reference_relation=True,
-            )
+            ) # 这一步将生成后的meta信息（包含引用关系）写入到.project_doc_record文件夹中
             return
 
-        if not self.meta_info.in_generation_process:
+        if not self.meta_info.in_generation_process: # 如果不是在生成过程中，就开始检测变更
             logger.info("Starting to detect changes.")
 
             """采用新的办法
