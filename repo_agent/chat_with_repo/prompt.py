@@ -38,14 +38,14 @@ class TextAnalysisTool:
         return markdown_str
 
     def nerquery(self, message):
-        query1 = """
+        instruction = """
         The output must strictly be a pure function name or class name, without any additional characters.
         For example:
         Pure function names: calculateSum, processData
         Pure class names: MyClass, DataProcessor
         The output function name or class name should be only one.
         """
-        query = f"Extract the most relevant class or function from the following{query1}input:\n{message}\nOutput:"
+        query = f"{instruction}\nExtract the most relevant class or function from the following input:\n{message}\nOutput:"
         response = self.llm.complete(query)
         # logger.debug(f"Input: {message}, Output: {response}")
         return response
