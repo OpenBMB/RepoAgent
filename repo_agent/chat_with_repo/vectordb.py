@@ -2,7 +2,7 @@ import chromadb
 from chromadb.utils import embedding_functions
 from repo_agent.log import logger
 
-logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+
 class ChromaManager:
     def __init__(self, api_key, api_base):
         self.api_key = api_key
@@ -17,7 +17,7 @@ class ChromaManager:
 
         # 获取所有集合的列表
         existing_collections = chroma_client.list_collections()
-        # logger.debug(f"Questions: {existing_collections}")
+        logger.debug(f"Questions: {existing_collections}")
 
         # 检查 "test" 集合是否存在
         if "test" in existing_collections:
@@ -25,7 +25,7 @@ class ChromaManager:
             self.chroma_collection = chroma_client.get_collection("test",embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-large"
+                        model_name="text-embedding-3-small"
                     ))
             self.is_new_collection = False
         else:
@@ -36,7 +36,7 @@ class ChromaManager:
                     embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-large"
+                        model_name="text-embedding-3-small"
                     )
                 )
                 self.is_new_collection = True
@@ -45,20 +45,22 @@ class ChromaManager:
                 self.chroma_collection = chroma_client.get_collection("test",embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-large"
+                        model_name="text-embedding-3-small"
                     ))
                 self.is_new_collection = False
 
-
-    def create_vector_store(self, md_contents,meta_data):
+    def create_vector_store(self, md_contents, meta_data):
         # Process Markdown content and store it in Chroma
         if self.is_new_collection:  # 仅当是新集合时执行
-            # logger.debug(f"judge: {self.is_new_collection}")
-            ids = [str(i) for i in range(len(md_contents))]
-            self.chroma_collection.add(ids = ids, documents = md_contents,metadatas = meta_data)
+            # 确保 ids 的长度与 md_contents 和 meta_data 中较短的一方相匹配
+            min_length = min(len(md_contents), len(meta_data))
+            ids = [str(i) for i in range(min_length)]
+            # 只使用相应长度的 md_contents 和 meta_data
+            self.chroma_collection.add(ids=ids, documents=md_contents[:min_length], metadatas=meta_data[:min_length])
         else:
             logger.debug(f"judge: {self.is_new_collection}")
 
+
+
 if __name__ == "__main__":
-    test = ChromaManager(api_key = "", api_base = "")
-    
+    test = ChromaManager(api_key="", api_base="")

@@ -2,7 +2,6 @@ from llama_index.llms import OpenAI
 from repo_agent.log import logger
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
 
-# logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
 
 class TextAnalysisTool:
     def __init__(self, llm, db_path):
@@ -25,8 +24,8 @@ class TextAnalysisTool:
         return prompt
 
     def queryblock(self, message):
-        search_result = self.jsonsearch.search_code_contents_by_name(self.db_path, message)
-        return search_result
+        search_result,md = self.jsonsearch.search_code_contents_by_name(self.db_path, message)
+        return search_result,md
     
     def list_to_markdown(self, search_result):
         markdown_str = ""
@@ -38,14 +37,14 @@ class TextAnalysisTool:
         return markdown_str
 
     def nerquery(self, message):
-        instruction = """
+        query1 = """
         The output must strictly be a pure function name or class name, without any additional characters.
         For example:
         Pure function names: calculateSum, processData
         Pure class names: MyClass, DataProcessor
         The output function name or class name should be only one.
         """
-        query = f"{instruction}\nExtract the most relevant class or function from the following input:\n{message}\nOutput:"
+        query = f"Extract the most relevant class or function base following instrcution {query1},here is input:\n{message}\nOutput:"
         response = self.llm.complete(query)
         # logger.debug(f"Input: {message}, Output: {response}")
         return response
