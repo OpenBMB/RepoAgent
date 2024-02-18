@@ -13,8 +13,7 @@ def main():
     )
 
     assistant = RepoAssistant(api_key, api_base, db_path)
-    md_contents = assistant.json_data.extract_md_contents()
-    meta_data = assistant.json_data.extract_metadata()
+    md_contents,meta_data = assistant.json_data.extract_data()
     assistant.chroma_data.create_vector_store(md_contents, meta_data)
     GradioInterface(assistant.respond)
 

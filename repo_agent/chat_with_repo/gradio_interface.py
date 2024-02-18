@@ -2,6 +2,7 @@ import gradio as gr
 import markdown
 from repo_agent.log import logger
 
+
 class GradioInterface:
     def __init__(self, respond_function):
         self.respond = respond_function
