@@ -9,7 +9,7 @@ def main():
     api_key = CONFIG["api_keys"][_model][0]["api_key"]
     api_base = CONFIG["api_keys"][_model][0]["base_url"]
     db_path = os.path.join(
-        CONFIG["repo_path"], CONFIG["project_hierarchy"], "project_hierarchy.json"
+        CONFIG["repo_path"], CONFIG["project_hierarchy"], ".project_hierarchy.json"
     )
 
     assistant = RepoAssistant(api_key, api_base, db_path)

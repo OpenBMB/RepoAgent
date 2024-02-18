@@ -319,7 +319,7 @@ class MetaInfo:
             os.path.join(checkpoint_dir_path, "meta-info.json"), "r", encoding="utf-8"
         ) as reader:
             meta_data = json.load(reader)
-            metainfo.repo_path = meta_data["repo_path"]
+            metainfo.repo_path = CONFIG["repo_path"]
             metainfo.document_version = meta_data["doc_version"]
             metainfo.in_generation_process = meta_data["in_generation_process"]
 
@@ -350,7 +350,6 @@ class MetaInfo:
 
             with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
                 meta = {
-                    "repo_path": self.repo_path,
                     "doc_version": self.document_version,
                     "in_generation_process": self.in_generation_process,
                 }
@@ -791,7 +790,7 @@ class MetaInfo:
 
 
 if __name__ == "__main__":
-    repo_path = "/Users/yeyn/data/git_repos/AutoPDB/"
+    repo_path = "some_repo_path"
     meta = MetaInfo.from_project_hierarchy_json(repo_path)
     meta.target_repo_hierarchical_tree.print_recursive()
     topology_list = meta.get_topology()

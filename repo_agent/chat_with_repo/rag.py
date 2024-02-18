@@ -40,7 +40,7 @@ class RepoAssistant:
     def rag(self, query, retrieved_documents):
         # rag 
         information = "\n\n".join(retrieved_documents)
-        messages = f"You are a helpful expert repo research assistant. Your users are asking questions about information contained in repo . You will be shown the user's question, and the relevant information from the repo. Answer the user's question using only this information.\nQuestion: {query}. \nInformation: {information}"
+        messages = f"You are a helpful expert repo research assistant. Your users are asking questions about information contained in a repository. You will be shown the user's question, and the relevant information from the repository. Answer the user's question using only  the information given.\nQuestion: {query}. \nInformation: {information}"
         response = self.llm.complete(messages)
         content = response
         return content
@@ -49,7 +49,7 @@ class RepoAssistant:
         
         # 对于列表中的每个项目，添加一个带数字的列表项
         for index, item in enumerate(list_items, start=1):
-            markdown_content += f"{index}. {item}\n"
+            markdown_content += f"[{index}] {item}\n"
 
         return markdown_content
     def rag_ar(self, query, related_code, embedding_recall, project_name):

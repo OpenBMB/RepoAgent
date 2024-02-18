@@ -12,6 +12,12 @@ class JsonFileProcessor:
             data = json.load(file)
         return data
     def extract_md_contents(self):
+        """
+        Extracts the contents of 'md_content' from a JSON file.
+
+        Returns:
+            A list of strings representing the contents of 'md_content'.
+        """
         # Load JSON data from a file
         json_data = self.read_json_file()
         md_contents = []
@@ -28,6 +34,12 @@ class JsonFileProcessor:
         return md_contents
 
     def extract_metadata(self):
+        """
+        Extracts metadata from JSON data.
+
+        Returns:
+            A list of dictionaries containing the extracted metadata.
+        """
         # Load JSON data from a file
         json_data = self.read_json_file()
         extracted_contents = []
@@ -50,7 +62,7 @@ class JsonFileProcessor:
                         # Adapt or remove fields based on new structure requirements
                     }
                     extracted_contents.append(item_dict)
-        return extracted_contents
+            return extracted_contents
 
     def recursive_search(self, data_item, search_text, results):
         if isinstance(data_item, dict):

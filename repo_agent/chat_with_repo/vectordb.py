@@ -25,7 +25,7 @@ class ChromaManager:
             self.chroma_collection = chroma_client.get_collection("test",embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-small"
+                        model_name="text-embedding-3-large"
                     ))
             self.is_new_collection = False
         else:
@@ -36,7 +36,7 @@ class ChromaManager:
                     embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-small"
+                        model_name="text-embedding-3-large"
                     )
                 )
                 self.is_new_collection = True
@@ -45,7 +45,7 @@ class ChromaManager:
                 self.chroma_collection = chroma_client.get_collection("test",embedding_function=embedding_functions.OpenAIEmbeddingFunction(
                         api_key=self.api_key,
                         api_base=self.api_base,
-                        model_name="text-embedding-3-small"
+                        model_name="text-embedding-3-large"
                     ))
                 self.is_new_collection = False
 
