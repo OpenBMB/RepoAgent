@@ -18,7 +18,7 @@ Please write out the function of this {code_type_tell} in bold plain text, follo
 
 The standard format is as follows:
 
-**{code_name}**: The function of {code_name} is XXX
+**{code_name}**: The function of {code_name} is XXX. (Only code name and one sentence function description are required)
 **{parameters_or_attribute}**: The {parameters_or_attribute} of this {code_type_tell}.
 · parameter1: XXX
 · parameter2: XXX

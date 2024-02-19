@@ -165,7 +165,6 @@ class GradioInterface:
 # 使用方法
 if __name__ == "__main__":
     def respond_function(msg, system):
-        # 这里实现您的响应逻辑
         RAG="""
 
         

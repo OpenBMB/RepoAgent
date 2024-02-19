@@ -8,7 +8,9 @@ __pycache__/
 */.DS_Store
 *.py[cod]
 *$py.class
-
+chroma_db/
+.vscode
+.project_doc_record
 # C extensions
 *.so
 

@@ -191,8 +191,10 @@ class Runner:
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
             # 首先删除doc下所有内容，然后再重新写入
-            shutil.rmtree(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
-            os.mkdir(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
+            markdown_docs_path = os.path.join(CONFIG["repo_path"], CONFIG["Markdown_Docs_folder"])
+            if os.path.exists(markdown_docs_path):
+                shutil.rmtree(markdown_docs_path)
+            os.mkdir(markdown_docs_path)
 
             file_item_list = self.meta_info.get_all_files()
             for file_item in tqdm(file_item_list):
@@ -216,7 +218,7 @@ class Runner:
                 def to_markdown(item: DocItem, now_level: int) -> str:
                     markdown_content = ""
                     markdown_content += (
-                        "#" * now_level + f" {item.item_type.name[1:] if item.item_type.name.startswith('_') else item.item_type.name} {item.obj_name}"
+                        "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
                     )
                     if (
                         "params" in item.content.keys()
@@ -224,7 +226,7 @@ class Runner:
                     ):
                         markdown_content += f"({', '.join(item.content['params'])})"
                     markdown_content += "\n"
-                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc has not been generated...'}\n"
+                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc is waiting to be generated...'}\n"
                     for _, child in item.children.items():
                         markdown_content += to_markdown(child, now_level + 1)
                     return markdown_content

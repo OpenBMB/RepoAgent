@@ -39,7 +39,7 @@ class RepoAssistant:
         queries = response.text.split("\n")
         return queries
     
-    def rerank(self, query ,docs):
+    def rerank(self, query ,docs): # 这里要防止返回值格式上出问题
         response = self.lm.chat.completions.create(
             model='gpt-4-1106-preview',
             response_format={"type": "json_object"},
@@ -58,7 +58,7 @@ class RepoAssistant:
     def rag(self, query, retrieved_documents):
         # rag 
         information = "\n\n".join(retrieved_documents)
-        messages = f"You are a helpful expert repo research assistant. Your users are asking questions about information contained in repo . You will be shown the user's question, and the relevant information from the repo. Answer the user's question using only this information.\nQuestion: {query}. \nInformation: {information}"
+        messages = f"You are a helpful assistant in repository Q&A . Users will ask questions about something contained in a repository . You will be shown the user's question, and the relevant information from the repository. Answer the user's question only with information given.\n\nQuestion: {query}. \n\nInformation: {information}"
         response = self.llm.complete(messages)
         content = response
         return content
@@ -72,26 +72,26 @@ class RepoAssistant:
         return markdown_content
     def rag_ar(self, query, related_code, embedding_recall, project_name):
         message_sys = f"""
-                You are a helpful Repository-Level Software Q&A assistant. Your task is to answer users questions based on given information about a software repository, including related code and documents. 
+You are a helpful Repository-Level Software Q&A assistant. Your task is to answer users questions based on given information about a software repository, including related code and documents. 
 
-                Currently, you're in the {project_name} project. The user's question is:
-                {query}
+Currently, you're in the {project_name} project. The user's question is:
+{query}
 
-                Now, you are given related code and documents as follows:
+Now, you are given related code and documents as follows:
 
-                -------------------Code-------------------
-                Some most likely related code snippets recalled by the retriever are:
-                {related_code}
+-------------------Code-------------------
+Some most likely related code snippets recalled by the retriever are:
+{related_code}
 
-                -------------------Document-------------------
-                Some most relevant documents recalled by the retriever are:
-                {embedding_recall}
+-------------------Document-------------------
+Some most relevant documents recalled by the retriever are:
+{embedding_recall}
 
-                Please note:   
-                1. All the provided recall results are related to the current project {project_name}. Please filter useful information according to the user's question and provide corresponding answers or solutions.
-                2. Ensure that your responses are accurate and detailed. Present specific answers in a professional manner and tone. If you find the user's question completely unrelated to the provided information or if you believe you cannot provide an accurate answer, kindly decline. Note: DO NOT fabricate any non-existent information.
+Please note:   
+1. All the provided recall results are related to the current project {project_name}. Please filter useful information according to the user's question and provide corresponding answers or solutions.
+2. Ensure that your responses are accurate and detailed. Present specific answers in a professional manner and tone. If you find the user's question completely unrelated to the provided information or if you believe you cannot provide an accurate answer, kindly decline. Note: DO NOT fabricate any non-existent information.
 
-                Now, focusing on the user's query, and incorporating the given information to offer a specific, detailed, and professional answer IN THE SAME LANGUAGE AS the user's question.
+Now, focusing on the user's query, and incorporating the given information to offer a specific, detailed, and professional answer IN THE SAME LANGUAGE AS the user's question.
             """
         response = self.client.complete(message_sys)
         content = response

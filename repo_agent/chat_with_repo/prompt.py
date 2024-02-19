@@ -10,7 +10,7 @@ class TextAnalysisTool:
         self.db_path = db_path
 
     def keyword(self, query):
-        prompt = f"Please provide a list of keywords related to the following query, requests output no more than 3 keywords, Input: {query}, Output:"
+        prompt = f"Please provide a list of Code keywords according to the following query, please output no more than 3 keywords, Input: {query}, Output:"
         response = self.llm.complete(prompt)
         return response
 
@@ -37,14 +37,16 @@ class TextAnalysisTool:
         return markdown_str
 
     def nerquery(self, message):
-        query1 = """
-        The output must strictly be a pure function name or class name, without any additional characters.
-        For example:
-        Pure function names: calculateSum, processData
-        Pure class names: MyClass, DataProcessor
-        The output function name or class name should be only one.
+        instrcution = """
+Extract the most relevant class or function base on the following instrcution:
+
+The output must strictly be a pure function name or class name, without any additional characters.
+For example:
+Pure function names: calculateSum, processData
+Pure class names: MyClass, DataProcessor
+The output function name or class name should be only one.
         """
-        query = f"Extract the most relevant class or function base following instrcution {query1},here is input:\n{message}\nOutput:"
+        query = f"{instrcution}\n\nThe input is shown as bellow:\n{message}\n\nAnd now directly give your Output:"
         response = self.llm.complete(query)
         # logger.debug(f"Input: {message}, Output: {response}")
         return response

@@ -337,7 +337,7 @@ class MetaInfo:
             flash_reference_relation (bool, optional): Whether to include flash reference relation in the saved MetaInfo. Defaults to False.
         """
         with self.checkpoint_lock:
-            logger.info(f"will save MetaInfo at {target_dir_path}")
+            logger.info(f"MetaInfo will be documented at {target_dir_path}")
             if not os.path.exists(target_dir_path):
                 os.makedirs(target_dir_path)
             now_hierarchy_json = self.to_hierarchy_json(
