@@ -229,6 +229,8 @@ class Runner:
                     markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc is waiting to be generated...'}\n"
                     for _, child in item.children.items():
                         markdown_content += to_markdown(child, now_level + 1)
+                        markdown_content += "***\n"
+                        
                     return markdown_content
 
                 markdown = ""
