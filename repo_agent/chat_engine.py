@@ -1,17 +1,19 @@
 import os, json
-import re, sys
-from openai import BadRequestError, OpenAI
+import sys
+from openai import OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
-from repo_agent.config import language_mapping
-from repo_agent.project_manager import ProjectManager
+from repo_agent.config import language_mapping, max_input_tokens_map
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem
 import inspect
 from collections import defaultdict
 from repo_agent.log import logger
 
+class ContextLengthExceededError(Exception):
+    """Exception raised when the input size exceeds the model's context length limit."""
+    pass
 
 def get_import_statements():
     source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
@@ -71,30 +73,6 @@ class ChatEngine:
     def generate_doc(self, doc_item: DocItem, file_handler):
         code_info = doc_item.content
         referenced = len(doc_item.who_reference_me) > 0
-
-        # print("len(referencer):\n",len(referencer))
-
-        # def get_code_from_json(json_file, referencer):
-        #     '''根据给出的referencer，找出其源码
-        #     '''
-        #     with open(json_file, 'r', encoding='utf-8') as f:
-        #         data = json.load(f)
-
-        #     code_from_referencer = {}
-        #     for ref in referencer:
-        #         file_path, line_number, _ = ref
-        #         if file_path in data:
-        #             objects = data[file_path]
-        #             min_obj = None
-        #             for obj_name, obj in objects.items():
-        #                 if obj['code_start_line'] <= line_number <= obj['code_end_line']:
-        #                     if min_obj is None or (obj['code_end_line'] - obj['code_start_line'] < min_obj['code_end_line'] - min_obj['code_start_line']):
-        #                         min_obj = obj
-        #             if min_obj is not None:
-        #                 if file_path not in code_from_referencer:
-        #                     code_from_referencer[file_path] = []
-        #                 code_from_referencer[file_path].append(min_obj['code_content'])
-        #     return code_from_referencer
 
         code_type = code_info["type"]
         code_name = code_info["name"]
@@ -214,20 +192,72 @@ class ChatEngine:
         # with open(f'prompt_output/sys_prompt_{code_name}.txt', 'w', encoding='utf-8') as f:
         #     f.write(sys_prompt+'\n'+ usr_prompt)
 
-        max_attempts = 5  # 设置最大尝试次数
+        logger.info(f"Using {max_input_tokens_map} for context window judgment.")
         model = self.config["default_completion_kwargs"]["model"]
-        code_max_length = 8192 - 1024 - 1
-        if model == "gpt-3.5-turbo":
-            code_max_length = 4096 - 1024 - 1
-        # 检查tokens长度
-        if (
-            self.num_tokens_from_string(sys_prompt)
-            + self.num_tokens_from_string(usr_prompt)
-            >= code_max_length
-        ):
-            print("The code is too long, using gpt-3.5-turbo-16k to process it.")
-            model = "gpt-3.5-turbo-16k"
+        code_max_length = max_input_tokens_map.get(model, 2000)
 
+        total_tokens = (
+            self.num_tokens_from_string(sys_prompt) +
+            self.num_tokens_from_string(usr_prompt)
+        )
+
+        # 如果总tokens超过当前模型的限制，则尝试寻找较大模型或者缩减输入
+        if total_tokens >= code_max_length:
+            # 查找一个拥有更大输入限制的模型
+            larger_models = {k: v for k, v in max_input_tokens_map.items() if v > code_max_length}
+            if larger_models:
+                # 选择一个拥有更大输入限制的模型
+                model = max(larger_models, key=larger_models.get)
+                logger.info(f"Switching to {model} for processing.")
+            else:
+                for attempt in range(2):
+                    logger.info(f"Attempt {attempt + 1} of {max_attempts}: Reducing the length of the messages.")
+                    if attempt == 0:
+                        # 第一次尝试，移除 project_structure 和 project_structure_prefix
+                        project_structure = ""
+                        project_structure_prefix = ""
+                    elif attempt == 1:
+                        # 第二次尝试，移除相关的调用者和被调用者信息
+                        referenced = False
+                        referencer_content = ""
+                        reference_letter = ""
+                        combine_ref_situation = ""
+                        
+                    # 更新 sys_prompt
+                    sys_prompt = SYS_PROMPT.format(
+                        reference_letter=reference_letter,
+                        combine_ref_situation=combine_ref_situation,
+                        file_path=file_path,
+                        project_structure_prefix=project_structure_prefix,
+                        project_structure=project_structure,
+                        code_type_tell=code_type_tell,
+                        code_name=code_name,
+                        code_content=code_content,
+                        have_return_tell=have_return_tell,
+                        has_relationship=has_relationship,
+                        referenced=referenced,
+                        referencer_content=referencer_content,
+                        parameters_or_attribute=parameters_or_attribute,
+                        language=language,
+                    )
+                    
+                    # 重新计算 tokens
+                    total_tokens = (
+                        self.num_tokens_from_string(sys_prompt) +
+                        self.num_tokens_from_string(usr_prompt)
+                    )
+                    # 检查是否满足要求
+                    if total_tokens < code_max_length:
+                        break
+                    
+                if total_tokens >= code_max_length:
+                    error_message = (
+                        f"Context length of {total_tokens} exceeds the maximum limit of {code_max_length} tokens "
+                        f"after {max_attempts} attempts. Please reduce the input size manually."
+                    )
+                    raise ContextLengthExceededError(error_message)
+
+        max_attempts = 5  # 设置最大尝试次数
         attempt = 0
         while attempt < max_attempts:
             try:
@@ -242,8 +272,6 @@ class ChatEngine:
                     {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": usr_prompt},
                 ]
-                # print(f"tokens of system-prompt={self.num_tokens_from_string(sys_prompt)}, user-prompt={self.num_tokens_from_string(usr_prompt)}")
-                # print(f"message:\n{messages}\n")
 
                 response = client.chat.completions.create(
                     model=model,
@@ -258,13 +286,10 @@ class ChatEngine:
                 if response_message is None:
                     attempt += 1
                     continue
-
-                # print(f"\nAnswer:\n{response_message.content}\n")
-
                 return response_message
 
             except APIConnectionError as e:
-                print(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
+                logger.error(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
                 # Retry after 7 seconds
                 time.sleep(7)
                 attempt += 1
@@ -272,72 +297,8 @@ class ChatEngine:
                     raise
                 else:
                     continue  # Try to request again
-
-            except BadRequestError as e:
-                # import pdb; pdb.set_trace()
-                if "context_length_exceeded" in str(e):
-                    logger.info(
-                        f"Error: The model's maximum context length is exceeded. Reducing the length of the messages. Attempt {attempt + 1} of {max_attempts}"
-                    )
-                    logger.info(
-                        f"Length of sys_prompt: {len(sys_prompt)}, removing project_structure..."
-                    )
-                    project_structure_prefix = ""
-                    project_structure = ""
-                    # Remove project_structure and project_structure_prefix
-                    sys_prompt = SYS_PROMPT.format(
-                        reference_letter=reference_letter,
-                        combine_ref_situation=combine_ref_situation,
-                        file_path=file_path,
-                        project_structure_prefix="",
-                        project_structure="",
-                        code_type_tell=code_type_tell,
-                        code_name=code_name,
-                        code_content=code_content,
-                        have_return_tell=have_return_tell,
-                        has_relationship=has_relationship,
-                        referenced=referenced,
-                        referencer_content=referencer_content,
-                        parameters_or_attribute=parameters_or_attribute,
-                        language=language,
-                    )
-
-                    attempt += 1
-                    if attempt >= 2:
-                        # Remove related callers and callees
-                        logger.info(
-                            f"Length of sys_prompt: {len(sys_prompt)}, removing related callers and callees..."
-                        )
-                        referenced = False
-                        referencer_content = ""
-                        reference_letter = ""
-                        combine_ref_situation = ""
-
-                        sys_prompt = SYS_PROMPT.format(
-                            combine_ref_situation="",
-                            file_path=file_path,
-                            project_structure_prefix=project_structure_prefix,
-                            project_structure=project_structure,
-                            code_type_tell=code_type_tell,
-                            code_name=code_name,
-                            code_content=code_content,
-                            have_return_tell=have_return_tell,
-                            # referenced=referenced,
-                            has_relationship=has_relationship,
-                            reference_letter="",
-                            referencer_content="",
-                            parameters_or_attribute=parameters_or_attribute,
-                            language=language,
-                        )
-
-                    continue  # Try to request again
-                else:
-                    print(
-                        f"An OpenAI error occurred: {e}. Attempt {attempt + 1} of {max_attempts}"
-                    )
-
             except Exception as e:
-                print(
+                logger.error(
                     f"An unknown error occurred: {e}. \nAttempt {attempt + 1} of {max_attempts}"
                 )
                 # Retry after 10 seconds
