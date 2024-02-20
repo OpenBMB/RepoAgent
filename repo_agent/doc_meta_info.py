@@ -569,12 +569,20 @@ class MetaInfo:
     def load_doc_from_older_meta(self, older_meta: MetaInfo):
         """older_meta是老版本的、已经生成doc的meta info"""
         logger.info("merge doc from an older version of metainfo")
-        root_item = self.target_repo_hierarchical_tree
+        root_item = self.target_repo_hierarchical_tree # 新版的根节点
 
         def find_item(now_item: DocItem) -> Optional[DocItem]:
-            """新版的meta中能不能找到原来的某个东西"""
+            """
+            Find an item in the new version of meta based on its original item.
+
+            Args:
+                now_item (DocItem): The original item to be found in the new version of meta.
+
+            Returns:
+                Optional[DocItem]: The corresponding item in the new version of meta if found, otherwise None.
+            """
             nonlocal root_item
-            if now_item.father == None:  # 根节点永远能找到
+            if now_item.father == None:  # The root node can always be found
                 return root_item
             father_find_result = find_item(now_item.father)
             if not father_find_result:

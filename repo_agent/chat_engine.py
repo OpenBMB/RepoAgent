@@ -159,7 +159,7 @@ class ChatEngine:
         language = self.config["language"]
         if language not in language_mapping:
             raise KeyError(
-                f"Language code {language} is not given! Supported languages are: {json.dumps(language_mapping)}"
+                f"Language code {language} is not provided! Supported languages are: {json.dumps(language_mapping)}"
             )
 
         language = language_mapping[language]

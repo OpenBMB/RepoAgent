@@ -63,19 +63,20 @@ class Runner:
 
         if not os.path.exists(
             os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
-        ):
-            self.meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"])
-            self.meta_info.checkpoint(
+        ):  # 如果不存在全局结构信息文件夹.project_hierarchy，就新建一个
+            self.meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"]) # 从repo_path中初始化一个meta_info, metainfo代表了整个项目的结构信息
+            self.meta_info.checkpoint( # 将初始化的meta_info写入到.project_doc_record文件夹中
                 target_dir_path=os.path.join(
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
                 )
             )
-        else:
+        else: # 如果存在全局结构信息文件夹.project_hierarchy，就从中加载
             self.meta_info = MetaInfo.from_checkpoint_path(
                 os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
             )
+
         self.meta_info.white_list = load_whitelist()
-        self.meta_info.checkpoint(
+        self.meta_info.checkpoint(  # 更新白名单后也要重新将全局信息写入到.project_doc_record文件夹中
             target_dir_path=os.path.join(
                 CONFIG["repo_path"], CONFIG["project_hierarchy"]
             )
@@ -190,7 +191,7 @@ class Runner:
     def markdown_refresh(self):
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
-            # 首先删除doc下所有内容，然后再重新写入
+            # 首先删除doc下所有内容，然后再重新写入 (这种方法有点问题吧？@yeyn)
             markdown_docs_path = os.path.join(CONFIG["repo_path"], CONFIG["Markdown_Docs_folder"])
             if os.path.exists(markdown_docs_path):
                 shutil.rmtree(markdown_docs_path)
@@ -230,7 +231,7 @@ class Runner:
                     for _, child in item.children.items():
                         markdown_content += to_markdown(child, now_level + 1)
                         markdown_content += "***\n"
-                        
+
                     return markdown_content
 
                 markdown = ""
@@ -297,11 +298,11 @@ class Runner:
             1.新建的文件没有文档，因此metainfo merge后还是没有文档
             2.被删除的文件和obj，本来就不在新的meta里面，相当于文档被自动删除了
             3.只需要观察被修改的文件，以及引用关系需要被通知的文件去重新生成文档"""
-            new_meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"])
-            new_meta_info.load_doc_from_older_meta(self.meta_info)
+            new_meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"]) # 从repo_path中初始化一个meta_info, metainfo代表了整个项目的结构信息
+            new_meta_info.load_doc_from_older_meta(self.meta_info) # 从老的meta_info中加载文档信息, 目的是跟上面的new_meta_info做merge，检测出new中的变更
 
-            self.meta_info = new_meta_info
-            self.meta_info.in_generation_process = True
+            self.meta_info = new_meta_info # 更新自身的meta_info信息为new的信息
+            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后正在生成文档的过程中
 
         # 处理任务队列
         ignore_list = CONFIG.get("ignore_list", [])
