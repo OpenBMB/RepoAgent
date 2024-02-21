@@ -92,11 +92,9 @@ api_keys:
   ...
 
 default_completion_kwargs:
-  model: gpt-4
+  model: gpt-4-1106
   temperature: 0.2
   request_timeout: 60
-
-max_thread_count: int # We support multiprocessing to speedup the process
 
 repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
@@ -105,6 +103,9 @@ ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore
 whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json, will only process the given part. This is useful in a very big project, like "higgingface Transformers"
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
+max_thread_count: 10 # We support multiprocessing to speedup the process
+max_document_tokens: 1024 # the maximum number of tokens in a document generated 
+log_level: info
 ```
 
 ### Run RepoAgent

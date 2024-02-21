@@ -135,6 +135,8 @@ class ChatEngine:
 
         # language
         language = self.config["language"]
+        max_tokens = self.config.get("max_document_tokens", 1024) or 1024
+
         if language not in language_mapping:
             raise KeyError(
                 f"Language code {language} is not provided! Supported languages are: {json.dumps(language_mapping)}"
@@ -277,7 +279,7 @@ class ChatEngine:
                     model=model,
                     messages=messages,
                     temperature=self.config["default_completion_kwargs"]["temperature"],
-                    max_tokens=1024,
+                    max_tokens=max_tokens,
                 )
 
                 response_message = response.choices[0].message
