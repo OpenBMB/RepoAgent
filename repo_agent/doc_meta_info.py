@@ -106,15 +106,28 @@ class DocItem:
 
     multithread_task_id: int = -1  # 在多线程中的task_id
 
-    def __eq__(self, other) -> bool:
-        # 检查other是否是MyCustomClass的实例
-        if not isinstance(other, DocItem):
-            return False
-        if self.item_type != other.item_type:
-            return False
-        if self.obj_name != other.obj_name:
-            return False
-        return self.get_full_name() == other.get_full_name()
+    # def __eq__(self, other) -> bool:
+    #     # 检查other是否是MyCustomClass的实例
+    #     if not isinstance(other, DocItem):
+    #         return False
+    #     if self.item_type != other.item_type:
+    #         return False
+    #     if self.obj_name != other.obj_name:
+    #         return False
+        
+    #     if self.get_full_name() != other.get_full_name():
+    #         return False
+    #     # 如果是重名的obj，还要检测
+    #     name_1, name_2 = None, None
+    #     for _,child in self.father.children.items():
+    #         if child == self:
+    #             name_1 = _
+    #             break
+    #     for _,child in other.father.children.items():
+    #         if child == other:
+    #             name_2 = _
+    #             break
+    #     return name_1 == name_2
 
     @staticmethod
     def has_ans_relation(now_a: DocItem, now_b: DocItem):
@@ -158,25 +171,6 @@ class DocItem:
         self.depth = max_child_depth + 1
         return self.depth
 
-    @staticmethod
-    def find_min_ances(node_a: DocItem, node_b: DocItem):
-        """
-        Find the minimum ancestor between two DocItems.
-
-        Args:
-            node_a (DocItem): The first DocItem.
-            node_b (DocItem): The second DocItem.
-
-        Returns:
-            The minimum ancestor between node_a and node_b.
-        """
-        pos = 0
-        assert node_a.tree_path[pos] == node_b.tree_path[pos]
-        while True:
-            pos += 1
-            if node_a.tree_path[pos] != node_b.tree_path[pos]:
-                return node_a.tree_path[pos - 1]
-
     def parse_tree_path(self, now_path):
         """
         Recursively parses the tree path by appending the current node to the given path.
@@ -195,7 +189,7 @@ class DocItem:
         full_name = self.get_full_name()
         return full_name.split(".py")[0] + ".py"
 
-    def get_full_name(self):
+    def get_full_name(self, strict = False):
             """获取从下到上所有的obj名字
 
             Returns:
@@ -206,7 +200,15 @@ class DocItem:
             name_list = []
             now = self
             while now != None:
-                name_list = [now.obj_name] + name_list
+                self_name = now.obj_name
+                if strict:
+                    for name, item in self.father.children.items():
+                        if item == now:
+                            self_name = name
+                            break
+                    if self_name != now.obj_name:
+                        self_name = self_name + "(name_duplicate_version)"
+                name_list = [self_name] + name_list
                 now = now.father
 
             name_list = name_list[1:]
@@ -375,10 +377,12 @@ class MetaInfo:
         '''打印'''
         task_table = PrettyTable(["task_id","Doc Generation Reason", "Path","dependency"])
         for task_id, task_info in task_dict.items():
-            remain_str = ",".join([str(d_task.task_id) for d_task in task_info.dependencies])
-            if len(remain_str) > 20:
-                remain_str = remain_str[:8] + "..." + remain_str[-8:]
-            task_table.add_row([task_id, task_info.extra_info.item_status.name, task_info.extra_info.get_full_name(), remain_str])
+            remain_str = "None"
+            if task_info.dependencies != []:
+                remain_str = ",".join([str(d_task.task_id) for d_task in task_info.dependencies])
+                if len(remain_str) > 20:
+                    remain_str = remain_str[:8] + "..." + remain_str[-8:]
+            task_table.add_row([task_id, task_info.extra_info.item_status.name, task_info.extra_info.get_full_name(strict=True), remain_str])
         # print("Remain tasks to be done")
         print(task_table)
 
@@ -492,8 +496,6 @@ class MetaInfo:
                         )
                         continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
-                    # if now_obj.get_full_name() == "experiment1_gpt4_io.py/main":
-                    #     print(referencer_node.get_full_name())
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         if now_obj not in referencer_node.reference_who:
@@ -502,6 +504,8 @@ class MetaInfo:
                             referencer_node.reference_who.append(now_obj)
                             now_obj.who_reference_me.append(referencer_node)
                             ref_count += 1
+                # if now_obj.get_full_name() == "autogen/_pydantic.py/type2schema":
+                #     import pdb; pdb.set_trace()
                 for _, child in now_obj.children.items():
                     walk_file(child)
 
@@ -614,12 +618,23 @@ class MetaInfo:
             father_find_result = find_item(now_item.father)
             if not father_find_result:
                 return None
-            if now_item.obj_name in father_find_result.children.keys():
-                result_item = father_find_result.children[now_item.obj_name]
+            #注意：这里需要考虑 now_item.obj_name可能会有重名，并不一定等于
+            real_name = None
+            for child_real_name, temp_item in now_item.father.children.items():
+                if temp_item == now_item:
+                    real_name = child_real_name
+                    break
+            assert real_name != None
+            # if real_name != now_item.obj_name:
+            #     import pdb; pdb.set_trace()
+            if real_name in father_find_result.children.keys():
+                result_item = father_find_result.children[real_name]
                 return result_item
             return None
 
         def travel(now_older_item: DocItem):  # 只寻找源码是否被修改的信息
+            # if now_older_item.get_full_name() == "autogen/_pydantic.py/type2schema":
+            #     import pdb; pdb.set_trace()
             result_item = find_item(now_older_item)
             if not result_item:  # 新版文件中找不到原来的item，就回退
                 deleted_items.append([now_older_item.get_full_name(), now_older_item.item_type.name])
@@ -650,11 +665,11 @@ class MetaInfo:
                 return
             """result_item引用的人是否变化了"""
             new_reference_names = [
-                name.get_full_name() for name in result_item.who_reference_me
+                name.get_full_name(strict=True) for name in result_item.who_reference_me
             ]
             old_reference_names = now_older_item.who_reference_me_name_list
-            # if now_older_item.get_full_name() == "experiment1_gpt4_io.py/main":
-            #     import pdb; pdb.set_trace()
+            # if now_older_item.get_full_name() == "autogen/_pydantic.py/type2schema":
+            #     import pdb; pdb.set_trace() 
             if not (set(new_reference_names) == set(old_reference_names)) and (
                 result_item.item_status == DocItemStatus.doc_up_to_date
             ):
@@ -701,8 +716,8 @@ class MetaInfo:
                 temp_json_obj["item_status"] = now_obj.item_status.name
                 
                 if flash_reference_relation:
-                    temp_json_obj["who_reference_me"] = [cont.get_full_name() for cont in now_obj.who_reference_me]
-                    temp_json_obj["reference_who"] = [cont.get_full_name() for cont in now_obj.reference_who]
+                    temp_json_obj["who_reference_me"] = [cont.get_full_name(strict=True) for cont in now_obj.who_reference_me]
+                    temp_json_obj["reference_who"] = [cont.get_full_name(strict=True) for cont in now_obj.reference_who]
                     temp_json_obj["special_reference_type"] = now_obj.special_reference_type
                 file_hierarchy_content.append(temp_json_obj)
 
@@ -803,7 +818,8 @@ class MetaInfo:
                     potential_father = file_item
                 item.father = potential_father
                 child_name = item.obj_name
-                if child_name in potential_father.children.keys():
+                if child_name in potential_father.children.keys(): 
+                    # 如果存在同层次的重名问题，就重命名成 xxx_i的形式
                     now_name_id = 0
                     while (child_name + f"_{now_name_id}") in potential_father.children.keys():
                         now_name_id += 1
