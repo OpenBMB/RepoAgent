@@ -133,15 +133,14 @@ class ChatEngine:
             else:
                 return ""
 
-        # language
-        language = self.config["language"]
+        
         max_tokens = self.config.get("max_document_tokens", 1024) or 1024
-
+        max_attempts = 5  # 设置最大尝试次数
+        language = self.config["language"] # setting document language
         if language not in language_mapping:
             raise KeyError(
                 f"Language code {language} is not provided! Supported languages are: {json.dumps(language_mapping)}"
             )
-
         language = language_mapping[language]
 
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
@@ -162,9 +161,7 @@ class ChatEngine:
 
         referencer_content = get_referencer_prompt(doc_item)
         reference_letter = get_referenced_prompt(doc_item)
-        has_relationship = get_relationship_description(
-            referencer_content, reference_letter
-        )
+        has_relationship = get_relationship_description(referencer_content, reference_letter)
 
         project_structure_prefix = ", and the related hierarchical structure of this project is as follows (The current object is marked with an *):"
 
@@ -186,9 +183,6 @@ class ChatEngine:
         )
 
         usr_prompt = USR_PROMPT.format(language=language)
-        # import pdb; pdb.set_trace()
-        # print("\nsys_prompt:\n",sys_prompt)
-        # print("\nusr_prompt:\n",str(usr_prompt))
 
         # # 保存prompt到txt文件
         # with open(f'prompt_output/sys_prompt_{code_name}.txt', 'w', encoding='utf-8') as f:
@@ -196,7 +190,7 @@ class ChatEngine:
 
         logger.info(f"Using {max_input_tokens_map} for context window judgment.")
         model = self.config["default_completion_kwargs"]["model"]
-        code_max_length = max_input_tokens_map.get(model, 2000)
+        max_input_length = max_input_tokens_map.get(model, 4096) - max_tokens
 
         total_tokens = (
             self.num_tokens_from_string(sys_prompt) +
@@ -204,13 +198,13 @@ class ChatEngine:
         )
 
         # 如果总tokens超过当前模型的限制，则尝试寻找较大模型或者缩减输入
-        if total_tokens >= code_max_length:
+        if total_tokens >= max_input_length:
             # 查找一个拥有更大输入限制的模型
-            larger_models = {k: v for k, v in max_input_tokens_map.items() if v > code_max_length}
+            larger_models = {k: v for k, v in max_input_tokens_map.items() if (v-max_tokens) > max_input_length}
             if larger_models:
                 # 选择一个拥有更大输入限制的模型
                 model = max(larger_models, key=larger_models.get)
-                logger.info(f"Switching to {model} for processing.")
+                logger.info(f"Switching to {model} for long-context processing.")
             else:
                 for attempt in range(2):
                     logger.info(f"Attempt {attempt + 1} of {max_attempts}: Reducing the length of the messages.")
@@ -249,17 +243,16 @@ class ChatEngine:
                         self.num_tokens_from_string(usr_prompt)
                     )
                     # 检查是否满足要求
-                    if total_tokens < code_max_length:
+                    if total_tokens < max_input_length:
                         break
                     
-                if total_tokens >= code_max_length:
+                if total_tokens >= max_input_length:
                     error_message = (
-                        f"Context length of {total_tokens} exceeds the maximum limit of {code_max_length} tokens "
-                        f"after {max_attempts} attempts. Please reduce the input size manually."
+                        f"Context length of {total_tokens} exceeds the maximum limit of {max_input_length} tokens..."
                     )
-                    raise ContextLengthExceededError(error_message)
+                    # raise ContextLengthExceededError(error_message)
+                    return None
 
-        max_attempts = 5  # 设置最大尝试次数
         attempt = 0
         while attempt < max_attempts:
             try:
