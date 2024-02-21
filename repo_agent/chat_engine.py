@@ -188,7 +188,8 @@ class ChatEngine:
         # with open(f'prompt_output/sys_prompt_{code_name}.txt', 'w', encoding='utf-8') as f:
         #     f.write(sys_prompt+'\n'+ usr_prompt)
 
-        logger.info(f"Using {max_input_tokens_map} for context window judgment.")
+        # logger.info(f"Using {max_input_tokens_map} for context window judgment.")
+        
         model = self.config["default_completion_kwargs"]["model"]
         max_input_length = max_input_tokens_map.get(model, 4096) - max_tokens
 
