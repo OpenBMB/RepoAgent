@@ -12,16 +12,17 @@ RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在�
 
 传统上，创建和维护软件文档需要大量的人力和专业知识，这对于没有专门人员的小团队来说是一个挑战。大型语言模型（LLMs）如GPT的引入改变了这一情况，使得AI能够处理大部分文档编写过程。这种转变使得人类开发人员可以专注于验证和微调修改，极大地减轻了文档编写的人工负担。
 
-**🏆 我们的目标是创建一个智能的文档助手，帮助人类阅读并理解repo项目，并生成文档，最终帮助人类提高效率、节省时间。**
+**🏆 我们的目标是创建一个智能的文档助手，自动生成和维护文档，并帮助人类阅读并理解repo项目，最终帮助人类提高效率、节省时间。**
 
 # 🪭 特性
 
 - **🤖 自动检测Git仓库中的变更，跟踪文件的添加、删除和修改。**
-- **📝 通过AST独立分析代码结构，为各个对象生成文档。**
-- **🔍 精准识别对象间调用关系，丰富文档内容的全局视野**
+- **📝 通过深度递归+AST独立分析代码结构，为各个对象生成文档。**
+- **🔍 精准识别对象间双向调用关系，丰富文档内容的全局视野**
 - **📚 根据变更无缝替换Markdown内容，保持文档的一致性。**
 - **🕙 执行多线程并发操作，提高文档生成的效率。**
 - **👭 为团队协作提供可持续、自动化的文档更新方法。**
+- **😍 美观的文档书（Gitbook）展示**
 
 # 📦 安装
 首先，确保您的机器安装了python3.9以上的版本
@@ -66,12 +67,15 @@ Markdown_Docs_folder: Markdown_Docs # 目标存储库根目录中用于存储文
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # 通过在ignore_list中给出相对路径来忽略一些您不想为其生成文档的py文件或文件夹
 
 language: zh # 双字母语言代码（ISO 639-1 代码），例如 `language: en` 表示英语，有关更多语言，请参阅支持的语言
+max_thread_count: 10 # 我们支持多线程执行来加速文档生成过程
+max_document_tokens: 1024 # 每一个对象文档（如类、函数）允许的最大长度
+log_level: info # log信息显示等级
 ```
 
 ## 运行RepoAgent
 进入RepoAgent根目录，在命令行输入以下命令：
-```
-python repo_agent/runner.py
+```sh
+python -m repo_agent
 ```
 如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
@@ -117,10 +121,21 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 
 生成的文档将存放在目标仓库根目录下的指定文件夹中，生成的文档效果如下图所示：
 ![Documentation](assets/images/Doc_example.png)
+![Documentation](assets/images/8_documents.png)
 
-我们使用默认模型**gpt-3.5-turbo**对一个约**27万行**的中大型项目[**XAgent**](https://github.com/OpenBMB/XAgent)生成了文档。您可以前往XAgent项目的Markdown_Docs文件目录下查看生成效果。如果您希望得到更好的文档效果，我们建议您使用更先进的模型，如**gpt-4**或**gpt-4-1106-preview**。
+
+我们使用默认模型**gpt-3.5-turbo**对一个约**27万行**的中大型项目[**XAgent**](https://github.com/OpenBMB/XAgent)生成了文档。您可以前往XAgent项目的Markdown_Docs文件目录下查看生成效果。如果您希望得到更好的文档效果，我们建议您使用更先进的模型，如**gpt-4-1106** 或 **gpt-4-0125-preview**。
 
 **最后，您可以通过自定义Prompt来灵活调整文档的输出格式、模板等方面的效果。 我们很高兴您探索更科学的自动化Technical Writing Prompts并对社区作出贡献。**
+
+### 探索 chat with repo
+
+我们将与仓库对话视为所有下游应用的统一入口，作为连接RepoAgent与人类用户和其他AI智能体之间的接口。我们未来的研究将探索适配各种下游应用的接口，并实现这些下游任务的独特性和现实要求。
+
+在这里，我们展示了我们的下游任务之一的初步原型：自动issue问题解答和代码解释。您可以通过在终端运行以下代码启动服务。
+```bash
+python -m repo_agent.chat_with_repo
+```
 
 # ✅ 未来工作
 
@@ -174,12 +189,12 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 # 📊 引用我们
 ```bibtex
 @misc{RepoAgent,
-  author = {Qinyu Luo, Yining Ye, Shihao Liang, Arno},
+  author = {Qinyu Luo, Yining Ye, Shihao Liang, Zhong Zhang, Arno, Yang Li},
   title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/LOGIC-10/RepoAgent}},
+  howpublished = {\url{https://github.com/OpenBMB/RepoAgent}},
 }
 ```
 
