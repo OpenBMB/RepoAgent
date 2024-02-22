@@ -42,7 +42,6 @@ used_models = []
 for model_name, _ in CONFIG['api_keys'].items():
     used_models.append(model_name)
 
-# NOTE Each model's token limit has been reduced by 1024 tokens to account for the output space and 1 for boundary conditions.
 max_input_tokens_map = {
     "gpt-3.5-turbo": 4096, # NOTE OPENAI said that The gpt-3.5-turbo model alias will be automatically upgraded from gpt-3.5-turbo-0613 to gpt-3.5-turbo-0125 on February 16th. But in 2/20, then still maintain 4,096 tokens for context window.
     "gpt-3.5-turbo-0613": 4096, # NOTE Will be deprecated on June 13, 2024.
@@ -56,6 +55,9 @@ max_input_tokens_map = {
     "gpt-4-0125-preview": 131072,
     "gpt-4-turbo-preview": 131072,
 }
+
+max_output_token = 1024
+boundary_token = 1
 
 # 移除在 yaml 文件中未使用的模型
 for model_key in list(max_input_tokens_map.keys()):

@@ -1,19 +1,76 @@
 import os, json
-import sys
-from openai import OpenAI
-from openai import APIConnectionError
-import tiktoken
 import time
-from repo_agent.config import language_mapping, max_input_tokens_map
+import sys
+import tiktoken
+import inspect
+from repo_agent.config import (
+    language_mapping, 
+    max_input_tokens_map, 
+    max_output_token, 
+    boundary_token
+)
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem
-import inspect
 from collections import defaultdict
 from repo_agent.log import logger
+from typing import Dict, Literal
+from openai import OpenAI, APIConnectionError
+
 
 class ContextLengthExceededError(Exception):
     """Exception raised when the input size exceeds the model's context length limit."""
     pass
+
+def get_relative_items_from_key(dictionary: Dict, target_key: str, direction: Literal["before", "after"]='after') -> Dict[str, int]:
+    """
+    获取与指定键相对位置的所有键值对。
+
+    Args:
+        dictionary (dict): 要操作的字典对象。
+        target_key (str): 用于定位的键。
+        direction (str, optional): 指定获取方向，'before'表示获取目标键之前的键值对，
+                                   'after'表示获取目标键之后的键值对。默认为'after'。
+
+    Returns:
+        dict: 根据指定方向，相对于指定键的所有键值对构成的字典。
+
+    Raises:
+        ValueError: 如果方向参数不是'before'或'after'。
+    """
+    keys = list(dictionary.keys())
+    try:
+        key_index = keys.index(target_key)
+    except ValueError:
+        # 如果指定的键不在字典中，返回空字典
+        return {}
+
+    if direction == 'before':
+        # 获取键之前的所有键值对
+        selected_items = dict(list(dictionary.items())[:key_index])
+    elif direction == 'after':
+        # 获取键之后以及键的所有键值对
+        selected_items = dict(list(dictionary.items())[key_index:])
+    else:
+        raise ValueError("Direction must be 'before' or 'after'.")
+
+    return selected_items
+
+def find_first_model_exceeding_limit(model_limits: Dict[str, int], minimum_tokens: int) -> str | None:
+    """
+    在给定的模型及其限制中，找到第一个输入限制超过指定数量的模型。
+
+    Args:
+        model_limits (dict): 模型及其对应的输入限制的字典。
+        minimum_tokens (int): 指定的最小输入令牌数量。
+
+    Returns:
+        str: 第一个输入限制超过指定数量的模型名称。如果没有找到符合条件的模型，则返回None。
+    """
+    for model_name, token_limit in model_limits.items():
+        if token_limit >= minimum_tokens:
+            return model_name  # 返回第一个符合条件的模型名称
+    return None  # 如果没有找到符合条件的模型，则返回None
+
 
 def get_import_statements():
     source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
@@ -188,32 +245,33 @@ class ChatEngine:
         # with open(f'prompt_output/sys_prompt_{code_name}.txt', 'w', encoding='utf-8') as f:
         #     f.write(sys_prompt+'\n'+ usr_prompt)
 
-        # logger.info(f"Using {max_input_tokens_map} for context window judgment.")
-        
         model = self.config["default_completion_kwargs"]["model"]
-        max_input_length = max_input_tokens_map.get(model, 4096) - max_tokens
+        max_input_tokens = max_input_tokens_map.get(model, 4096) - max_output_token - boundary_token
 
-        total_tokens = (
+        input_tokens = (
             self.num_tokens_from_string(sys_prompt) +
             self.num_tokens_from_string(usr_prompt)
         )
 
         # 如果总tokens超过当前模型的限制，则尝试寻找较大模型或者缩减输入
-        if total_tokens >= max_input_length:
+        if input_tokens > max_input_tokens:
             # 查找一个拥有更大输入限制的模型
-            larger_models = {k: v for k, v in max_input_tokens_map.items() if (v-max_tokens) > max_input_length}
-            if larger_models:
+            first_larger_model = find_first_model_exceeding_limit(max_input_tokens_map, input_tokens)
+            if first_larger_model is not None:
                 # 选择一个拥有更大输入限制的模型
-                model = max(larger_models, key=larger_models.get)
-                logger.info(f"Switching to {model} for long-context processing.")
+                model = first_larger_model
+                logger.info(f"Use {model} for processing.")
             else:
-                for attempt in range(2):
-                    logger.info(f"Attempt {attempt + 1} of {max_attempts}: Reducing the length of the messages.")
+                trim_max_retry = 2
+                for attempt in range(trim_max_retry):
+                    logger.info(f"Attempt {attempt + 1} of {trim_max_retry}: Reducing the length of the messages.")
                     if attempt == 0:
+                        logger.info(f"Removed project_structure and project_structure_prefix to suit context window")
                         # 第一次尝试，移除 project_structure 和 project_structure_prefix
                         project_structure = ""
                         project_structure_prefix = ""
                     elif attempt == 1:
+                        logger.info(f"Removed referencer_content, reference_letter, combine_ref_situation to suit context window")
                         # 第二次尝试，移除相关的调用者和被调用者信息
                         referenced = False
                         referencer_content = ""
@@ -244,61 +302,65 @@ class ChatEngine:
                         self.num_tokens_from_string(usr_prompt)
                     )
                     # 检查是否满足要求
-                    if total_tokens < max_input_length:
+                    if total_tokens <= max_input_tokens:
                         break
                     
-                if total_tokens >= max_input_length:
+                if total_tokens > max_input_tokens:
                     error_message = (
-                        f"Context length of {total_tokens} exceeds the maximum limit of {max_input_length} tokens..."
+                        f"Context length of {total_tokens} exceeds the maximum limit of {max_input_tokens} tokens "
+                        f"after {trim_max_retry} attempts."
                     )
                     # raise ContextLengthExceededError(error_message)
                     return None
 
+        max_attempts = 5
         attempt = 0
-        while attempt < max_attempts:
-            try:
-                # 获取基本配置
-                client = OpenAI(
-                    api_key=self.config["api_keys"][model][0]["api_key"],
-                    base_url=self.config["api_keys"][model][0]["base_url"],
-                    timeout=self.config["default_completion_kwargs"]["request_timeout"],
-                )
+        fallback_model = get_relative_items_from_key(max_input_tokens_map, model, 'after')
+        for model, _ in fallback_model.items():
+            while attempt < max_attempts:
+                try:
+                    # 获取基本配置
+                    client = OpenAI(
+                        api_key=self.config["api_keys"][model][0]["api_key"],
+                        base_url=self.config["api_keys"][model][0]["base_url"],
+                        timeout=self.config["default_completion_kwargs"]["request_timeout"],
+                    )
 
-                messages = [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": usr_prompt},
-                ]
+                    messages = [
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": usr_prompt},
+                    ]
 
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=self.config["default_completion_kwargs"]["temperature"],
-                    max_tokens=max_tokens,
-                )
+                    response = client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        temperature=self.config["default_completion_kwargs"]["temperature"],
+                        max_tokens=max_output_token,
+                    )
 
-                response_message = response.choices[0].message
+                    response_message = response.choices[0].message
 
-                # 如果 response_message 是 None，则继续下一次循环
-                if response_message is None:
+                    # 如果 response_message 是 None，则继续下一次循环
+                    if response_message is None:
+                        attempt += 1
+                        continue
+                    return response_message
+
+                except APIConnectionError as e:
+                    logger.error(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
+                    # Retry after 7 seconds
+                    time.sleep(7)
                     attempt += 1
-                    continue
-                return response_message
-
-            except APIConnectionError as e:
-                logger.error(f"Connection error: {e}. Attempt {attempt + 1} of {max_attempts}")
-                # Retry after 7 seconds
-                time.sleep(7)
-                attempt += 1
-                if attempt == max_attempts:
-                    raise
-                else:
-                    continue  # Try to request again
-            except Exception as e:
-                logger.error(
-                    f"An unknown error occurred: {e}. \nAttempt {attempt + 1} of {max_attempts}"
-                )
-                # Retry after 10 seconds
-                time.sleep(10)
-                attempt += 1
-                if attempt == max_attempts:
-                    return None
+                    if attempt == max_attempts:
+                        raise
+                    else:
+                        continue  # Try to request again
+                except Exception as e:
+                    logger.error(
+                        f"An unknown error occurred: {e}. \nAttempt {attempt + 1} of {max_attempts}"
+                    )
+                    # Retry after 10 seconds
+                    time.sleep(10)
+                    attempt += 1
+                    if attempt == max_attempts:
+                        return None
