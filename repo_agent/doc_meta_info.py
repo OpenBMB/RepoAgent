@@ -490,12 +490,17 @@ class MetaInfo:
                     referencer_file_item = self.target_repo_hierarchical_tree.find(target_file_hiera)
                     if referencer_file_item == None:
                         # import pdb; pdb.set_trace()
-
                         logger.info(
                             f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo"
                         )
                         continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
+                    if referencer_node.obj_name == now_obj.obj_name:
+                        logger.info(
+                            f"Jedi find {now_obj.get_full_name()} with name_duplicate_reference, skipped"
+                        )
+                        continue
+
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         if now_obj not in referencer_node.reference_who:
@@ -719,6 +724,10 @@ class MetaInfo:
                     temp_json_obj["who_reference_me"] = [cont.get_full_name(strict=True) for cont in now_obj.who_reference_me]
                     temp_json_obj["reference_who"] = [cont.get_full_name(strict=True) for cont in now_obj.reference_who]
                     temp_json_obj["special_reference_type"] = now_obj.special_reference_type
+                else:
+                    temp_json_obj["who_reference_me"] = now_obj.who_reference_me_name_list
+                    temp_json_obj["reference_who"] = now_obj.reference_who_name_list
+                    # temp_json_obj["special_reference_type"] = 
                 file_hierarchy_content.append(temp_json_obj)
 
                 for _, child in now_obj.children.items():
