@@ -7,6 +7,8 @@ from llama_index.llms import OpenAI
 import json
 from openai import OpenAI as AI
 
+# logger.add("./log.txt", level="DEBUG", format="{time} - {name} - {level} - {message}")
+
 
 class RepoAssistant:
     def __init__(self, api_key, api_base, db_path):
@@ -39,21 +41,20 @@ class RepoAssistant:
         queries = response.text.split("\n")
         return queries
     
-    def rerank(self, query ,docs): # 这里要防止返回值格式上出问题
+    def relevant(self, query ,docs,docsx): # 这里要防止返回值格式上出问题
         response = self.lm.chat.completions.create(
             model='gpt-4-1106-preview',
-            response_format={"type": "json_object"},
             temperature=0,
             messages=[
-            {"role": "system", "content": "You are an expert relevance ranker. Given a list of documents and a query, your job is to determine how relevant each document is for answering the query. Your output is JSON, which is a list of documents.  Each document has two fields, content and score.  relevance_score is from 0.0 to 100.0. Higher relevance means higher score."},
-            {"role": "user", "content": f"Query: {query} Docs: {docs}"}
+            {"role": "system", "content": "You are a judge, you need to determine whether the content in the list Docs is more relevant to the Query content, or the content in the list Docsx is more relevant to the Query content. You need to judge which of the two lists' contents can more completely generate the Query's answer. If Docs can output True, otherwise output False."},
+            {"role": "user", "content": f"here is Query: {query} , here is the list Docs: {docs} , here is the list Docsx:{docsx}"}
             ]
         )
-        scores = json.loads(response.choices[0].message.content)["documents"]
-        logger.debug(f"scores: {scores}")
-        sorted_data = sorted(scores, key=lambda x: x['relevance_score'], reverse=True)
-        top_5_contents = [doc['content'] for doc in sorted_data[:5]]
-        return top_5_contents
+        judge = response.choices[0].message.content
+        if judge:
+            return True
+        else:
+            return False
 
     def rag(self, query, retrieved_documents):
         # rag 
@@ -72,27 +73,27 @@ class RepoAssistant:
         return markdown_content
     def rag_ar(self, query, related_code, embedding_recall, project_name):
         message_sys = f"""
-You are a helpful Repository-Level Software Q&A assistant. Your task is to answer users questions based on given information about a software repository, including related code and documents. 
+                    You are a helpful Repository-Level Software Q&A assistant. Your task is to answer users questions based on given information about a software repository, including related code and documents. 
 
-Currently, you're in the {project_name} project. The user's question is:
-{query}
+                    Currently, you're in the {project_name} project. The user's question is:
+                    {query}
 
-Now, you are given related code and documents as follows:
+                    Now, you are given related code and documents as follows:
 
--------------------Code-------------------
-Some most likely related code snippets recalled by the retriever are:
-{related_code}
+                    -------------------Code-------------------
+                    Some most likely related code snippets recalled by the retriever are:
+                    {related_code}
 
--------------------Document-------------------
-Some most relevant documents recalled by the retriever are:
-{embedding_recall}
+                    -------------------Document-------------------
+                    Some most relevant documents recalled by the retriever are:
+                    {embedding_recall}
 
-Please note:   
-1. All the provided recall results are related to the current project {project_name}. Please filter useful information according to the user's question and provide corresponding answers or solutions.
-2. Ensure that your responses are accurate and detailed. Present specific answers in a professional manner and tone. If you find the user's question completely unrelated to the provided information or if you believe you cannot provide an accurate answer, kindly decline. Note: DO NOT fabricate any non-existent information.
+                    Please note:   
+                    1. All the provided recall results are related to the current project {project_name}. Please filter useful information according to the user's question and provide corresponding answers or solutions.
+                    2. Ensure that your responses are accurate and detailed. Present specific answers in a professional manner and tone. If you find the user's question completely unrelated to the provided information or if you believe you cannot provide an accurate answer, kindly decline. Note: DO NOT fabricate any non-existent information.
 
-Now, focusing on the user's query, and incorporating the given information to offer a specific, detailed, and professional answer IN THE SAME LANGUAGE AS the user's question.
-            """
+                    Now, focusing on the user's query, and incorporating the given information to offer a specific, detailed, and professional answer IN THE SAME LANGUAGE AS the user's question.
+                                """
         response = self.client.complete(message_sys)
         content = response
         return content
@@ -107,13 +108,13 @@ Now, focusing on the user's query, and incorporating the given information to of
         all_ids = []
         for i in promptq:
             query_result = self.chroma_data.chroma_collection.query(query_texts = [i], n_results = 5,include=['documents','metadatas'])
+            # logger.debug(f"query: ,{query_result}")
             all_results.append(query_result)
             all_ids.extend(query_result['ids'][0])
         
-        logger.debug(f"all_ids: {all_ids},{all_results}")
+        # logger.debug(f"all_ids: {all_ids},{all_results}")
         unique_ids = list(dict.fromkeys(all_ids))
-        # unique_ids = [id for id in all_ids if all_ids.count(id) == 1]
-        logger.debug(f"uniqueid: {unique_ids}")
+        # logger.debug(f"uniqueid: {unique_ids}")
         unique_documents = []
         unique_code = []
         for result in all_results:
@@ -122,7 +123,7 @@ Now, focusing on the user's query, and incorporating the given information to of
                     unique_documents.append(doc)
                     unique_code.append(code.get("code_content"))
         
-        retrieved_documents = self.rerank(message,unique_documents)
+        retrieved_documents = unique_documents[:10]
         # logger.debug(f"retrieveddocuments: {retrieved_documents}")
         response = self.rag(prompt,retrieved_documents)
         chunkrecall = self.list_to_markdown(retrieved_documents)
@@ -149,12 +150,15 @@ Now, focusing on the user's query, and incorporating the given information to of
         uni_codex = list(dict.fromkeys(codex))
         uni_md = list(dict.fromkeys(unique_mdx))
         codex = self.textanslys.list_to_markdown(uni_codex)
-        retrieved_documents = retrieved_documents+uni_md
+        if self.relevant(message,uni_md,retrieved_documents):
+            retrieved_documents = retrieved_documents[:1]+uni_md[:4]
+        else:
+            retrieved_documents = retrieved_documents[:4]+uni_md[:1]
         retrieved_documents = list(dict.fromkeys(retrieved_documents))
-        retrieved_documents = self.rerank(message,retrieved_documents[:6])
+        retrieved_documents = retrieved_documents
         uni_code = uni_codex+unique_code
         uni_code = list(dict.fromkeys(uni_code))
-        uni_code = self.rerank(message,uni_code[:6])
+        uni_code = uni_code[:5]
         unique_code=self.textanslys.list_to_markdown(unique_code)
         bot_message = self.rag_ar(prompt,uni_code,retrieved_documents,"test")
         bot_message = str(bot_message)
