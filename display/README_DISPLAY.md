@@ -31,6 +31,7 @@ Tasks:
 ```
 
 其中，您可以直接使用`make init_env`进行nvm和nodejs 10 的安装，也可以自己根据自身系统，自行安装 nodejs 10。
+如果是Windows系统，您可以使用管理员权限打开命令行，然后输入命令。
 
 然后您可以依次进行 `make init` 初始化 gitbook 运行环境（make init 运行一次即可）。
 
