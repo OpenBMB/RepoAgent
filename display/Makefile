@@ -28,8 +28,8 @@ RESET  := $(shell tput -Txterm sgr0)
 # We need nodejs 10.x to run gitbook, this target will install nodejs 10.x
 ################################################################################
 env_install:
-	chmod +x ./scripts/install-nodejs.sh
-	./scripts/install-nodejs.sh
+	chmod +x ./scripts/install_nodejs.sh
+	./scripts/install_nodejs.sh
 
 ## init nodejs 10.x env
 init_env: env_install
