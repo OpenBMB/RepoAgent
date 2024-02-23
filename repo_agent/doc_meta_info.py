@@ -833,7 +833,7 @@ class MetaInfo:
                     while (child_name + f"_{now_name_id}") in potential_father.children.keys():
                         now_name_id += 1
                     child_name = child_name + f"_{now_name_id}"
-                    logger.info(f"name duplicate in {file_item.get_full_name()}: rename to {item.obj_name}->{child_name}")
+                    logger.warning(f"Name duplicate in {file_item.get_full_name()}: rename to {item.obj_name}->{child_name}")
                 potential_father.children[child_name] = item
                 # print(f"{potential_father.get_full_name()} -> {item.get_full_name()}")
 

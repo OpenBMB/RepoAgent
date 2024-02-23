@@ -307,6 +307,7 @@ class FileHandler:
             file_path = self.file_path
 
         # Find the file object in json_data that matches file_path
+            
         file_dict = json_data.get(file_path)
 
         if file_dict is None:
