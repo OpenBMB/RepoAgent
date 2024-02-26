@@ -3,30 +3,32 @@ import os, json
 import json
 import git
 import itertools
-from repo_agent.file_handler import FileHandler
-from repo_agent.utils.meta_info_utils import fake_file_substring
-from repo_agent.change_detector import ChangeDetector
-from repo_agent.project_manager import ProjectManager
-from repo_agent.chat_engine import ChatEngine
-from concurrent.futures import ThreadPoolExecutor
-from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
-from repo_agent.log import logger
-from repo_agent.config import CONFIG
-from repo_agent.multi_task_dispatch import worker
 from tqdm import tqdm
 from typing import List
 from functools import partial
 import subprocess
 import shutil  
+from concurrent.futures import ThreadPoolExecutor
 from colorama import Fore, Style
+
+from repo_agent.file_handler import FileHandler
+from repo_agent.utils.meta_info_utils import latest_verison_substring
+from repo_agent.change_detector import ChangeDetector
+from repo_agent.project_manager import ProjectManager
+from repo_agent.chat_engine import ChatEngine
+from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
+from repo_agent.log import logger
+from repo_agent.config import CONFIG
+from repo_agent.multi_task_dispatch import worker
 
 
 
 def make_fake_files():
     """根据git status检测暂存区信息。如果有文件：
     1. 新增文件，没有add。无视
-    2. 修改文件内容，没有add，原位置增加fake_file,内容是原本文件内容
-    3. 删除文件，没有add，原位置增加fake_file，内容是原本文件内容
+    2. 修改文件内容，没有add，原始文件重命名为fake_file，新建原本的文件名内容为git status中的文件内容
+    3. 删除文件，没有add，原始文件重命名为fake_file，新建原本的文件名内容为git status中的文件内容
+    注意: 目标仓库的文件不能以latest_verison_substring结尾
     """
     delete_fake_files()
     
@@ -36,10 +38,11 @@ def make_fake_files():
 
     jump_files = [] #这里面的内容不parse、不生成文档，并且引用关系也不计算他们
     for file_name in untracked_files:
-        if file_name.endswith(".py") and (not file_name.endswith(fake_file_substring)):
+        if file_name.endswith(".py"):
+            print(f"{Fore.LIGHTMAGENTA_EX}[SKIP untracked files]: {Style.RESET_ALL}{file_name}")
             jump_files.append(file_name)
     for diff_file in unstaged_changes.iter_change_type('A'): #新增的、没有add的文件，都不处理
-        if diff_file.a_path.endswith(fake_file_substring):
+        if diff_file.a_path.endswith(latest_verison_substring):
             logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
             exit()
         jump_files.append(diff_file.a_path)
@@ -47,18 +50,24 @@ def make_fake_files():
 
     file_path_reflections = {}
     for diff_file in itertools.chain(unstaged_changes.iter_change_type('M'),unstaged_changes.iter_change_type('D')):  # 获取修改过的文件
-        if diff_file.a_path.endswith(fake_file_substring):
+        if diff_file.a_path.endswith(latest_verison_substring):
             logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
             exit()
         now_file_path = diff_file.a_path #针对repo_path的相对路径
         if now_file_path.endswith(".py"):
             raw_file_content = diff_file.a_blob.data_stream.read().decode("utf-8")
-            fake_file_path = now_file_path[:-3] + fake_file_substring
-            with open(os.path.join(CONFIG["repo_path"],fake_file_path), "w") as writer:
+            latest_file_path = now_file_path[:-3] + latest_verison_substring
+            if os.path.exists(os.path.join(CONFIG["repo_path"],now_file_path)):
+                os.rename(os.path.join(CONFIG["repo_path"],now_file_path), os.path.join(CONFIG["repo_path"], latest_file_path))
+                
+                print(f"{Fore.LIGHTMAGENTA_EX}[Save Latest Version of Code]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}")
+            else:
+                print(f"{Fore.LIGHTMAGENTA_EX}[Create Temp-File for Deleted(But not Staged) Files]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}") 
+                with open(os.path.join(CONFIG["repo_path"],latest_file_path), "w") as writer:
+                    pass
+            with open(os.path.join(CONFIG["repo_path"],now_file_path), "w") as writer:
                 writer.write(raw_file_content)
-            file_path_reflections[now_file_path] = fake_file_path #real指向fake
-            
-            print(f"{Fore.LIGHTMAGENTA_EX}[Add Fake-File with status ({diff_file.change_type})]: {Style.RESET_ALL}{now_file_path}")
+            file_path_reflections[now_file_path] = latest_file_path #real指向fake
     return file_path_reflections, jump_files
 
 
@@ -72,10 +81,16 @@ def delete_fake_files():
             fi_d = os.path.join(filepath, fi)
             if os.path.isdir(fi_d):
                 gci(fi_d)
-            elif fi_d.endswith(fake_file_substring):
-                print(f"{Fore.LIGHTRED_EX}[Remove Existing Fake-File]: {Style.RESET_ALL}{fi_d}")
-                os.remove(fi_d)
-                
+            elif fi_d.endswith(latest_verison_substring):
+                origin_name = fi_d.replace(latest_verison_substring, ".py")
+                os.remove(origin_name)
+                if os.path.getsize(fi_d) == 0:
+                    print(f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(CONFIG['repo_path']):]}, {origin_name[len(CONFIG['repo_path']):]}")
+                    os.remove(fi_d)
+                else:
+                    print(f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(CONFIG['repo_path']):]} <- {fi_d[len(CONFIG['repo_path']):]}")
+                    os.rename(fi_d, origin_name)
+
     gci(CONFIG["repo_path"])
 
 def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
@@ -106,8 +121,7 @@ def load_whitelist():
         ), f"whitelist_path must be a json-file,and must exists: {CONFIG['whitelist_path']}"
         with open(CONFIG["whitelist_path"], "r") as reader:
             white_list_json_data = json.load(reader)
-        # for i in range(len(white_list_json_data)):
-        #     white_list_json_data[i]["file_path"] = white_list_json_data[i]["file_path"].replace("https://github.com/huggingface/transformers/blob/v4.36.1/","")
+
         return white_list_json_data
     else:
         return None
@@ -252,8 +266,10 @@ class Runner:
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
             # 首先删除doc下所有内容，然后再重新写入
-            shutil.rmtree(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
-            os.mkdir(os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"]))  
+            markdown_folder = os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"])
+            if os.path.exists(markdown_folder):
+                shutil.rmtree(markdown_folder)  
+            os.mkdir(markdown_folder)  
 
             file_item_list = self.meta_info.get_all_files()
             for file_item in tqdm(file_item_list):
@@ -372,7 +388,7 @@ class Runner:
         self.meta_info.print_task_list(task_manager.task_dict)
         if task_manager.all_success:
             logger.info("No tasks in the queue, all documents are completed and up to date.")
-
+        exit()
         task_manager.sync_func = self.markdown_refresh
         threads = [
             threading.Thread(

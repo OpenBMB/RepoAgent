@@ -1,3 +1,3 @@
 
 
-fake_file_substring = "_fake_file_for_repoagent.py"
+latest_verison_substring = "_latest_version.py"

@@ -10,11 +10,11 @@ import time
 from prettytable import PrettyTable
 import os
 import json
-from repo_agent.log import logger
 import jedi
 from tqdm import tqdm
 
-from repo_agent.utils.meta_info_utils import fake_file_substring
+from repo_agent.log import logger
+from repo_agent.utils.meta_info_utils import latest_verison_substring
 from repo_agent.config import CONFIG
 from repo_agent.file_handler import FileHandler
 from repo_agent.multi_task_dispatch import TaskManager, Task
@@ -259,7 +259,6 @@ def find_all_referencer(
 ):
     """复制过来的之前的实现"""
     script = jedi.Script(path=os.path.join(repo_path, file_path))
-
     try:
         if in_file_only:
             references = script.get_references(
@@ -269,6 +268,8 @@ def find_all_referencer(
             references = script.get_references(line=line_number, column=column_number)
         # 过滤出变量名为 variable_name 的引用，并返回它们的位置
         variable_references = [ref for ref in references if ref.name == variable_name]
+        # if variable_name == "need_to_generate": 
+        #     import pdb; pdb.set_trace()
         return [
             (os.path.relpath(ref.module_path, repo_path), ref.line, ref.column)
             for ref in variable_references
@@ -436,10 +437,10 @@ class MetaInfo:
         for file_node in tqdm(file_nodes, desc="parsing bidirectional reference"):
             """检测一个文件内的所有引用信息，只能检测引用该文件内某个obj的其他内容。
             1. 如果某个文件是jump-files，就不应该出现在这个循环里
-            2. 如果检测到的引用信息来源于一个有fake-file的文件，忽略这个引用
+            2. 如果检测到的引用信息来源于一个jump-files, 忽略它
             3. 如果检测到一个引用来源于fake-file,则认为他的母文件是原来的文件
             """
-            assert not file_node.get_full_name().endswith(fake_file_substring)
+            assert not file_node.get_full_name().endswith(latest_verison_substring)
 
             ref_count = 0
             rel_file_path = file_node.get_full_name()
@@ -469,29 +470,37 @@ class MetaInfo:
                 )
                 for referencer_pos in reference_list:  # 对于每个引用
                     referencer_file_ral_path = referencer_pos[0]
-                    if referencer_file_ral_path in self.fake_file_reflection.keys():
+                    if referencer_file_ral_path in self.fake_file_reflection.values():
                         """检测到的引用者来自于unstaged files，跳过该引用"""
+                        print(
+                            f"{Fore.LIGHTBLUE_EX}[Reference From Unstaged Version, skip]{Style.RESET_ALL} {referencer_file_ral_path} -> {now_obj.get_full_name()}"
+                        )
                         continue
-                    # print(f"find {now_obj.get_full_name()} -> {referencer_file_ral_path}")
+                    elif referencer_file_ral_path in self.jump_files:
+                        """检测到的引用者来自于untracked files，跳过该引用"""
+                        print(
+                            f"{Fore.LIGHTBLUE_EX}[Reference From Unstracked Version, skip]{Style.RESET_ALL} {referencer_file_ral_path} -> {now_obj.get_full_name()}"
+                        )
+                        continue
+
                     target_file_hiera = referencer_file_ral_path.split("/")
-                    for file_hiera_id in range(len(target_file_hiera)):
-                        if target_file_hiera[file_hiera_id].endswith(fake_file_substring):
-                            prefix = "/".join(target_file_hiera[:file_hiera_id+1])
-                            find_in_reflection = False
-                            for real, fake in self.fake_file_reflection.items():
-                                if fake == prefix:
-                                    print(f"{Fore.BLUE}Find Reference in Fake-File: {Style.RESET_ALL}{referencer_file_ral_path} {Fore.BLUE}referred{Style.RESET_ALL} {now_obj.item_type.name} {now_obj.get_full_name()}")
-                                    target_file_hiera[file_hiera_id] = real
-                                    find_in_reflection = True
-                                    break
-                            assert find_in_reflection
-                            break
+                    # for file_hiera_id in range(len(target_file_hiera)):
+                    #     if target_file_hiera[file_hiera_id].endswith(fake_file_substring):
+                    #         prefix = "/".join(target_file_hiera[:file_hiera_id+1])
+                    #         find_in_reflection = False
+                    #         for real, fake in self.fake_file_reflection.items():
+                    #             if fake == prefix:
+                    #                 print(f"{Fore.BLUE}Find Reference in Fake-File: {Style.RESET_ALL}{referencer_file_ral_path} {Fore.BLUE}referred{Style.RESET_ALL} {now_obj.item_type.name} {now_obj.get_full_name()}")
+                    #                 target_file_hiera = real.split("/") + target_file_hiera[file_hiera_id+1:]
+                    #                 find_in_reflection = True
+                    #                 break
+                    #         assert find_in_reflection
+                    #         break
 
                     referencer_file_item = self.target_repo_hierarchical_tree.find(target_file_hiera)
                     if referencer_file_item == None:
-                        # import pdb; pdb.set_trace()
-                        logger.info(
-                            f"Jedi find {referencer_file_ral_path} referenced {now_obj.get_full_name()}, which is not in the target repo"
+                        print(
+                            f"{Fore.LIGHTRED_EX}Error: Find \"{referencer_file_ral_path}\"(not in target repo){Style.RESET_ALL} referenced {now_obj.get_full_name()}"
                         )
                         continue
                     referencer_node = self.find_obj_with_lineno(referencer_file_item, referencer_pos[1])
@@ -500,7 +509,8 @@ class MetaInfo:
                             f"Jedi find {now_obj.get_full_name()} with name_duplicate_reference, skipped"
                         )
                         continue
-
+                    # if now_obj.get_full_name() == "repo_agent/runner.py/Runner/run":
+                    #     import pdb; pdb.set_trace()
                     if DocItem.has_ans_relation(now_obj, referencer_node) == None:
                         # 不考虑祖先节点之间的引用
                         if now_obj not in referencer_node.reference_who:
@@ -509,8 +519,6 @@ class MetaInfo:
                             referencer_node.reference_who.append(now_obj)
                             now_obj.who_reference_me.append(referencer_node)
                             ref_count += 1
-                # if now_obj.get_full_name() == "autogen/_pydantic.py/type2schema":
-                #     import pdb; pdb.set_trace()
                 for _, child in now_obj.children.items():
                     walk_file(child)
 
