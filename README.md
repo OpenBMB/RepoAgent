@@ -234,12 +234,12 @@ Set the target language with the two-letter language codes (ISO 639-1 codes), Cl
 ## 📊 Citation
 
 ```bibtex
-@misc{RepoAgent,
-  author = {Qinyu Luo, Yining Ye, Shihao Liang, Zhong Zhang, Arno, Yang Li},
-  title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
-  year = {2023},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/OpenBMB/RepoAgent}},
+@misc{luo2024repoagent,
+      title={RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation}, 
+      author={Qinyu Luo and Yining Ye and Shihao Liang and Zhong Zhang and Yujia Qin and Yaxi Lu and Yesai Wu and Xin Cong and Yankai Lin and Yingli Zhang and Xiaoyin Che and Zhiyuan Liu and Maosong Sun},
+      year={2024},
+      eprint={2402.16667},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
