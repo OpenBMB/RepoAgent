@@ -1,5 +1,7 @@
 import os
 import jedi
+from collections import defaultdict
+
 
 
 class ProjectManager:
@@ -32,6 +34,39 @@ class ProjectManager:
             structure = []
             walk_dir(self.repo_path)
             return "\n".join(structure)
+    
+    def build_path_tree(self, who_reference_me, reference_who, doc_item_path):
+        from collections import defaultdict
+
+        def tree():
+            return defaultdict(tree)
+
+        path_tree = tree()
+
+        # 构建 who_reference_me 和 reference_who 的树
+        for path_list in [who_reference_me, reference_who]:
+            for path in path_list:
+                parts = path.split(os.sep)
+                node = path_tree
+                for part in parts:
+                    node = node[part]
+
+        # 处理 doc_item_path
+        parts = doc_item_path.split(os.sep)
+        parts[-1] = "✳️" + parts[-1]  # 在最后一个对象前面加上星号
+        node = path_tree
+        for part in parts:
+            node = node[part]
+
+        def tree_to_string(tree, indent=0):
+            s = ""
+            for key, value in sorted(tree.items()):
+                s += "    " * indent + key + "\n"
+                if isinstance(value, dict):
+                    s += tree_to_string(value, indent + 1)
+            return s
+
+        return tree_to_string(path_tree)
 
     # def find_all_referencer(self, variable_name, file_path, line_number, column_number):
     #     """
