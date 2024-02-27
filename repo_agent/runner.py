@@ -145,12 +145,13 @@ class Runner:
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
                 )
             )
-        else:
+        else: # 如果存在全局结构信息文件夹.project_hierarchy，就从中加载
             self.meta_info = MetaInfo.from_checkpoint_path(
                 os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
             )
+
         self.meta_info.white_list = load_whitelist()
-        self.meta_info.checkpoint(
+        self.meta_info.checkpoint(  # 更新白名单后也要重新将全局信息写入到.project_doc_record文件夹中
             target_dir_path=os.path.join(
                 CONFIG["repo_path"], CONFIG["project_hierarchy"]
             )
@@ -224,7 +225,7 @@ class Runner:
             logger.info("Init a new task-list")
         else:
             logger.info("Load from an existing task-list")
-        # self.meta_info.print_task_list(task_manager.task_dict)      
+        self.meta_info.print_task_list(task_manager.task_dict)      
 
         try:
             task_manager.sync_func = self.markdown_refresh
@@ -293,7 +294,7 @@ class Runner:
                 def to_markdown(item: DocItem, now_level: int) -> str:
                     markdown_content = ""
                     markdown_content += (
-                        "#" * now_level + f" {item.item_type.name[1:] if item.item_type.name.startswith('_') else item.item_type.name} {item.obj_name}"
+                        "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
                     )
                     if (
                         "params" in item.content.keys()
@@ -301,9 +302,11 @@ class Runner:
                     ):
                         markdown_content += f"({', '.join(item.content['params'])})"
                     markdown_content += "\n"
-                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc has not been generated...'}\n"
+                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc is waiting to be generated...'}\n"
                     for _, child in item.children.items():
                         markdown_content += to_markdown(child, now_level + 1)
+                        markdown_content += "***\n"
+
                     return markdown_content
 
                 markdown = ""
@@ -346,17 +349,17 @@ class Runner:
         """
 
         if self.meta_info.document_version == "":
-            # 根据document version自动检测是否仍在最初生成的process里
-            self.first_generate()
+            # 根据document version自动检测是否仍在最初生成的process里(是否为第一次生成)
+            self.first_generate() # 如果是第一次做文档生成任务，就通过first_generate生成所有文档
             self.meta_info.checkpoint(
                 target_dir_path=os.path.join(
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
                 ),
                 flash_reference_relation=True,
-            )
+            ) # 这一步将生成后的meta信息（包含引用关系）写入到.project_doc_record文件夹中
             return
 
-        if not self.meta_info.in_generation_process:
+        if not self.meta_info.in_generation_process: # 如果不是在生成过程中，就开始检测变更
             logger.info("Starting to detect changes.")
 
             """采用新的办法
@@ -374,8 +377,8 @@ class Runner:
             new_meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
             new_meta_info.load_doc_from_older_meta(self.meta_info)
 
-            self.meta_info = new_meta_info
-            self.meta_info.in_generation_process = True
+            self.meta_info = new_meta_info # 更新自身的meta_info信息为new的信息
+            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后正在生成文档的过程中
 
         # 处理任务队列
         ignore_list = CONFIG.get("ignore_list", [])

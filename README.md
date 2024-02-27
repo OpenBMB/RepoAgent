@@ -18,10 +18,12 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 - **🤖 Automatically detects changes in Git repositories, tracking additions, deletions, and modifications of files.**
 - **📝 Independently analyzes the code structure through AST, generating documents for individual objects.**
-- **🔍 Accurate identification of inter-object invocation relationships, enriching the global perspective of document content.**
+- **🔍 Accurate identification of inter-object bidirectional invocation relationships, enriching the global perspective of document content.**
 - **📚 Seamlessly replaces Markdown content based on changes, maintaining consistency in documentation.**
 - **🕙 Executes multi-threaded concurrent operations, enhancing the efficiency of document generation.**
 - **👭 Offer a sustainable, automated documentation update method for team collaboration.**
+- **😍 Display Code Documentation in an amazing way. (with document book per project powered by Gitbook)**
+
 
 ## 🚀 Getting Started
 
@@ -92,19 +94,20 @@ api_keys:
   ...
 
 default_completion_kwargs:
-  model: gpt-4
+  model: gpt-4-1106
   temperature: 0.2
   request_timeout: 60
-
-max_thread_count: int # We support multiprocessing to speedup the process
 
 repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
 Markdown_Docs_folder: Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore some py files or folders that you don't want to generate documentation for by giving relative paths in ignore_list.
-whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json, will only process the given part. This is useful in a very big project, like "higgingface Transformers"
+whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json with the same structure in Metainfo, RepoAgent will only process the given part. This is useful in a very big project, like "higgingface Transformers"
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
+max_thread_count: 10 # We support multiprocessing to speedup the process
+max_document_tokens: 1024 # the maximum number of tokens in a document generated 
+log_level: info
 ```
 
 ### Run RepoAgent
@@ -162,13 +165,16 @@ After execution, RepoAgent will automatically modify the staged files in the tar
 
 The generated document will be stored in the specified folder in the root directory of the target warehouse. The rendering of the generated document is as shown below:
 ![Documentation](assets/images/Doc_example.png)
+![Documentation](assets/images/8_documents.png)
 
-We utilized the default model **gpt-3.5-turbo** to generate documentation for the [**XAgent**](https://github.com/OpenBMB/XAgent) project, which comprises approximately **270,000 lines** of code. You can view the results of this generation in the Markdown_Docs directory of the XAgent project on GitHub. For enhanced documentation quality, we suggest considering more advanced models like **gpt-4** or **gpt-4-1106-preview**.
+We utilized the default model **gpt-3.5-turbo** to generate documentation for the [**XAgent**](https://github.com/OpenBMB/XAgent) project, which comprises approximately **270,000 lines** of code. You can view the results of this generation in the Markdown_Docs directory of the XAgent project on GitHub. For enhanced documentation quality, we suggest considering more advanced models like **gpt-4-1106** or **gpt-4-0125-preview**.
 
 **In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.** 
 
-### Using chat with repo
+### Exploring chat with repo
+We conceptualize **Chat With Repo** as a unified gateway for these downstream applications, acting as a connector that links RepoAgent to human users and other AI agents. Our future research will focus on adapting the interface to various downstream applications and customizing it to meet their unique characteristics and implementation requirements.
 
+Here we demonstrate a preliminary prototype of one of our downstream tasks: Automatic Q&A for Issues and Code Explanation. You can start the server by running the following code.
 ```bash
 python -m repo_agent.chat_with_repo
 ```
@@ -182,7 +188,9 @@ python -m repo_agent.chat_with_repo
 - [x] Automatically generate better visualizations such as Gitbook
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
-- [ ] Local model support like Llama, chatGLM, Qianwen, GLM4, etc.
+- [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
+- [X] Automatically generate Gitbook for better visualization effects
+
 
 ## 🇺🇳 Supported Language
 
@@ -227,11 +235,11 @@ Set the target language with the two-letter language codes (ISO 639-1 codes), Cl
 
 ```bibtex
 @misc{RepoAgent,
-  author = {Qinyu Luo, Yining Ye, Shihao Liang, Arno},
+  author = {Qinyu Luo, Yining Ye, Shihao Liang, Zhong Zhang, Arno, Yang Li},
   title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/LOGIC-10/RepoAgent}},
+  howpublished = {\url{https://github.com/OpenBMB/RepoAgent}},
 }
 ```

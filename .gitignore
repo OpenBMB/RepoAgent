@@ -8,7 +8,9 @@ __pycache__/
 */.DS_Store
 *.py[cod]
 *$py.class
-
+chroma_db/
+.vscode
+.project_doc_record
 # C extensions
 *.so
 
@@ -171,8 +173,8 @@ prompt_output/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# IDE
-.vscode
+# VS Code
+.vscode/
 
 # RepoAgent
 .project_doc_record
