@@ -3,6 +3,8 @@ import threading
 import time
 import random
 from typing import List, Callable, Dict, Any
+from colorama import Fore, Style
+
 from repo_agent.log import logger
 
 
@@ -77,8 +79,8 @@ class TaskManager:
                 ) and self.task_dict[task_id].status == 0
                 if ready:
                     self.task_dict[task_id].status = 1
-                    logger.info(
-                        f"[{process_id}] get task_id {task_id}, remain task: {len(self.task_dict)}"
+                    print(
+                        f"{Fore.RED}[process {process_id}]{Style.RESET_ALL}: get task({task_id}), remain({len(self.task_dict)})"
                     )
                     if self.query_id % 10 == 0:
                         self.sync_func()
