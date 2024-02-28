@@ -359,7 +359,7 @@ class MetaInfo:
                 flash_reference_relation=flash_reference_relation
             )
             with open(
-                os.path.join(target_dir_path, "project_hierarchy.json"), "w"
+                os.path.join(target_dir_path, "project_hierarchy.json"), "w", encoding='utf-8'
             ) as writer:
                 json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
 
