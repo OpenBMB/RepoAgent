@@ -5,6 +5,8 @@
 RepoAgent is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
 It is designed to be a handy tool for developers who need to organize their code and cooperate with teammates.
 
+**Paper:** http://arxiv.org/abs/2402.16667
+
 ![RepoAgent](assets/images/RepoAgent.png)
 
 ## 👾 Background

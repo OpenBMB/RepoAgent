@@ -5,6 +5,8 @@
 RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
 它的设计目标是成为开发人员的便捷工具，用于创建、维护清晰易懂的代码文档并在团队成员之间应用协作。
 
+**论文地址**：http://arxiv.org/abs/2402.16667
+
 ![RepoAgent](assets/images/RepoAgent.png)
 
 # 👾 背景
