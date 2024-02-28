@@ -5,6 +5,8 @@
 RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
 它的设计目标是成为开发人员的便捷工具，用于创建、维护清晰易懂的代码文档并在团队成员之间应用协作。
 
+**论文地址**：http://arxiv.org/abs/2402.16667
+
 ![RepoAgent](assets/images/RepoAgent.png)
 
 # 👾 背景
@@ -146,6 +148,7 @@ python -m repo_agent.chat_with_repo
 - [ ] 通过全局文档信息自动生成仓库README.md文件
 - [ ] **多编程语言支持** 支持更多编程语言，如Java、C或C++等
 - [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
+- [ ] 支持通过`pip install repoagent`将项目作为包进行安装配置
 - [x] 自动生成Gitbook等更佳的可视化效果
 
 # 🇺🇳 支持语言
@@ -188,13 +191,13 @@ python -m repo_agent.chat_with_repo
 
 # 📊 引用我们
 ```bibtex
-@misc{RepoAgent,
-  author = {Qinyu Luo, Yining Ye, Shihao Liang, Zhong Zhang, Arno, Yang Li},
-  title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
-  year = {2023},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/OpenBMB/RepoAgent}},
+@misc{luo2024repoagent,
+      title={RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation}, 
+      author={Qinyu Luo and Yining Ye and Shihao Liang and Zhong Zhang and Yujia Qin and Yaxi Lu and Yesai Wu and Xin Cong and Yankai Lin and Yingli Zhang and Xiaoyin Che and Zhiyuan Liu and Maosong Sun},
+      year={2024},
+      eprint={2402.16667},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
 
