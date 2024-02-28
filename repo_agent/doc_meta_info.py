@@ -723,7 +723,7 @@ class MetaInfo:
         project_hierarchy_json_path = os.path.join(repo_path, "project_hierarchy.json")
         logger.info(f"parsing from {project_hierarchy_json_path}")
         if not os.path.exists(project_hierarchy_json_path):
-            raise NotImplementedError("怪")
+            raise NotImplementedError("Invalid operation detected")
 
         with open(project_hierarchy_json_path, "r", encoding="utf-8") as reader:
             project_hierarchy_json = json.load(reader)
