@@ -4,13 +4,14 @@ from openai import OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
+import inspect
+from collections import defaultdict
+from colorama import Fore, Style
+
+from repo_agent.log import logger
 from repo_agent.config import language_mapping, max_input_tokens_map
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem
-import inspect
-from collections import defaultdict
-from repo_agent.log import logger
-
 class ContextLengthExceededError(Exception):
     """Exception raised when the input size exceeds the model's context length limit."""
     pass
@@ -87,13 +88,6 @@ class ChatEngine:
         project_structure = build_path_tree(
             who_reference_me, reference_who, doc_item_path
         )
-
-        # project_manager = ProjectManager(repo_path=file_handler.repo_path, project_hierarchy=file_handler.project_hierarchy)
-        # project_structure = project_manager.get_project_structure()
-        # file_path = os.path.join(file_handler.repo_path, file_handler.file_path)
-        # code_from_referencer = get_code_from_json(project_manager.project_hierarchy, referencer) #
-        # referenced = True if len(code_from_referencer) > 0 else False
-        # referencer_content = '\n'.join([f'File_Path:{file_path}\n' + '\n'.join([f'Corresponding code as follows:\n{code}\n[End of this part of code]' for code in codes]) + f'\n[End of {file_path}]' for file_path, codes in code_from_referencer.items()])
 
         def get_referenced_prompt(doc_item: DocItem) -> str:
             if len(doc_item.reference_who) == 0:
@@ -204,8 +198,9 @@ class ChatEngine:
             larger_models = {k: v for k, v in max_input_tokens_map.items() if (v-max_tokens) > max_input_length}
             if larger_models:
                 # 选择一个拥有更大输入限制的模型
-                model = max(larger_models, key=larger_models.get)
-                logger.info(f"Switching to {model} for long-context processing.")
+                new_model = max(larger_models, key=larger_models.get)
+                print(f"{Fore.LIGHTRED_EX}[Context Length Exceeded]{Style.RESET_ALL} model switching {model} -> {new_model}")
+                model = new_model
             else:
                 for attempt in range(2):
                     logger.info(f"Attempt {attempt + 1} of {max_attempts}: Reducing the length of the messages.")

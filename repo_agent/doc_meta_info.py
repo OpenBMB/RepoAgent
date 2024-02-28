@@ -57,9 +57,9 @@ class DocItemType(Enum):
         elif self == DocItemType._file:
             color = Fore.YELLOW
         elif self == DocItemType._class:
-            color = Fore.BLUE
-        elif self == DocItemType._function:
             color = Fore.RED
+        elif self in [ DocItemType._function, DocItemType._sub_function, DocItemType._class_function]:
+            color = Fore.BLUE
         return color + self.name + Style.RESET_ALL
 
     def get_edge_type(
@@ -76,6 +76,26 @@ class DocItemStatus(Enum):
     add_new_referencer = auto()  # 添加了新的引用者
     referencer_not_exist = auto()  # 曾经引用他的obj被删除了，或者不再引用他了
 
+
+def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
+    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
+    if doc_item.item_status == DocItemStatus.doc_up_to_date:
+        return False
+    rel_file_path = doc_item.get_full_name()
+    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]: #暂时不生成file及以上的doc
+        return False
+    doc_item = doc_item.father
+    while doc_item:
+        if doc_item.item_type == DocItemType._file:
+            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
+            if any(
+                rel_file_path.startswith(ignore_item) for ignore_item in ignore_list
+            ):
+                return False
+            else:
+                return True
+        doc_item = doc_item.father
+    return False
 
 @dataclass
 class DocItem:
@@ -102,32 +122,10 @@ class DocItem:
     reference_who_name_list: List[str] = field(default_factory=list) #他引用了谁，这个可能是老版本
     who_reference_me_name_list: List[str] = field(default_factory=list) #谁引用了他，这个可能是老版本的
 
-    visited: bool = False
+    has_task: bool = False
 
     multithread_task_id: int = -1  # 在多线程中的task_id
 
-    # def __eq__(self, other) -> bool:
-    #     # 检查other是否是MyCustomClass的实例
-    #     if not isinstance(other, DocItem):
-    #         return False
-    #     if self.item_type != other.item_type:
-    #         return False
-    #     if self.obj_name != other.obj_name:
-    #         return False
-        
-    #     if self.get_full_name() != other.get_full_name():
-    #         return False
-    #     # 如果是重名的obj，还要检测
-    #     name_1, name_2 = None, None
-    #     for _,child in self.father.children.items():
-    #         if child == self:
-    #             name_1 = _
-    #             break
-    #     for _,child in other.father.children.items():
-    #         if child == other:
-    #             name_2 = _
-    #             break
-    #     return name_1 == name_2
 
     @staticmethod
     def has_ans_relation(now_a: DocItem, now_b: DocItem):
@@ -233,25 +231,37 @@ class DocItem:
             now = now.children[recursive_file_path[pos]]
             pos += 1
         return now
+    
+    @staticmethod
+    def check_has_task(now_item: DocItem, ignore_list) -> bool:
+        if need_to_generate(now_item, ignore_list=ignore_list):
+            now_item.has_task = True
+        for _, child in now_item.children.items():
+            DocItem.check_has_task(child, ignore_list)
+            now_item.has_task = child.has_task or now_item.has_task
 
-    def print_recursive(self, indent=0, print_content=False):
+    def print_recursive(self, indent=0, print_content=False, diff_status = False, ignore_list = []):
         """递归打印repo对象"""
 
         def print_indent(indent=0):
             if indent == 0:
                 return ""
             return "  " * indent + "|-"
-
-        print(
-            print_indent(indent) + f"{self.item_type.print_self()}: {self.obj_name}",
-            end="",
-        )
-        if len(self.children) > 0:
-            print(f", {len(self.children)} children")
+        print_obj_name = self.obj_name
+        if self.item_type == DocItemType._repo:
+            print_obj_name = CONFIG["repo_path"]
+        if diff_status and need_to_generate(self, ignore_list=ignore_list):
+            print(
+                print_indent(indent) + f"{self.item_type.print_self()}: {print_obj_name} : {self.item_status.name}",
+            )
         else:
-            print()
+            print(
+                print_indent(indent) + f"{self.item_type.print_self()}: {print_obj_name}",
+            )
         for child_name, child in self.children.items():
-            child.print_recursive(indent=indent + 1, print_content=print_content)
+            if diff_status and child.has_task == False:
+                continue
+            child.print_recursive(indent=indent + 1, print_content=print_content, diff_status = diff_status, ignore_list = ignore_list)
 
 
 def find_all_referencer(
@@ -858,17 +868,21 @@ class MetaInfo:
                     logger.warning(f"Name duplicate in {file_item.get_full_name()}: rename to {item.obj_name}->{child_name}")
                 potential_father.children[child_name] = item
                 # print(f"{potential_father.get_full_name()} -> {item.get_full_name()}")
-
-            for item in obj_item_list:
-                if item.content["type"] == "ClassDef":
-                    item.item_type = DocItemType._class
-                elif item.content["type"] == "FunctionDef":
-                    item.item_type = DocItemType._function
-                    if item.father.item_type != DocItemType._file:
-                        if item.father.content["type"] == "FunctionDef":
-                            obj_doc_item.item_type = DocItemType._sub_function
-                        elif item.father.content["type"] == "ClassDef":
-                            obj_doc_item.item_type = DocItemType._class_function                
+            
+            def change_items(now_item: DocItem):
+                if now_item.item_type != DocItemType._file:
+                    if now_item.content["type"] == "ClassDef":
+                        now_item.item_type = DocItemType._class
+                    elif now_item.content["type"] == "FunctionDef":
+                        now_item.item_type = DocItemType._function
+                        if now_item.father.item_type == DocItemType._class:
+                            now_item.item_type = DocItemType._class_function
+                        elif now_item.father.item_type in [ DocItemType._function, DocItemType._sub_function]:
+                            now_item.item_type = DocItemType._sub_function
+                for _, child in now_item.children.items():
+                    change_items(child)
+            change_items(file_item)
+           
             
         target_meta_info.target_repo_hierarchical_tree.parse_tree_path(now_path=[])
         target_meta_info.target_repo_hierarchical_tree.check_depth()

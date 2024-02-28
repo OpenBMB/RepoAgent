@@ -56,7 +56,7 @@ If you're looking to contribute or set up a development environment:
     ```bash
     git clone https://github.com/LOGIC-10/RepoAgent.git
     cd RepoAgent
-    ```
+```
 
 - **Setup with PDM**
 
@@ -114,9 +114,14 @@ log_level: info
 
 ### Run RepoAgent
 
-Enter the root directory of RepoAgent and type the following command in the terminal:
+Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
-python -m repo_agent
+python -m repo_agent #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+
+# you can also try the follow feature
+python -m repo_agent clean #this command will remove repoagent-related cache
+python -m repo_agent print #this command will print how repo-agent parse the target repo
+python -m repo_agent diff #this command will check what docs will be updated/generated based on current code change
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
@@ -124,7 +129,6 @@ If it's your first time generating documentation for the target repository, Repo
 The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
 
 Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
-
 
 ### Configuring the Target Repository
 

@@ -10,108 +10,19 @@ import subprocess
 import shutil  
 from concurrent.futures import ThreadPoolExecutor
 from colorama import Fore, Style
+import time
 
 from repo_agent.file_handler import FileHandler
-from repo_agent.utils.meta_info_utils import latest_verison_substring
+from repo_agent.utils.meta_info_utils import latest_verison_substring, make_fake_files, delete_fake_files
 from repo_agent.change_detector import ChangeDetector
 from repo_agent.project_manager import ProjectManager
 from repo_agent.chat_engine import ChatEngine
-from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
+from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus, need_to_generate
 from repo_agent.log import logger
 from repo_agent.config import CONFIG
 from repo_agent.multi_task_dispatch import worker
 
 
-
-def make_fake_files():
-    """根据git status检测暂存区信息。如果有文件：
-    1. 新增文件，没有add。无视
-    2. 修改文件内容，没有add，原始文件重命名为fake_file，新建原本的文件名内容为git status中的文件内容
-    3. 删除文件，没有add，原始文件重命名为fake_file，新建原本的文件名内容为git status中的文件内容
-    注意: 目标仓库的文件不能以latest_verison_substring结尾
-    """
-    delete_fake_files()
-    
-    repo = git.Repo(CONFIG["repo_path"])
-    unstaged_changes = repo.index.diff(None) #在git status里，但是有修改没提交
-    untracked_files = repo.untracked_files #在文件系统里，但没在git里的文件
-
-    jump_files = [] #这里面的内容不parse、不生成文档，并且引用关系也不计算他们
-    for file_name in untracked_files:
-        if file_name.endswith(".py"):
-            print(f"{Fore.LIGHTMAGENTA_EX}[SKIP untracked files]: {Style.RESET_ALL}{file_name}")
-            jump_files.append(file_name)
-    for diff_file in unstaged_changes.iter_change_type('A'): #新增的、没有add的文件，都不处理
-        if diff_file.a_path.endswith(latest_verison_substring):
-            logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
-            exit()
-        jump_files.append(diff_file.a_path)
-
-
-    file_path_reflections = {}
-    for diff_file in itertools.chain(unstaged_changes.iter_change_type('M'),unstaged_changes.iter_change_type('D')):  # 获取修改过的文件
-        if diff_file.a_path.endswith(latest_verison_substring):
-            logger.error("FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
-            exit()
-        now_file_path = diff_file.a_path #针对repo_path的相对路径
-        if now_file_path.endswith(".py"):
-            raw_file_content = diff_file.a_blob.data_stream.read().decode("utf-8")
-            latest_file_path = now_file_path[:-3] + latest_verison_substring
-            if os.path.exists(os.path.join(CONFIG["repo_path"],now_file_path)):
-                os.rename(os.path.join(CONFIG["repo_path"],now_file_path), os.path.join(CONFIG["repo_path"], latest_file_path))
-                
-                print(f"{Fore.LIGHTMAGENTA_EX}[Save Latest Version of Code]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}")
-            else:
-                print(f"{Fore.LIGHTMAGENTA_EX}[Create Temp-File for Deleted(But not Staged) Files]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}") 
-                with open(os.path.join(CONFIG["repo_path"],latest_file_path), "w") as writer:
-                    pass
-            with open(os.path.join(CONFIG["repo_path"],now_file_path), "w") as writer:
-                writer.write(raw_file_content)
-            file_path_reflections[now_file_path] = latest_file_path #real指向fake
-    return file_path_reflections, jump_files
-
-
-def delete_fake_files():
-    """在任务执行完成以后，删除所有的fake_file
-    """
-    def gci(filepath):
-        # 遍历filepath下所有文件，包括子目录
-        files = os.listdir(filepath)
-        for fi in files:
-            fi_d = os.path.join(filepath, fi)
-            if os.path.isdir(fi_d):
-                gci(fi_d)
-            elif fi_d.endswith(latest_verison_substring):
-                origin_name = fi_d.replace(latest_verison_substring, ".py")
-                os.remove(origin_name)
-                if os.path.getsize(fi_d) == 0:
-                    print(f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(CONFIG['repo_path']):]}, {origin_name[len(CONFIG['repo_path']):]}")
-                    os.remove(fi_d)
-                else:
-                    print(f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(CONFIG['repo_path']):]} <- {fi_d[len(CONFIG['repo_path']):]}")
-                    os.rename(fi_d, origin_name)
-
-    gci(CONFIG["repo_path"])
-
-def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
-    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
-    if doc_item.item_status == DocItemStatus.doc_up_to_date:
-        return False
-    rel_file_path = doc_item.get_full_name()
-    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]: #暂时不生成file及以上的doc
-        return False
-    doc_item = doc_item.father
-    while doc_item:
-        if doc_item.item_type == DocItemType._file:
-            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-            if any(
-                rel_file_path.startswith(ignore_item) for ignore_item in ignore_list
-            ):
-                return False
-            else:
-                return True
-        doc_item = doc_item.father
-    return False
 
 
 def load_whitelist():
@@ -333,7 +244,8 @@ class Runner:
     def git_commit(self, commit_message):
         try:
             subprocess.check_call(
-                ["git", "commit", "--no-verify", "-m", commit_message]
+                ["git", "commit", "--no-verify", "-m", commit_message],
+                shell=True,
             )
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while trying to commit {str(e)}")
@@ -391,7 +303,7 @@ class Runner:
         self.meta_info.print_task_list(task_manager.task_dict)
         if task_manager.all_success:
             logger.info("No tasks in the queue, all documents are completed and up to date.")
-        exit()
+
         task_manager.sync_func = self.markdown_refresh
         threads = [
             threading.Thread(
@@ -418,6 +330,17 @@ class Runner:
 
         self.markdown_refresh()
         delete_fake_files()
+
+        logger.info(f"Starting to git-add DocMetaInfo and newly generated Docs")
+        time.sleep(1)
+
+        # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
+        git_add_result = self.change_detector.add_unstaged_files()
+
+        if len(git_add_result) > 0:
+            logger.info(f"已添加 {[file for file in git_add_result]} 到暂存区")
+
+        # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
 
     def add_new_item(self, file_handler, json_data):
         """
@@ -685,7 +608,6 @@ if __name__ == "__main__":
 
     runner = Runner()
 
-    # runner.meta_info.target_repo_hierarchical_tree.print_recursive()
     runner.run()
 
     logger.info("文档任务完成。")
