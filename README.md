@@ -27,15 +27,15 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 ## 🚀 Getting Started
 
-### Installation Methods
+### Installation Method
 
-#### Using pip (Recommended for Users)
+<!-- #### Using pip (Recommended for Users)
 
 Install the `repoagent` package directly using pip:
 
 ```bash
 pip install repoagent
-```
+``` -->
 
 #### Development Setup Using PDM
 
@@ -189,6 +189,7 @@ python -m repo_agent.chat_with_repo
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
+- [ ] Support install and configure via `pip install repoagent`
 - [X] Automatically generate Gitbook for better visualization effects
 
 

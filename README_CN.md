@@ -146,6 +146,7 @@ python -m repo_agent.chat_with_repo
 - [ ] 通过全局文档信息自动生成仓库README.md文件
 - [ ] **多编程语言支持** 支持更多编程语言，如Java、C或C++等
 - [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
+- [ ] 支持通过`pip install repoagent`将项目作为包进行安装配置
 - [x] 自动生成Gitbook等更佳的可视化效果
 
 # 🇺🇳 支持语言
