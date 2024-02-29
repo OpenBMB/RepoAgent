@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Callable, Optional
 from colorama import Fore, Style
 from enum import Enum, unique, auto
-import time
 from prettytable import PrettyTable
 import os
 import json

@@ -5,16 +5,15 @@ import os, json
 import ast
 from tqdm import tqdm
 from colorama import Fore, Style
-import threading
-from typing import Dict
 from repo_agent.utils.meta_info_utils import latest_verison_substring
 from repo_agent.config import CONFIG
-from repo_agent.log import logger
 from repo_agent.utils.gitignore_checker import GitignoreChecker
 
 
-# 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
+    """
+    历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
+    """
     def __init__(self, repo_path, file_path):
         self.file_path = file_path  # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
