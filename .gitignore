@@ -181,3 +181,4 @@ prompt_output/
 log.txt
 .chroma_db
 config.yml
+.pre-commit-config.yaml

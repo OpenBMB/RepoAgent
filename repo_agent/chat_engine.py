@@ -4,6 +4,11 @@ from openai import OpenAI
 from openai import APIConnectionError
 import tiktoken
 import time
+import inspect
+from collections import defaultdict
+from colorama import Fore, Style
+
+from repo_agent.log import logger
 from repo_agent.config import language_mapping, max_input_tokens_map
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem

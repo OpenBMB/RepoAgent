@@ -5,6 +5,8 @@
 RepoAgent is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
 It is designed to be a handy tool for developers who need to organize their code and cooperate with teammates.
 
+**Paper:** http://arxiv.org/abs/2402.16667
+
 ![RepoAgent](assets/images/RepoAgent.png)
 
 ## 👾 Background
@@ -27,15 +29,15 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 ## 🚀 Getting Started
 
-### Installation Methods
+### Installation Method
 
-#### Using pip (Recommended for Users)
+<!-- #### Using pip (Recommended for Users)
 
 Install the `repoagent` package directly using pip:
 
 ```bash
 pip install repoagent
-```
+``` -->
 
 #### Development Setup Using PDM
 
@@ -54,7 +56,7 @@ If you're looking to contribute or set up a development environment:
     ```bash
     git clone https://github.com/LOGIC-10/RepoAgent.git
     cd RepoAgent
-    ```
+```
 
 - **Setup with PDM**
 
@@ -112,9 +114,14 @@ log_level: info
 
 ### Run RepoAgent
 
-Enter the root directory of RepoAgent and type the following command in the terminal:
+Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
-python -m repo_agent
+python -m repo_agent #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+
+# you can also try the follow feature
+python -m repo_agent clean #this command will remove repoagent-related cache
+python -m repo_agent print #this command will print how repo-agent parse the target repo
+python -m repo_agent diff #this command will check what docs will be updated/generated based on current code change
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
@@ -122,7 +129,6 @@ If it's your first time generating documentation for the target repository, Repo
 The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
 
 Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
-
 
 ### Configuring the Target Repository
 
@@ -189,6 +195,7 @@ python -m repo_agent.chat_with_repo
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
+- [ ] Support install and configure via `pip install repoagent`
 - [X] Automatically generate Gitbook for better visualization effects
 
 
@@ -234,12 +241,12 @@ Set the target language with the two-letter language codes (ISO 639-1 codes), Cl
 ## 📊 Citation
 
 ```bibtex
-@misc{RepoAgent,
-  author = {Qinyu Luo, Yining Ye, Shihao Liang, Zhong Zhang, Arno, Yang Li},
-  title = {RepoAgent: A LLM-based Intelligent tool for repository understanding and documentation writing},
-  year = {2023},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/OpenBMB/RepoAgent}},
+@misc{luo2024repoagent,
+      title={RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation}, 
+      author={Qinyu Luo and Yining Ye and Shihao Liang and Zhong Zhang and Yujia Qin and Yaxi Lu and Yesai Wu and Xin Cong and Yankai Lin and Yingli Zhang and Xiaoyin Che and Zhiyuan Liu and Maosong Sun},
+      year={2024},
+      eprint={2402.16667},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```

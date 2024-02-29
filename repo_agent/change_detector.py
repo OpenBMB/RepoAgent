@@ -1,8 +1,10 @@
 import git
 import re, os
-from repo_agent.file_handler import FileHandler
 import subprocess
+from colorama import Fore, Style
+
 from repo_agent.config import CONFIG
+from repo_agent.file_handler import FileHandler
 
 
 class ChangeDetector:
@@ -63,7 +65,7 @@ class ChangeDetector:
 
         if is_new_file:
             # For new files, first add them to the staging area.
-            add_command = f'git -C {repo.working_dir} add "{file_path}"'
+            add_command = f'git -C {repo.working_dir} add {file_path}'
             subprocess.run(add_command, shell=True, check=True)
 
             # Get the diff from the staging area.
@@ -161,7 +163,8 @@ class ChangeDetector:
         to_be_staged_files = []
         # staged_files是已经暂存的文件，通常这里是作者做了更改后git add 的.py文件 或其他文件
         staged_files = [item.a_path for item in self.repo.index.diff("HEAD")]
-        print(f"staged_files:{staged_files}")
+        print(f"{Fore.LIGHTYELLOW_EX}target_repo_path{Style.RESET_ALL}: {self.repo_path}")
+        print(f"{Fore.LIGHTMAGENTA_EX}already_staged_files{Style.RESET_ALL}:{staged_files}")
 
         project_hierarchy = CONFIG["project_hierarchy"]
         # diffs是所有未暂存更改文件的列表。这些更改文件是相对于工作区（working directory）的，也就是说，它们是自上次提交（commit）以来在工作区发生的更改，但还没有被添加到暂存区（staging area）
@@ -170,17 +173,16 @@ class ChangeDetector:
         # untracked_files是一个包含了所有未跟踪文件的列表。比如说用户添加了新的.py文件后项目自己生成的对应.md文档。它们是在工作区中存在但还没有被添加到暂存区（staging area）的文件。
         # untracked_files中的文件路径是绝对路径
         untracked_files = self.repo.untracked_files
-        print(f"untracked_files:{untracked_files}")
-        print(f"repo_path:{self.repo_path}")
+        print(f"{Fore.LIGHTCYAN_EX}untracked_files{Style.RESET_ALL}: {untracked_files}")
 
         # 处理untrack_files中的内容
         for untracked_file in untracked_files:
             # 连接repo_path和untracked_file以获取完整的绝对路径
-            abs_untracked_file = os.path.join(self.repo_path, "/" + untracked_file)
-            # 获取相对于仓库根目录的相对路径
-            rel_untracked_file = os.path.relpath(abs_untracked_file, self.repo_path)
+            if untracked_file.startswith(CONFIG["Markdown_Docs_folder"]):
+                to_be_staged_files.append(untracked_file)
+            continue
             print(f"rel_untracked_file:{rel_untracked_file}")
-
+            # import pdb; pdb.set_trace()
             # 判断这个文件的类型：
             if rel_untracked_file.endswith(".md"):
                 # 把rel_untracked_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
@@ -205,12 +207,19 @@ class ChangeDetector:
 
         # 处理已追踪但是未暂存的内容
         unstaged_files = [diff.b_path for diff in diffs]
-        print(
-            f"unstaged_files:{unstaged_files}"
-        )  # 虽然是从根目录开始的，但是最前头缺少一个 ' / ' ，所以还是会被解析为相对路径
+        print(f"{Fore.LIGHTCYAN_EX}unstaged_files{Style.RESET_ALL}: {unstaged_files}")
+
         for unstaged_file in unstaged_files:
             # 连接repo_path和unstaged_file以获取完整的绝对路径
-            abs_unstaged_file = os.path.join(self.repo_path, "/" + unstaged_file)
+            if unstaged_file.startswith(CONFIG["Markdown_Docs_folder"]):
+                # abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
+                # # # 获取相对于仓库根目录的相对路径
+                # # rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
+                to_be_staged_files.append(unstaged_file)
+            elif unstaged_file == project_hierarchy: #project_hierarchy永远add
+                to_be_staged_files.append(unstaged_file)
+            continue
+            abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
             # 获取相对于仓库根目录的相对路径
             rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
             print(f"rel_unstaged_file:{rel_unstaged_file}")
@@ -231,9 +240,9 @@ class ChangeDetector:
                             rel_unstaged_file,
                         )
                     )
-            elif unstaged_file == project_hierarchy:
+            elif unstaged_file == project_hierarchy: #project_hierarchy永远add
                 to_be_staged_files.append(unstaged_file)
-
+        print(f"{Fore.LIGHTRED_EX}newly_staged_files{Style.RESET_ALL}: {to_be_staged_files}")
         return to_be_staged_files
 
     def add_unstaged_files(self):
@@ -242,7 +251,7 @@ class ChangeDetector:
         """
         unstaged_files_meeting_conditions = self.get_to_be_staged_files()
         for file_path in unstaged_files_meeting_conditions:
-            add_command = f'git -C {self.repo.working_dir} add "{file_path}"'
+            add_command = f'git -C {self.repo.working_dir} add {file_path}'
             subprocess.run(add_command, shell=True, check=True)
         return unstaged_files_meeting_conditions
 

@@ -1,42 +1,28 @@
 import threading
 import os, json
 import json
-from repo_agent.file_handler import FileHandler
-from repo_agent.change_detector import ChangeDetector
-from repo_agent.project_manager import ProjectManager
-from repo_agent.chat_engine import ChatEngine
-from concurrent.futures import ThreadPoolExecutor
-from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus
-from repo_agent.log import logger
-from repo_agent.config import CONFIG
-from repo_agent.multi_task_dispatch import worker
+import git
+import itertools
 from tqdm import tqdm
 from typing import List
 from functools import partial
 import subprocess
 import shutil  
+from concurrent.futures import ThreadPoolExecutor
+from colorama import Fore, Style
+import time
+
+from repo_agent.file_handler import FileHandler
+from repo_agent.utils.meta_info_utils import latest_verison_substring, make_fake_files, delete_fake_files
+from repo_agent.change_detector import ChangeDetector
+from repo_agent.project_manager import ProjectManager
+from repo_agent.chat_engine import ChatEngine
+from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus, need_to_generate
+from repo_agent.log import logger
+from repo_agent.config import CONFIG
+from repo_agent.multi_task_dispatch import worker
 
 
-
-def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
-    """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
-    if doc_item.item_status == DocItemStatus.doc_up_to_date:
-        return False
-    rel_file_path = doc_item.get_full_name()
-    if doc_item.item_type in [DocItemType._file, DocItemType._dir, DocItemType._repo]: #暂时不生成file及以上的doc
-        return False
-    doc_item = doc_item.father
-    while doc_item:
-        if doc_item.item_type == DocItemType._file:
-            # 如果当前文件在忽略列表中，或者在忽略列表某个文件路径下，则跳过
-            if any(
-                rel_file_path.startswith(ignore_item) for ignore_item in ignore_list
-            ):
-                return False
-            else:
-                return True
-        doc_item = doc_item.father
-    return False
 
 
 def load_whitelist():
@@ -46,8 +32,7 @@ def load_whitelist():
         ), f"whitelist_path must be a json-file,and must exists: {CONFIG['whitelist_path']}"
         with open(CONFIG["whitelist_path"], "r") as reader:
             white_list_json_data = json.load(reader)
-        # for i in range(len(white_list_json_data)):
-        #     white_list_json_data[i]["file_path"] = white_list_json_data[i]["file_path"].replace("https://github.com/huggingface/transformers/blob/v4.36.1/","")
+
         return white_list_json_data
     else:
         return None
@@ -63,9 +48,10 @@ class Runner:
 
         if not os.path.exists(
             os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
-        ):  # 如果不存在全局结构信息文件夹.project_hierarchy，就新建一个
-            self.meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"]) # 从repo_path中初始化一个meta_info, metainfo代表了整个项目的结构信息
-            self.meta_info.checkpoint( # 将初始化的meta_info写入到.project_doc_record文件夹中
+        ):
+            file_path_reflections, jump_files = make_fake_files()
+            self.meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
+            self.meta_info.checkpoint(
                 target_dir_path=os.path.join(
                     CONFIG["repo_path"], CONFIG["project_hierarchy"]
                 )
@@ -109,9 +95,9 @@ class Runner:
 
             ignore_list = CONFIG.get("ignore_list", [])
             if not need_to_generate(doc_item, ignore_list):
-                logger.info(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
+                print(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
             else:
-                logger.info(f" -- 正在生成{doc_item.get_full_name()} 对象文档...")
+                print(f" -- 正在生成文档 {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
                 file_handler = FileHandler(CONFIG["repo_path"], rel_file_path)
                 response_message = self.chat_engine.generate_doc(
                     doc_item=doc_item,
@@ -191,11 +177,11 @@ class Runner:
     def markdown_refresh(self):
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
-            # 首先删除doc下所有内容，然后再重新写入 (这种方法有点问题吧？@yeyn)
-            markdown_docs_path = os.path.join(CONFIG["repo_path"], CONFIG["Markdown_Docs_folder"])
-            if os.path.exists(markdown_docs_path):
-                shutil.rmtree(markdown_docs_path)
-            os.mkdir(markdown_docs_path)
+            # 首先删除doc下所有内容，然后再重新写入
+            markdown_folder = os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"])
+            if os.path.exists(markdown_folder):
+                shutil.rmtree(markdown_folder)  
+            os.mkdir(markdown_folder)  
 
             file_item_list = self.meta_info.get_all_files()
             for file_item in tqdm(file_item_list):
@@ -258,7 +244,8 @@ class Runner:
     def git_commit(self, commit_message):
         try:
             subprocess.check_call(
-                ["git", "commit", "--no-verify", "-m", commit_message]
+                ["git", "commit", "--no-verify", "-m", commit_message],
+                shell=True,
             )
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while trying to commit {str(e)}")
@@ -298,8 +285,9 @@ class Runner:
             1.新建的文件没有文档，因此metainfo merge后还是没有文档
             2.被删除的文件和obj，本来就不在新的meta里面，相当于文档被自动删除了
             3.只需要观察被修改的文件，以及引用关系需要被通知的文件去重新生成文档"""
-            new_meta_info = MetaInfo.init_from_project_path(CONFIG["repo_path"]) # 从repo_path中初始化一个meta_info, metainfo代表了整个项目的结构信息
-            new_meta_info.load_doc_from_older_meta(self.meta_info) # 从老的meta_info中加载文档信息, 目的是跟上面的new_meta_info做merge，检测出new中的变更
+            file_path_reflections, jump_files = make_fake_files()
+            new_meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
+            new_meta_info.load_doc_from_older_meta(self.meta_info)
 
             self.meta_info = new_meta_info # 更新自身的meta_info信息为new的信息
             self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后正在生成文档的过程中
@@ -310,10 +298,11 @@ class Runner:
 
         task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
         
+        for item_name, item_type in self.meta_info.deleted_items_from_older_meta:
+            print(f"{Fore.LIGHTMAGENTA_EX}[Dir/File/Obj Delete Dected]: {Style.RESET_ALL} {item_type} {item_name}")
+        self.meta_info.print_task_list(task_manager.task_dict)
         if task_manager.all_success:
             logger.info("No tasks in the queue, all documents are completed and up to date.")
-        else:
-            self.meta_info.print_task_list(task_manager.task_dict)
 
         task_manager.sync_func = self.markdown_refresh
         threads = [
@@ -340,6 +329,18 @@ class Runner:
         logger.info(f"Doc has been forwarded to the latest version")
 
         self.markdown_refresh()
+        delete_fake_files()
+
+        logger.info(f"Starting to git-add DocMetaInfo and newly generated Docs")
+        time.sleep(1)
+
+        # 将run过程中更新的Markdown文件（未暂存）添加到暂存区
+        git_add_result = self.change_detector.add_unstaged_files()
+
+        if len(git_add_result) > 0:
+            logger.info(f"已添加 {[file for file in git_add_result]} 到暂存区")
+
+        # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
 
     def add_new_item(self, file_handler, json_data):
         """
@@ -542,8 +543,8 @@ class Runner:
                             changed_obj[0],
                             ref_obj["obj_referencer_list"],
                         )
-                        logger.info(
-                            f"正在生成 {file_handler.file_path}中的{changed_obj[0]} 对象文档..."
+                        print(
+                            f"正在生成 {Fore.CYAN}{file_handler.file_path}{Style.RESET_ALL}中的{Fore.CYAN}{changed_obj[0]}{Style.RESET_ALL}对象文档."
                         )
                         futures.append(future)
 
@@ -604,9 +605,9 @@ class Runner:
 
 
 if __name__ == "__main__":
+
     runner = Runner()
 
-    # runner.meta_info.target_repo_hierarchical_tree.print_recursive()
     runner.run()
 
     logger.info("文档任务完成。")
