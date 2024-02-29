@@ -82,7 +82,7 @@ class ChatEngine:
         who_reference_me = doc_item.who_reference_me_name_list
         reference_who = doc_item.reference_who_name_list
         file_path = doc_item.get_full_name()
-        doc_item_path = file_path + "/" + code_name
+        doc_item_path = os.path.join(file_path, code_name)
 
         # 树结构路径通过全局信息中的who reference me 和 reference who + 自身的file_path来获取
         project_structure = build_path_tree(
