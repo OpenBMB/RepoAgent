@@ -204,7 +204,7 @@ Here are featured cases that have adopted RepoAgent.
 
 - [MiniCPM](https://github.com/agencyenterprise/react-native-health): An edge-side LLM of 2B size, comparable to 7B model.
 - [ChatDev](https://github.com/revtel/react-native-nfc-manager): Collaborative AI agents for software development.
-- [Xagent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving
+- [XAgent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving.
 
 ## 🇺🇳 Supported Language
 

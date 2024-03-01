@@ -164,7 +164,7 @@ python -m repo_agent.chat_with_repo
 
 - [MiniCPM](https://github.com/agencyenterprise/react-native-health): 一个端侧大语言模型，大小为2B，效果可与7B模型媲美。
 - [ChatDev](https://github.com/revtel/react-native-nfc-manager): 用于软件开发的协作式AI智能体。
-- [Xagent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
+- [XAgent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
 
 # 🇺🇳 支持语言
 在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
