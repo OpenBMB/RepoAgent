@@ -76,9 +76,16 @@ log_level: info # log信息显示等级
 
 ## 运行RepoAgent
 进入RepoAgent根目录，在命令行输入以下命令：
+
 ```sh
-python -m repo_agent
+python -m repo_agent # 此命令将生成文档或更新文档（pre-commit钩子将自动调用此命令）
+
+# 你也可以尝试以下功能
+python -m repo_agent clean # 此命令将删除与repoagent相关的缓存
+python -m repo_agent print # 此命令将打印repo-agent如何解析目标仓库
+python -m repo_agent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
 ```
+
 如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
 
@@ -150,6 +157,14 @@ python -m repo_agent.chat_with_repo
 - [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
 - [ ] 支持通过`pip install repoagent`将项目作为包进行安装配置
 - [x] 自动生成Gitbook等更佳的可视化效果
+
+# 🥰 精选案例
+
+以下是采用了RepoAgent的开源项目精选案例。
+
+- [MiniCPM](https://github.com/agencyenterprise/react-native-health): 一个端侧大语言模型，大小为2B，效果可与7B模型媲美。
+- [ChatDev](https://github.com/revtel/react-native-nfc-manager): 用于软件开发的协作式AI智能体。
+- [Xagent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
 
 # 🇺🇳 支持语言
 在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
