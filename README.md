@@ -202,8 +202,8 @@ python -m repo_agent.chat_with_repo
 
 Here are featured cases that have adopted RepoAgent.
 
-- [MiniCPM](https://github.com/agencyenterprise/react-native-health): An edge-side LLM of 2B size, comparable to 7B model.
-- [ChatDev](https://github.com/revtel/react-native-nfc-manager): Collaborative AI agents for software development.
+- [MiniCPM](https://github.com/OpenBMB/MiniCPM): An edge-side LLM of 2B size, comparable to 7B model.
+- [ChatDev](https://github.com/OpenBMB/ChatDev): Collaborative AI agents for software development.
 - [XAgent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving.
 
 ## 🇺🇳 Supported Language

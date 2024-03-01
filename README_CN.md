@@ -162,8 +162,8 @@ python -m repo_agent.chat_with_repo
 
 以下是采用了RepoAgent的开源项目精选案例。
 
-- [MiniCPM](https://github.com/agencyenterprise/react-native-health): 一个端侧大语言模型，大小为2B，效果可与7B模型媲美。
-- [ChatDev](https://github.com/revtel/react-native-nfc-manager): 用于软件开发的协作式AI智能体。
+- [MiniCPM](https://github.com/OpenBMB/MiniCPM): 一个端侧大语言模型，大小为2B，效果可与7B模型媲美。
+- [ChatDev](https://github.com/OpenBMB/ChatDev): 用于软件开发的协作式AI智能体。
 - [XAgent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
 
 # 🇺🇳 支持语言
