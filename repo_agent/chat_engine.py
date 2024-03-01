@@ -1,6 +1,5 @@
 import json
 import sys
-from attr import dataclass
 import tiktoken
 import time
 import inspect
@@ -10,6 +9,7 @@ from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem
 from repo_agent.log import logger
 from openai import OpenAI, APIConnectionError
+from dataclasses import dataclass
 
 
 def get_import_statements():

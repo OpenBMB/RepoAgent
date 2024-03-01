@@ -2,7 +2,15 @@
 import sys
 import logging
 from loguru import logger
-from repo_agent.config import CONFIG
+from enum import StrEnum
+
+class LogLevel(StrEnum):
+    DEBUG = 'DEBUG'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+    CRITICAL = 'CRITICAL'
+# from repo_agent.config import CONFIG
 
 logger = logger.opt(colors=True)
 """
@@ -63,22 +71,14 @@ class InterceptHandler(logging.Handler):
         )
 
 
-def set_logger_level_from_config():
-    log_level = CONFIG.get("log_level", "INFO").upper()
+def set_logger_level_from_config(log_level):
 
-    try:
-        logger.remove()
-        logger.add(sys.stderr, level=log_level)
+    logger.remove()
+    logger.add(sys.stderr, level=log_level)
 
-        # Intercept standard logging
-        logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    # Intercept standard logging
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
-        logger.success(f"Log level set to {log_level}!")
-    except ValueError:
-        logger.warning(
-            f"Invalid log level '{log_level}' in config. Using default log level."
-        )
+    logger.success(f"Log level set to {log_level}!")
 
 
-# Automatically set logger level from config when module is imported
-set_logger_level_from_config()

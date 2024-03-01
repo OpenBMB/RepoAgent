@@ -1,0 +1,15 @@
+[project]
+target_repo = ""
+hierarchy_name = ".project_doc_record"
+markdown_docs_name = "markdown_docs"
+ignore_list = []
+language = "Chinese"
+max_thread_count = 4
+max_document_tokens = 1024
+log_level = "info"
+
+[chat_completion]
+model = "gpt-3.5-turbo"
+temperature = 0.2
+request_timeout = 60
+base_url = "https://api.openai.com/v1"
