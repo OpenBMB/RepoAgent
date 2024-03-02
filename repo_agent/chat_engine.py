@@ -1,16 +1,14 @@
-import json
 import sys
 import tiktoken
 import time
 import inspect
 from repo_agent.log import logger
-from repo_agent.config import language_mapping, max_input_tokens_map
+from repo_agent.settings import setting, max_input_tokens_map
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.doc_meta_info import DocItem
 from repo_agent.log import logger
 from openai import OpenAI, APIConnectionError
 from dataclasses import dataclass
-
 
 def get_import_statements():
     source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
@@ -31,8 +29,7 @@ class ChatEngine:
     ChatEngine is used to generate the doc of functions or classes.
     """
 
-    def __init__(self, CONFIG, project_manager):
-        self.config = CONFIG
+    def __init__(self, project_manager):
         self.project_manager = project_manager
 
     def num_tokens_from_string(self, string: str, encoding_name="cl100k_base") -> int:
@@ -70,9 +67,9 @@ class ChatEngine:
 
     def generate_response(self, model, sys_prompt, usr_prompt, max_tokens):
         client = OpenAI(
-            api_key=self.config["api_keys"][model][0]["api_key"],
-            base_url=self.config["api_keys"][model][0]["base_url"],
-            timeout=self.config["default_completion_kwargs"]["request_timeout"],
+            api_key=setting.chat_completion.openai_api_key.get_secret_value(),
+            base_url=str(setting.chat_completion.base_url),
+            timeout=setting.chat_completion.request_timeout,
         )
 
         messages = [
@@ -83,7 +80,7 @@ class ChatEngine:
         response = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=self.config["default_completion_kwargs"]["temperature"],
+            temperature=setting.chat_completion.temperature,
             max_tokens=max_tokens,
         )
 
@@ -188,7 +185,7 @@ class ChatEngine:
 
         def get_relationship_description(referencer_content, reference_letter):
             if referencer_content and reference_letter:
-                has_relationship = "And please include the reference relationship with its callers and callees in the project from a functional perspective"
+                return "And please include the reference relationship with its callers and callees in the project from a functional perspective"
             elif referencer_content:
                 return "And please include the relationship with its callers in the project from a functional perspective."
             elif reference_letter:
@@ -196,14 +193,7 @@ class ChatEngine:
             else:
                 return ""
 
-        max_tokens = self.config.get("max_document_tokens", 1024) or 1024
-
-        language = self.config["language"]  # setting document language
-        if language not in language_mapping:
-            raise KeyError(
-                f"Language code {language} is not provided! Supported languages are: {json.dumps(language_mapping)}"
-            )
-        language = language_mapping[language]
+        max_tokens = setting.chat_completion.max_document_tokens
 
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
         parameters_or_attribute = (
@@ -243,14 +233,14 @@ class ChatEngine:
             "reference_letter": reference_letter,
             "referencer_content": referencer_content,
             "parameters_or_attribute": parameters_or_attribute,
-            "language": language,
+            "language": setting.project.language,
         }
 
         sys_prompt = SYS_PROMPT.format(**prompt_data)
 
-        usr_prompt = USR_PROMPT.format(language=language)
+        usr_prompt = USR_PROMPT.format(language=setting.project.language)
 
-        model = self.config["default_completion_kwargs"]["model"]
+        model = setting.chat_completion.model
         max_input_length = max_input_tokens_map.get(model, 4096) - max_tokens
 
         total_tokens = self.num_tokens_from_string(

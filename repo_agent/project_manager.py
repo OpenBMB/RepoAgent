@@ -1,7 +1,5 @@
 import os
 import jedi
-from collections import defaultdict
-
 
 
 class ProjectManager:

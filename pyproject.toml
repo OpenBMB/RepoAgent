@@ -54,3 +54,6 @@ includes = [
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
+
+[tool.pyright]
+reportCallIssue="none"

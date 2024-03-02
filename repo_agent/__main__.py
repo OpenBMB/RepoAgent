@@ -1,4 +1,3 @@
-#!/Users/yeyn/anaconda3/envs/ai-doc/bin/python
 import os
 import sys
 

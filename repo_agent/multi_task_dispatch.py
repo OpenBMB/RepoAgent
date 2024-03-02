@@ -5,8 +5,6 @@ import random
 from typing import List, Callable, Dict, Any
 from colorama import Fore, Style
 
-from repo_agent.log import logger
-
 
 class Task:
     def __init__(self, task_id: int, dependencies: List[Task], extra_info: Any = None):

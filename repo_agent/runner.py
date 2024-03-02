@@ -1,8 +1,6 @@
 import threading
 import os, json
 import json
-import git
-import itertools
 from tqdm import tqdm
 from typing import List
 from functools import partial
@@ -13,11 +11,11 @@ from colorama import Fore, Style
 import time
 
 from repo_agent.file_handler import FileHandler
-from repo_agent.utils.meta_info_utils import latest_verison_substring, make_fake_files, delete_fake_files
+from repo_agent.utils.meta_info_utils import make_fake_files, delete_fake_files
 from repo_agent.change_detector import ChangeDetector
 from repo_agent.project_manager import ProjectManager
 from repo_agent.chat_engine import ChatEngine
-from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus, need_to_generate
+from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemStatus, need_to_generate
 from repo_agent.log import logger
 from repo_agent.config import CONFIG
 from repo_agent.multi_task_dispatch import worker
