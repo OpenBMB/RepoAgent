@@ -198,6 +198,13 @@ python -m repo_agent.chat_with_repo
 - [ ] Support install and configure via `pip install repoagent`
 - [X] Automatically generate Gitbook for better visualization effects
 
+## 🥰 Featured Cases
+
+Here are featured cases that have adopted RepoAgent.
+
+- [MiniCPM](https://github.com/OpenBMB/MiniCPM): An edge-side LLM of 2B size, comparable to 7B model.
+- [ChatDev](https://github.com/OpenBMB/ChatDev): Collaborative AI agents for software development.
+- [XAgent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving.
 
 ## 🇺🇳 Supported Language
 
