@@ -1,14 +1,17 @@
-import sys
-import tiktoken
-import time
 import inspect
-from repo_agent.log import logger
-from repo_agent.settings import setting, max_input_tokens_map
-from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
+import os
+import sys
+import time
+from dataclasses import dataclass
+
+import tiktoken
+from openai import APIConnectionError, OpenAI
+
 from repo_agent.doc_meta_info import DocItem
 from repo_agent.log import logger
-from openai import OpenAI, APIConnectionError
-from dataclasses import dataclass
+from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
+from repo_agent.settings import max_input_tokens_map, setting
+
 
 def get_import_statements():
     source_lines = inspect.getsourcelines(sys.modules[__name__])[0]
@@ -255,7 +258,7 @@ class ChatEngine:
                 for k, v in max_input_tokens_map.items()
                 if (v - max_tokens) > total_tokens
             }  # 抽取出所有上下文长度大于当前总输入tokens的模型
-            for model_name, max_input_length in larger_models:
+            for model_name, max_input_length in larger_models.items():
                 if max_input_length - max_tokens > total_tokens:
                     try:
                         # Attempt to make a request with the larger model

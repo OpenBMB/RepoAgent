@@ -1,19 +1,29 @@
-from pydantic_settings import BaseSettings
-from pydantic import (
-    PositiveFloat,
-    HttpUrl,
-    PositiveInt,
-    DirectoryPath,
-    SecretStr,
-    field_validator,
-    field_serializer,
-    Field,
-)
-from repo_agent.config_manager import read_config, write_config
+from enum import StrEnum
+
 from iso639 import Language, LanguageNotFoundError
-from repo_agent.log import LogLevel, set_logger_level_from_config
+from pydantic import (
+    DirectoryPath,
+    Field,
+    HttpUrl,
+    PositiveFloat,
+    PositiveInt,
+    SecretStr,
+    field_serializer,
+    field_validator,
+)
+from pydantic_settings import BaseSettings
+
+from repo_agent.config_manager import read_config, write_config
 
 
+class LogLevel(StrEnum):
+    DEBUG = 'DEBUG'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+    CRITICAL = 'CRITICAL'
+
+    
 class ProjectSettings(BaseSettings):
     target_repo: DirectoryPath = "" # type: ignore
     hierarchy_name: str = ".project_doc_record"
@@ -69,7 +79,6 @@ class Setting(BaseSettings):
 
 _config_data = read_config()
 setting = Setting.model_validate(_config_data)
-set_logger_level_from_config(log_level=setting.project.log_level)
 
 if _config_data == {}:
     write_config(setting.model_dump())

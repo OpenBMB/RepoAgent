@@ -104,7 +104,6 @@ repo_path: /path/to/your/repo
 project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
 Markdown_Docs_folder: Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
 ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore some py files or folders that you don't want to generate documentation for by giving relative paths in ignore_list.
-whitelist_path: /path/of/whitelist_path_json #if you provide the whitelist json with the same structure in Metainfo, RepoAgent will only process the given part. This is useful in a very big project, like "higgingface Transformers"
 
 language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
 max_thread_count: 10 # We support multiprocessing to speedup the process

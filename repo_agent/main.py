@@ -1,20 +1,26 @@
-import click
-from repo_agent.settings import (
-    Setting,
-    ProjectSettings,
-    ChatCompletionSettings,
-)
-from repo_agent.config_manager import write_config
 from importlib import metadata
+
+import click
+from iso639 import Language, LanguageNotFoundError
 from loguru import logger
 from tenacity import (
     retry,
-    stop_after_attempt,
     retry_if_exception_type,
     stop_after_attempt,
 )
-from iso639 import Language, LanguageNotFoundError
-from repo_agent.log import LogLevel
+
+from repo_agent.config_manager import write_config
+from repo_agent.doc_meta_info import DocItem, MetaInfo
+from repo_agent.log import logger, set_logger_level_from_config
+from repo_agent.runner import Runner, delete_fake_files
+from repo_agent.settings import (
+    ChatCompletionSettings,
+    LogLevel,
+    ProjectSettings,
+    Setting,
+    setting,
+)
+from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
 
 # 尝试获取版本号，如果失败，则使用默认版本号。
 try:
@@ -73,7 +79,9 @@ def configure():
         ),
         ignore_list=click.prompt(
             "Enter files or directories to ignore, separated by commas",
-            default=",".join(project_settings_default_instance.ignore_list),
+            default=",".join(
+                str(path) for path in project_settings_default_instance.ignore_list
+            ),
         ).split(","),
         language=language_prompt(
             default_language=project_settings_default_instance.language
@@ -97,7 +105,7 @@ def configure():
         ),
     )
 
-    logger.info("Project settings saved successfully.")
+    logger.success("Project settings saved successfully.")
 
     chat_completion_instance = ChatCompletionSettings(
         model=click.prompt(
@@ -117,13 +125,11 @@ def configure():
             "Enter the base URL", default=str(chat_completion_default_instance.base_url)
         ),
     )
-    logger.info("Chat completion settings saved successfully.")
+    logger.success("Chat completion settings saved successfully.")
 
     update_setting = Setting(
         project=project_settings_instance, chat_completion=chat_completion_instance
     )
-
-    logger.debug(f"Current settings: {update_setting.model_dump()}")
 
     write_config(update_setting.model_dump())
 
@@ -132,7 +138,7 @@ def configure():
 @click.option(
     "--model",
     "-m",
-    default=chat_completion_default_instance.model,
+    default=setting.chat_completion.model,
     show_default=True,
     help="Specifies the model to use for completion.",
     type=str,
@@ -140,7 +146,7 @@ def configure():
 @click.option(
     "--temperature",
     "-t",
-    default=chat_completion_default_instance.temperature,
+    default=setting.chat_completion.temperature,
     show_default=True,
     help="Sets the generation temperature for the model. Lower values make the model more deterministic.",
     type=float,
@@ -148,7 +154,7 @@ def configure():
 @click.option(
     "--request-timeout",
     "-r",
-    default=chat_completion_default_instance.request_timeout,
+    default=setting.chat_completion.request_timeout,
     show_default=True,
     help="Defines the timeout in seconds for the API request.",
     type=int,
@@ -156,7 +162,7 @@ def configure():
 @click.option(
     "--base-url",
     "-b",
-    default=chat_completion_default_instance.base_url,
+    default=setting.chat_completion.base_url,
     show_default=True,
     help="The base URL for the API calls.",
     type=str,
@@ -164,7 +170,7 @@ def configure():
 @click.option(
     "--target-repo-path",
     "-tp",
-    default=project_settings_default_instance.target_repo,
+    default=setting.project.target_repo,
     show_default=True,
     help="The file system path to the target repository. This path is used as the root for documentation generation.",
     type=click.Path(),
@@ -172,7 +178,7 @@ def configure():
 @click.option(
     "--hierarchy-path",
     "-hp",
-    default=project_settings_default_instance.hierarchy_name,
+    default=setting.project.hierarchy_name,
     show_default=True,
     help="The name or path for the project hierarchy file, used to organize documentation structure.",
     type=str,
@@ -180,7 +186,7 @@ def configure():
 @click.option(
     "--markdown-docs-path",
     "-mdp",
-    default=project_settings_default_instance.markdown_docs_name,
+    default=setting.project.markdown_docs_name,
     show_default=True,
     help="The folder path where Markdown documentation will be stored or generated.",
     type=str,
@@ -188,7 +194,7 @@ def configure():
 @click.option(
     "--ignore-list",
     "-i",
-    default=project_settings_default_instance.ignore_list,
+    default=setting.project.ignore_list,
     show_default=True,
     help="A list of files or directories to ignore during documentation generation, separated by commas.",
     multiple=True,
@@ -197,7 +203,7 @@ def configure():
 @click.option(
     "--language",
     "-l",
-    default=project_settings_default_instance.language,
+    default=setting.project.language,
     show_default=True,
     help="The ISO 639 code or language name for the documentation. ",
     type=str,
@@ -205,7 +211,7 @@ def configure():
 @click.option(
     "--log-level",
     "-ll",
-    default=project_settings_default_instance.log_level,
+    default=setting.project.log_level,
     show_default=True,
     help="Sets the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL) for the application. Default is INFO.",
     type=click.Choice([level.value for level in LogLevel], case_sensitive=False),
@@ -244,6 +250,52 @@ def run(
         project=project_settings, chat_completion=chat_completion_settings
     )
     write_config(settings.model_dump())
+    set_logger_level_from_config(log_level=setting.project.log_level)
+
+    runner = Runner()
+    runner.run()
+    logger.success("Documentation task completed.")
+
+
+@cli.command()
+def clean():
+    """Clean the fake files generated by the documentation process."""
+    delete_fake_files()
+    logger.success("Fake files have been cleaned up.")
+
+
+@cli.command()
+def print_hierarchy():
+    """Print the hierarchy of the target repository."""
+    runner = Runner()
+    runner.meta_info.target_repo_hierarchical_tree.print_recursive()
+    logger.success("Hierarchy printed.")
+
+
+@cli.command()
+def diff():
+    """Check for changes and print which documents will be updated or generated."""
+    runner = Runner()
+    if runner.meta_info.in_generation_process:  # 如果不是在生成过程中，就开始检测变更
+        click.echo("This command only supports pre-check")
+        raise click.Abort()
+
+    file_path_reflections, jump_files = make_fake_files()
+    new_meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
+    new_meta_info.load_doc_from_older_meta(runner.meta_info)
+    delete_fake_files()
+
+    DocItem.check_has_task(
+        new_meta_info.target_repo_hierarchical_tree,
+        ignore_list=setting.project.ignore_list,
+    )
+    if new_meta_info.target_repo_hierarchical_tree.has_task:
+        click.echo("The following docs will be generated/updated:")
+        new_meta_info.target_repo_hierarchical_tree.print_recursive(
+            diff_status=True, ignore_list=setting.project.ignore_list
+        )
+    else:
+        click.echo("No docs will be generated/updated, check your source-code update")
 
 
 if __name__ == "__main__":

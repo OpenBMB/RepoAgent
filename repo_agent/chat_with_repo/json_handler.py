@@ -1,5 +1,6 @@
 import json
 import sys
+
 from repo_agent.log import logger
 
 
@@ -87,4 +88,4 @@ class JsonFileProcessor:
 
 if __name__ == "__main__":
     processor = JsonFileProcessor("database.json")
-    md_contents = processor.extract_md_contents()
+    md_contents,extracted_contents = processor.extract_data()

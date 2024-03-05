@@ -1,19 +1,19 @@
 # repo_agent/config_manager.py
 import os
-import tomli, tomli_w
 from pathlib import Path
-from loguru import logger
 from typing import Dict
+
+import tomli
+import tomli_w
+
 
 def get_config_path() -> Path:
     # 首先检查当前工作目录的父目录
-    parent_directory = Path.cwd().parent
+    parent_directory = Path.cwd()
     local_config_path = parent_directory / 'config.toml'
-    logger.debug(f'Checking local config path: {local_config_path}')
 
     # 如果在程序目录找到了 config.toml，则直接返回这个路径
     if local_config_path.exists():
-        logger.debug(f'Found local config at: {local_config_path}')
         return local_config_path
 
     # 如果在父目录没有找到 config.toml，按照原来的逻辑进行
@@ -23,7 +23,7 @@ def get_config_path() -> Path:
         home_config_path = Path.home() / '.repo_agent'
     elif os_name == 'nt':
         # 对于 Windows，使用 APPDATA 目录
-        home_config_path = Path(os.getenv('APPDATA')) / 'repo_agent'
+        home_config_path = Path(os.getenv('APPDATA')) / 'repo_agent' # type: ignore
     else:
         # 如果操作系统检测失败，默认使用一个本地目录
         home_config_path = Path.cwd() / 'repo_agent'
@@ -31,23 +31,19 @@ def get_config_path() -> Path:
     # 确保配置目录存在
     home_config_path.mkdir(parents=True, exist_ok=True)
     config_path = home_config_path / 'config.toml'
-    logger.debug(f'Using home config path: {config_path}')
     
     # 确保配置文件存在，如果不存在则创建一个空文件
     if not config_path.exists():
-        logger.debug(f'Config file does not exist, creating: {config_path}')
         config_path.touch()
 
     # 返回包含文件名的完整路径
     return config_path
 
 
-def read_config(file_path: Path | None = None) -> Dict[str, any]:
+def read_config(file_path: Path | None = None) -> Dict[str, any]: # type: ignore
 
     if file_path is None:
         file_path = get_config_path()
-
-    logger.debug(f"Reading configuration from {file_path}")
 
     with open(file_path, "rb") as f:
         try:
@@ -76,8 +72,6 @@ def write_config(update_config: dict, file_path: Path | None = None) -> None:
     # 将更新后的配置写回文件
     with open(file_path, "wb") as f:
         tomli_w.dump(existing_config, f)
-
-    logger.success("Configuration updated successfully.")
 
 if __name__ == '__main__':
     # Sample TOML data to be written to the configuration file

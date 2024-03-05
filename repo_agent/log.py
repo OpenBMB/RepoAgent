@@ -1,16 +1,8 @@
 # repo_agent/log.py
-import sys
 import logging
-from loguru import logger
-from enum import StrEnum
+import sys
 
-class LogLevel(StrEnum):
-    DEBUG = 'DEBUG'
-    INFO = 'INFO'
-    WARNING = 'WARNING'
-    ERROR = 'ERROR'
-    CRITICAL = 'CRITICAL'
-# from repo_agent.config import CONFIG
+from loguru import logger
 
 logger = logger.opt(colors=True)
 """
@@ -61,8 +53,8 @@ class InterceptHandler(logging.Handler):
 
         # Find caller from where the logged message originated
         frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back
+        while frame.f_code.co_filename == logging.__file__: # type: ignore
+            frame = frame.f_back # type: ignore
             depth += 1
 
         # Log to Loguru

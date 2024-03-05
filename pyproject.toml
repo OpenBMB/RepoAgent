@@ -3,7 +3,7 @@ authors = [
     {name = "Qinyu Luo", email = "qinyuluo123@gmail.com"},
 ]
 maintainers = [
-    {name = "Arno Edwards", email = "Arno.Edwards@outlook.com"},
+    {name = "Edwards Arno", email = "Edwards.Arno@outlook.com"},
 ]
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10,<4.0"
@@ -24,7 +24,7 @@ dependencies = [
     "tomli-w>=1.0.0",
 ]
 name = "repoagent"
-version = "0.0.6"
+version = "0.1.0"
 description = "An Agent designed to offer an intelligent approach for generating project documentation."
 readme = "README.md"
 
@@ -32,7 +32,7 @@ readme = "README.md"
 repository = "https://github.com/LOGIC-10/RepoAgent"
 
 [project.scripts]
-repoagent = "repo_agent.main:app"
+repoagent = "repo_agent.main:cli"
 
 [tool.pdm]
 [tool.pdm.dev-dependencies]

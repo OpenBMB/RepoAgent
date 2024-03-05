@@ -1,8 +1,10 @@
 from __future__ import annotations
+
+import random
 import threading
 import time
-import random
-from typing import List, Callable, Dict, Any
+from typing import Any, Callable, Dict, List
+
 from colorama import Fore, Style
 
 
