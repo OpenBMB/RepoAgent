@@ -1,15 +1,33 @@
-[中文](README_CN.md) | [Background](#-background) | [Features](#-features) | [Getting Started](#-getting-started) | [Future Work](#-future-work) | [Supported Language](#-supported-language) | [Citation](#-citation)
+<h1 align="center"><em> RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation.</em></h1>
 
-# 🤗 Introduction
+<p align="center">
+  <img src="https://img.shields.io/pypi/dm/repoagent" alt="PyPI - Downloads"/>
+  <a href="https://pypi.org/project/repoagent/">
+    <img src="https://img.shields.io/pypi/v/repoagent" alt="PyPI - Version"/>
+  </a>
+  <a href="Pypi">
+    <img src="https://img.shields.io/pypi/pyversions/repoagent" alt="PyPI - Python Version"/>
+  </a>
+  <img alt="GitHub License" src="https://img.shields.io/github/license/LOGIC-10/RepoAgent">
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/LOGIC-10/RepoAgent?style=social">
+  <img alt="GitHub issues" src="https://img.shields.io/github/issues/LOGIC-10/RepoAgent">
+  <a href="https://arxiv.org/abs/2402.16667v1">
+    <img src="https://img.shields.io/badge/cs.CL-2402.16667-b31b1b?logo=arxiv&logoColor=red" alt="arXiv"/>
+  </a>
+</p>
 
-RepoAgent is an Open-Source project driven by Large Language Models(LLMs) that aims to provide an intelligent way to document projects. 
-It is designed to be a handy tool for developers who need to organize their code and cooperate with teammates.
+<p align="center">
+  <img src="assets/images/RepoAgent.png" alt="RepoAgent"/>
+</p>
 
-**Paper:** http://arxiv.org/abs/2402.16667
-
-![RepoAgent](assets/images/RepoAgent.png)
+<p align="center">
+  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README.md">English readme</a>
+   • 
+  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README_CN.md">简体中文 readme</a>
+</p>
 
 ## 👾 Background
+
 In the realm of computer programming, the significance of comprehensive project documentation, including detailed explanations for each Python file, cannot be overstated. Such documentation serves as the cornerstone for understanding, maintaining, and enhancing the codebase. It provides essential context and rationale for the code, making it easier for current and future developers to comprehend the purpose, functionality, and structure of the software. It not only facilitates current and future developers in grasping the project's purpose and structure but also ensures that the project remains accessible and modifiable over time, significantly easing the learning curve for new team members.
 
 Traditionally, creating and maintaining software documentation demanded significant human effort and expertise, a challenge for small teams without dedicated personnel. The introduction of Large Language Models (LLMs) like GPT has transformed this, enabling AI to handle much of the documentation process. This shift allows human developers to focus on verification and fine-tuning, greatly reducing the manual burden of documentation.
@@ -31,13 +49,13 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 ### Installation Method
 
-<!-- #### Using pip (Recommended for Users)
+#### Using pip (Recommended for Users)
 
 Install the `repoagent` package directly using pip:
 
 ```bash
 pip install repoagent
-``` -->
+```
 
 #### Development Setup Using PDM
 
@@ -56,7 +74,7 @@ If you're looking to contribute or set up a development environment:
     ```bash
     git clone https://github.com/LOGIC-10/RepoAgent.git
     cd RepoAgent
-```
+    ```
 
 - **Setup with PDM**
 
@@ -76,75 +94,81 @@ If you're looking to contribute or set up a development environment:
 
 ### Configuring RepoAgent
 
-First, configure the OpenAI API parameters in the config.yml file.
-For details on obtaining these, please refer to [OpenAI API](https://beta.openai.com/docs/developer-quickstart/your-api-keys).
+You can use RepoAgent with OpenAI API for the moment.
 
-In the `config.yml` file, configure other parameters like OpenAI API, the destination repository path, document language, and so on:
-
-```yaml
-api_keys:
-  gpt-3.5-turbo-16k:
-    - api_key: sk-XXXX
-      base_url: https://example.com/v1/
-      api_type: azure
-      api_version: XXX
-      engine: GPT-35-Turbo-16k
-      # you can use any kwargs supported by openai.ChatCompletion here
-    - api_key: sk-xxxxx
-      organization: org-xxxxxx
-      model: gpt-3.5-turbo-16k
-  ...
-
-default_completion_kwargs:
-  model: gpt-4-1106
-  temperature: 0.2
-  request_timeout: 60
-
-repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy # This is a folder, where we store the project hierarchy and metainfo. This can be shared with your team members.
-Markdown_Docs_folder: Markdown_Docs # The folder in the root directory of your target repository to store the documentation.
-ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # Ignore some py files or folders that you don't want to generate documentation for by giving relative paths in ignore_list.
-
-language: en # Two-letter language codes (ISO 639-1 codes), e.g. `language: en` for English. Refer to Supported Language for more languages.
-max_thread_count: 10 # We support multiprocessing to speedup the process
-max_document_tokens: 1024 # the maximum number of tokens in a document generated 
-log_level: info
+```sh
+export OPENAI_API_KEY=YOUR_API_KEY # on Linux/Mac
+set OPENAI_API_KEY=YOUR_API_KEY # on Windows
+$Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ```
 
-### Run RepoAgent
+Use `repoagent configure` if you need to running parameters.
+
+```sh
+Enter the path to target repository: 
+Enter the project hierarchy file name [.project_doc_record]: 
+Enter the Markdown documents folder name [markdown_docs]: 
+Enter files or directories to ignore, separated by commas []: 
+Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English') [Chinese]: 
+Enter the maximum number of threads [4]: 
+Enter the maximum number of document tokens [1024]: 
+Enter the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) [INFO]: 
+Enter the model [gpt-3.5-turbo]: 
+Enter the temperature [0.2]: 
+Enter the request timeout (seconds) [60.0]: 
+Enter the base URL [https://api.openai.com/v1]: 
+```
+
+## Run RepoAgent
 
 Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
-python -m repo_agent #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+repo_agent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+```
 
-# you can also try the follow feature
-python -m repo_agent clean #this command will remove repoagent-related cache
-python -m repo_agent print #this command will print how repo-agent parse the target repo
-python -m repo_agent diff #this command will check what docs will be updated/generated based on current code change
+The run command supports the following optional flags (if set, will override config defaults):
+
+- `-m`, `--model` TEXT: Specifies the model to use for completion. Default: `gpt-3.5-turbo`
+- `-t`, `--temperature` FLOAT: Sets the generation temperature for the model. Lower values make the model more deterministic. Default: `0.2`
+- `-r`, `--request-timeout` INTEGER: Defines the timeout in seconds for the API request. Default: `60`
+- `-b`, `--base-url` TEXT: The base URL for the API calls. Default: `https://api.openai.com/v1`
+- `-tp`, `--target-repo-path` PATH: The file system path to the target repository. Used as the root for documentation generation. Default: `/home/test/arno`
+- `-hp`, `--hierarchy-path` TEXT: The name or path for the project hierarchy file, used to organize documentation structure. Default: `.project_doc_record`
+- `-mdp`, `--markdown-docs-path` TEXT: The folder path where Markdown documentation will be stored or generated. Default: `markdown_docs`
+- `-i`, `--ignore-list` TEXT: A list of files or directories to ignore during documentation generation, separated by commas.
+- `-l`, `--language` TEXT: The ISO 639 code or language name for the documentation. Default: `Chinese`
+- `-ll`, `--log-level` [DEBUG|INFO|WARNING|ERROR|CRITICAL]: Sets the logging level for the application. Default: `INFO`
+
+
+You can also try the following feature
+
+```sh
+repo_agent clean # Remove repoagent-related cache
+repo_agent print-hierarchy # Print how repo-agent parse the target repo
+repo_agent diff # Check what docs will be updated/generated based on current code change
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
 
-The paths of the global structure information json file and the documentation folder can be configured in `config.yml`.
+Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository! 
 
-Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
-
-### Configuring the Target Repository
+### Use `pre-commit` 
 
 RepoAgent currently supports generating documentation for projects, which requires some configuration in the target repository.
 
 First, ensure that the target repository is a git repository and has been initialized.
-```
+
+```sh
 git init
 ```
 Install pre-commit in the target repository to detect changes in the git repository.
 
-```
+```sh
 pip install pre-commit
 ```
 Create a file named `.pre-commit-config.yaml` in the root directory of the target repository. An example is as follows:
 
-```
+```yml
 repos:
   - repo: local
     hooks:
@@ -155,11 +179,14 @@ repos:
       # You can specify the file types that trigger the hook, but currently only python is supported.
       types: [python]
 ```
+
 For specific configuration methods of hooks, please refer to [pre-commit](https://pre-commit.com/#plugins).
 After configuring the yaml file, execute the following command to install the hook.
-```
+
+```sh
 pre-commit install
 ```
+
 In this way, each git commit will trigger the RepoAgent's hook, automatically detecting changes in the target repository and generating corresponding documents.
 Next, you can make some modifications to the target repository, such as adding a new file to the target repository, or modifying an existing file.
 You just need to follow the normal git workflow: git add, git commit -m "your commit message", git push
@@ -177,25 +204,21 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 **In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.** 
 
 ### Exploring chat with repo
+
 We conceptualize **Chat With Repo** as a unified gateway for these downstream applications, acting as a connector that links RepoAgent to human users and other AI agents. Our future research will focus on adapting the interface to various downstream applications and customizing it to meet their unique characteristics and implementation requirements.
 
 Here we demonstrate a preliminary prototype of one of our downstream tasks: Automatic Q&A for Issues and Code Explanation. You can start the server by running the following code.
-```bash
-python -m repo_agent.chat_with_repo
+
+```sh
+repoagent chat-with-repo
 ```
 
 ## ✅ Future Work
 
-- [x] Identification and maintenance of parent-child relationship hierarchy structure between objects
-- [x] Implement Black commit
-- [x] **Bi-direct reference**  Construct Bi-directional reference topology
-- [x] **chat with repo** Chat with the repository by giving code and document at the same time 
-- [x] Automatically generate better visualizations such as Gitbook
+- [x] Support install and configure via `pip install repoagent`
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
-- [ ] Support install and configure via `pip install repoagent`
-- [X] Automatically generate Gitbook for better visualization effects
 
 ## 🥰 Featured Cases
 
@@ -204,45 +227,6 @@ Here are featured cases that have adopted RepoAgent.
 - [MiniCPM](https://github.com/OpenBMB/MiniCPM): An edge-side LLM of 2B size, comparable to 7B model.
 - [ChatDev](https://github.com/OpenBMB/ChatDev): Collaborative AI agents for software development.
 - [XAgent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving.
-
-## 🇺🇳 Supported Language
-
-Set the target language with the two-letter language codes (ISO 639-1 codes), Click on the 'Languages List' section below to expand the list of supported languages.
-
-<details>
-<summary>Languages List</summary>
-
-| Flag | Code | Language   |
-|------|------|------------|
-| 🇬🇧 | en   | English    |
-| 🇪🇸 | es   | Spanish    |
-| 🇫🇷 | fr   | French     |
-| 🇩🇪 | de   | German     |
-| 🇨🇳 | zh   | Chinese    |
-| 🇯🇵 | ja   | Japanese   |
-| 🇷🇺 | ru   | Russian    |
-| 🇮🇹 | it   | Italian    |
-| 🇰🇷 | ko   | Korean     |
-| 🇳🇱 | nl   | Dutch      |
-| 🇵🇹 | pt   | Portuguese |
-| 🇸🇦 | ar   | Arabic     |
-| 🇹🇷 | tr   | Turkish    |
-| 🇸🇪 | sv   | Swedish    |
-| 🇩🇰 | da   | Danish     |
-| 🇫🇮 | fi   | Finnish    |
-| 🇳🇴 | no   | Norwegian  |
-| 🇵🇱 | pl   | Polish     |
-| 🇨🇿 | cs   | Czech      |
-| 🇭🇺 | hu   | Hungarian  |
-| 🇬🇷 | el   | Greek      |
-| 🇮🇱 | he   | Hebrew     |
-| 🇹🇭 | th   | Thai       |
-| 🇮🇳 | hi   | Hindi      |
-| 🇧🇩 | bn   | Bengali    |
-
-</details>
-
-> e.g., `language: en` for English.
 
 ## 📊 Citation
 

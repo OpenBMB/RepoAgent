@@ -9,6 +9,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
+from repo_agent.chat_with_repo import main as run_chat_with_repo
 from repo_agent.config_manager import write_config
 from repo_agent.doc_meta_info import DocItem, MetaInfo
 from repo_agent.log import logger, set_logger_level_from_config
@@ -57,7 +58,7 @@ def language_prompt(default_language):
 @click.group()
 @click.version_option(version_number)
 def cli():
-    """An LLM-powered repository agent designed to assist developers and teams in generating documentation and understanding repositories quickly."""
+    """An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation."""
     pass
 
 
@@ -296,6 +297,12 @@ def diff():
         )
     else:
         click.echo("No docs will be generated/updated, check your source-code update")
+
+
+@cli.command()
+def chat_with_repo():
+    """Automatic Q&A for Issues and Code Explanation."""
+    run_chat_with_repo()
 
 
 if __name__ == "__main__":

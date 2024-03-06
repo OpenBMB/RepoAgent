@@ -1,86 +1,139 @@
-[英文](README.md) | [背景](#-背景) ｜ [特性](#-特性) ｜ [快速开始](#-快速开始) | [未来工作](#-未来工作) | [支持语言](#-支持语言) | [引用我们](#-引用我们)
+<h1 align="center"><em>RepoAgent：一个用于代码库级别代码文档生成的LLM驱动开源框架</em></h1>
 
-# 🤗 介绍
+<p align="center">
+  <img src="https://img.shields.io/pypi/dm/repoagent" alt="PyPI - 下载量"/>
+  <a href="https://pypi.org/project/repoagent/">
+    <img src="https://img.shields.io/pypi/v/repoagent" alt="PyPI - 版本"/>
+  </a>
+  <a href="Pypi">
+    <img src="https://img.shields.io/pypi/pyversions/repoagent" alt="PyPI - Python版本"/>
+  </a>
+  <img alt="GitHub授权许可" src="https://img.shields.io/github/license/LOGIC-10/RepoAgent">
+  <img alt="GitHub仓库星标" src="https://img.shields.io/github/stars/LOGIC-10/RepoAgent?style=social">
+  <img alt="GitHub问题" src="https://img.shields.io/github/issues/LOGIC-10/RepoAgent">
+  <a href="https://arxiv.org/abs/2402.16667v1">
+    <img src="https://img.shields.io/badge/cs.CL-2402.16667-b31b1b?logo=arxiv&logoColor=red" alt="arXiv"/>
+  </a>
+</p>
 
-RepoAgent是一个由大型语言模型（LLMs）驱动的开源项目，旨在提供智能化的项目文档编写方式。
-它的设计目标是成为开发人员的便捷工具，用于创建、维护清晰易懂的代码文档并在团队成员之间应用协作。
+<p align="center">
+  <img src="assets/images/RepoAgent.png" alt="RepoAgent"/>
+</p>
 
-**论文地址**：http://arxiv.org/abs/2402.16667
+<p align="center">
+  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README.md">英文说明</a>
+   • 
+  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README_CN.md">简体中文说明</a>
+</p>
 
-![RepoAgent](assets/images/RepoAgent.png)
+## 👾 背景
 
-# 👾 背景
-在计算机编程领域，全面的项目文档非常重要，包括对每个Python文件的详细解释。这样的文档是理解、维护和增强代码库的基石。它为代码提供了必要的上下文解读，使当前和未来的开发人员更容易理解软件的目的、功能和结构。它不仅有助于当前和未来的开发人员理解项目的目的和结构，还确保项目随着时间的推移保持可访问和可修改，极大地降低了新团队成员的学习曲线。
+在计算机编程领域，全面的项目文档的重要性，包括每个Python文件的详细解释，不言而喻。这样的文档是理解、维护和增强代码库的基石。它提供了代码的必要上下文和理由，使当前和未来的开发者更容易理解软件的目的、功能和结构。它不仅便于当前和未来的开发者理解项目的目的和结构，还确保了项目随时间的推移保持可访问和可修改，大大简化了新团队成员的学习曲线。
 
-传统上，创建和维护软件文档需要大量的人力和专业知识，这对于没有专门人员的小团队来说是一个挑战。大型语言模型（LLMs）如GPT的引入改变了这一情况，使得AI能够处理大部分文档编写过程。这种转变使得人类开发人员可以专注于验证和微调修改，极大地减轻了文档编写的人工负担。
+传统上，创建和维护软件文档需要大量的人力和专业知识，这对没有专门人员的小团队来说是一个挑战。像GPT这样的大型语言模型（LLMs）的引入改变了这一点，使得AI可以处理大部分文档化过程。这种转变允许人类开发者专注于验证和微调，极大地减少了文档化的手动负担。
 
-**🏆 我们的目标是创建一个智能的文档助手，自动生成和维护文档，并帮助人类阅读并理解repo项目，最终帮助人类提高效率、节省时间。**
+**🏆 我们的目标是创建一个智能文档助手，帮助人们阅读和理解仓库并生成文档，最终帮助人们提高效率和节省时间。**
 
-# 🪭 特性
+## ✨ 特性
 
-- **🤖 自动检测Git仓库中的变更，跟踪文件的添加、删除和修改。**
-- **📝 通过深度递归+AST独立分析代码结构，为各个对象生成文档。**
-- **🔍 精准识别对象间双向调用关系，丰富文档内容的全局视野**
-- **📚 根据变更无缝替换Markdown内容，保持文档的一致性。**
-- **🕙 执行多线程并发操作，提高文档生成的效率。**
-- **👭 为团队协作提供可持续、自动化的文档更新方法。**
-- **😍 美观的文档书（Gitbook）展示**
+- **🤖 自动检测Git仓库中的变化，跟踪文件的增加、删除和修改。**
+- **📝 通过AST独立分析代码结构，为各个对象生成文档。**
+- **🔍 准确识别对象间的双向调用关系，丰富文档内容的全局视角。**
+- **📚 根据变化无缝替换Markdown内容，保持文档一致性。**
+- **🕙 执行多线程并发操作，提高文档生成效率。**
+- **👭 为团队协作提供可持续的自动化文档更新方法。**
+- **😍 以惊人的方式展示代码文档（每个项目都有由Gitbook提供支持的文档书）。**
 
-# 📦 安装
-首先，确保您的机器安装了python3.9以上的版本
-```
-$ python --version
-python 3.11.4
-```
+## 🚀 开始使用
 
-接着，克隆本项目，创建一个虚拟环境，并在环境内安装依赖
-```
-cd RepoAgent
-conda create -n RepoAgent python=3.11.4
-conda activate RepoAgent
-pip install -r requirements.txt
-```
+### 安装方法
 
-# 📖 快速开始
-## 配置RepoAgent
-在`config.yml`文件中，配置OpenAI API的相关参数信息、如目标仓库的路径、文档语言等。
-```yaml
-api_keys:
-  gpt-3.5-turbo-16k:
-    - api_key: sk-XXXX
-      base_url: https://example.com/v1/
-      api_type: azure
-      api_version: XXX
-      engine: GPT-35-Turbo-16k
-      # you can use any kwargs supported by openai.ChatCompletion here
-    - api_key: sk-xxxxx
-      organization: org-xxxxxx
-      model: gpt-3.5-turbo-16k
-  ...
+#### 使用pip（普通用户首选）
 
-default_completion_kwargs:
-  model: gpt-4
-  temperature: 0.2
-  request_timeout: 60
+直接使用pip安装`repoagent`包：
 
-repo_path: /path/to/your/repo
-project_hierarchy: .project_hierarchy # 全局结构信息文件夹的路径
-Markdown_Docs_folder: Markdown_Docs # 目标存储库根目录中用于存储文档的文件夹
-ignore_list: ["ignore_file1.py", "ignore_file2.py", "ignore_directory"] # 通过在ignore_list中给出相对路径来忽略一些您不想为其生成文档的py文件或文件夹
-
-language: zh # 双字母语言代码（ISO 639-1 代码），例如 `language: en` 表示英语，有关更多语言，请参阅支持的语言
-max_thread_count: 10 # 我们支持多线程执行来加速文档生成过程
-max_document_tokens: 1024 # 每一个对象文档（如类、函数）允许的最大长度
-log_level: info # log信息显示等级
+```bash
+pip install repoagent
 ```
 
-## 运行RepoAgent
-进入RepoAgent根目录，在命令行输入以下命令：
+#### 使用PDM进行开发环境设置
+
+如果您想要贡献或者设置一个开发环境：
+
+- **安装PDM**：如果您还没有安装，请[安装PDM](https://pdm-project.org/latest/#installation)。
+- **使用CodeSpace或克隆仓库**：
+
+    - **使用CodeSpace**
+    获取RepoAgent环境的最简单方式。点击下面链接使用GitHub Codespace，然后进行下一步。
+  
+    [![在GitHub Codespaces中打开](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
+  
+    - **克隆仓库**
+  
+    ```bash
+    git clone https://github.com/LOGIC-10/RepoAgent.git
+    cd RepoAgent
+    ```
+
+- **使用PDM设置**
+
+    - 初始化Python虚拟环境。确保在`/RepoAgent`目录下运行下面的命令：
+    
+      ```bash
+      pdm venv create --name repoagent
+      ```
+    
+    - [激活虚拟环境](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
+    
+    - 使用PDM安装依赖
+    
+      ```bash
+       pdm install
+      ```
+
+### 配置RepoAgent
+
+当前可以可以配置 OpenAI API 来使用 RepoAgent
 
 ```sh
-python -m repo_agent # 此命令将生成文档或更新文档（pre-commit钩子将自动调用此命令）
+export OPENAI_API_KEY=YOUR_API_KEY # on Linux/Mac
+set OPENAI_API_KEY=YOUR_API_KEY # on Windows
+$Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
+```
 
-# 你也可以尝试以下功能
+如果需要修改运行参数，使用 `repoagent configure` 
+
+```sh
+Enter the path to target repository: 
+Enter the project hierarchy file name [.project_doc_record]: 
+Enter the Markdown documents folder name [markdown_docs]: 
+Enter files or directories to ignore, separated by commas []: 
+Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English') [Chinese]: 
+Enter the maximum number of threads [4]: 
+Enter the maximum number of document tokens [1024]: 
+Enter the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) [INFO]: 
+Enter the model [gpt-3.5-turbo]: 
+Enter the temperature [0.2]: 
+Enter the request timeout (seconds) [60.0]: 
+Enter the base URL [https://api.openai.com/v1]: 
+```
+
+run 命令支持以下可选标志（如果设置，将覆盖配置默认值）：
+
+- `-m`, `--model` TEXT：指定用于完成的模型。默认值：`gpt-3.5-turbo`
+- `-t`, `--temperature` FLOAT：设置模型的生成温度。较低的值使模型更确定性。默认值：`0.2`
+- `-r`, `--request-timeout` INTEGER：定义 API 请求的超时时间（秒）。默认值：`60`
+- `-b`, `--base-url` TEXT：API 调用的基础 URL。默认值：`https://api.openai.com/v1`
+- `-tp`, `--target-repo-path` PATH：目标仓库的文件系统路径。用作文档生成的根路径。默认值：`/home/test/arno`
+- `-hp`, `--hierarchy-path` TEXT：项目层级文件的名称或路径，用于组织文档结构。默认值：`.project_doc_record`
+- `-mdp`, `--markdown-docs-path` TEXT：Markdown 文档将被存储或生成的文件夹路径。默认值：`markdown_docs`
+- `-i`, `--ignore-list` TEXT：在文档生成过程中要忽略的文件或目录列表，用逗号分隔。
+- `-l`, `--language` TEXT：文档的 ISO 639 代码或语言名称。默认值：`Chinese`
+- `-ll`, `--log-level` [DEBUG|INFO|WARNING|ERROR|CRITICAL]：设置应用程序的日志级别。默认值：`INFO`
+
+你也可以尝试以下功能
+
+```sh
 python -m repo_agent clean # 此命令将删除与repoagent相关的缓存
 python -m repo_agent print # 此命令将打印repo-agent如何解析目标仓库
 python -m repo_agent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
@@ -142,21 +195,18 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 我们将与仓库对话视为所有下游应用的统一入口，作为连接RepoAgent与人类用户和其他AI智能体之间的接口。我们未来的研究将探索适配各种下游应用的接口，并实现这些下游任务的独特性和现实要求。
 
 在这里，我们展示了我们的下游任务之一的初步原型：自动issue问题解答和代码解释。您可以通过在终端运行以下代码启动服务。
-```bash
-python -m repo_agent.chat_with_repo
+
+```sh
+repoagent chat_with_repo
 ```
 
 # ✅ 未来工作
 
-- [x] 对象间父子关系层级结构识别及维护
-- [x] 实现 Black commit
-- [x] **Bi-direct reference** 构建双向引用拓扑结构
-- [x] **与仓库对话(chat with repo)** 通过直接提供相关代码文件、代码块和文档信息使用户能直接向Repo提问
+- [x] 支持通过`pip install repoagent`将项目作为包进行安装配置
 - [ ] 通过全局文档信息自动生成仓库README.md文件
 - [ ] **多编程语言支持** 支持更多编程语言，如Java、C或C++等
 - [ ] 本地模型支持如 Llama、chatGLM、Qianwen 等
-- [ ] 支持通过`pip install repoagent`将项目作为包进行安装配置
-- [x] 自动生成Gitbook等更佳的可视化效果
+
 
 # 🥰 精选案例
 
@@ -166,43 +216,6 @@ python -m repo_agent.chat_with_repo
 - [ChatDev](https://github.com/OpenBMB/ChatDev): 用于软件开发的协作式AI智能体。
 - [XAgent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
 
-# 🇺🇳 支持语言
-在`config.yml`配置文件中使用两个字母的语言代码（ISO 639-1代码）设置生成文档的目标语言，点击下方的'语言列表'部分以展开支持的语言列表。
-
-<details>
-<summary>语言列表</summary>
-
-| 国旗 | 语言代码 | 语言   |
-|------|------|------------|
-| 🇬🇧 | en   | English    |
-| 🇪🇸 | es   | Spanish    |
-| 🇫🇷 | fr   | French     |
-| 🇩🇪 | de   | German     |
-| 🇨🇳 | zh   | Chinese    |
-| 🇯🇵 | ja   | Japanese   |
-| 🇷🇺 | ru   | Russian    |
-| 🇮🇹 | it   | Italian    |
-| 🇰🇷 | ko   | Korean     |
-| 🇳🇱 | nl   | Dutch      |
-| 🇵🇹 | pt   | Portuguese |
-| 🇸🇦 | ar   | Arabic     |
-| 🇹🇷 | tr   | Turkish    |
-| 🇸🇪 | sv   | Swedish    |
-| 🇩🇰 | da   | Danish     |
-| 🇫🇮 | fi   | Finnish    |
-| 🇳🇴 | no   | Norwegian  |
-| 🇵🇱 | pl   | Polish     |
-| 🇨🇿 | cs   | Czech      |
-| 🇭🇺 | hu   | Hungarian  |
-| 🇬🇷 | el   | Greek      |
-| 🇮🇱 | he   | Hebrew     |
-| 🇹🇭 | th   | Thai       |
-| 🇮🇳 | hi   | Hindi      |
-| 🇧🇩 | bn   | Bengali    |
-
-</details>
-
-> 例如，`language: en`代表生成的文档使用英语。
 
 # 📊 引用我们
 ```bibtex
