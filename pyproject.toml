@@ -15,18 +15,25 @@ dependencies = [
     "pyyaml>=6.0.1",
     "jedi>=0.19.1",
     "GitPython>=3.1.41",
-    "llama-index<0.10.0",
     "chromadb>=0.4.22",
     "prettytable>=3.9.0",
     "python-iso639>=2024.2.7",
     "pydantic-settings>=2.2.1",
     "tomli>=2.0.1",
     "tomli-w>=1.0.0",
+    "llama-index<0.10.0",
 ]
 name = "repoagent"
-version = "0.1.0"
-description = "An Agent designed to offer an intelligent approach for generating project documentation."
+version = "0.1.2"
+description = "An LLM-Powered Framework for Repository-level Code Documentation Generation."
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic ::  Scientific/Engineering :: Artificial Intelligence"
+]
 
 [project.urls]
 repository = "https://github.com/LOGIC-10/RepoAgent"
@@ -47,6 +54,7 @@ test = [
 [tool.pdm.build]
 includes = [
     "repo_agent",
+    "assets/images/*.png"
 ]
 
 

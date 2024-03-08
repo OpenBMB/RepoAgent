@@ -34,6 +34,13 @@ class ProjectSettings(BaseSettings):
     max_document_tokens: PositiveInt = 1024
     log_level: LogLevel = LogLevel.INFO
 
+    @field_serializer("ignore_list")
+    def serialize_ignore_list(self, ignore_list: list[str] = []):
+        if ignore_list == [""]:
+            self.ignore_list = []  # If the ignore_list is empty, set it to an empty list
+            return [] 
+        return ignore_list
+    
     @field_validator("language")
     @classmethod
     def validate_language_code(cls, v: str) -> str:

@@ -196,7 +196,7 @@ class ChatEngine:
             else:
                 return ""
 
-        max_tokens = setting.chat_completion.max_document_tokens
+        max_tokens = setting.project.max_document_tokens
 
         code_type_tell = "Class" if code_type == "ClassDef" else "Function"
         parameters_or_attribute = (

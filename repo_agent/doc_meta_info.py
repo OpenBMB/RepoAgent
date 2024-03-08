@@ -80,7 +80,7 @@ class DocItemStatus(Enum):
     referencer_not_exist = auto()  # 曾经引用他的obj被删除了，或者不再引用他了
 
 
-def need_to_generate(doc_item: DocItem, ignore_list: List = []) -> bool:
+def need_to_generate(doc_item: DocItem, ignore_list: List[str]  = []) -> bool:
     """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
     if doc_item.item_status == DocItemStatus.doc_up_to_date:
         return False
@@ -236,14 +236,14 @@ class DocItem:
         return now
     
     @staticmethod
-    def check_has_task(now_item: DocItem, ignore_list: List = []):
+    def check_has_task(now_item: DocItem, ignore_list: List[str] = []):
         if need_to_generate(now_item, ignore_list=ignore_list):
             now_item.has_task = True
         for _, child in now_item.children.items():
             DocItem.check_has_task(child, ignore_list)
             now_item.has_task = child.has_task or now_item.has_task
 
-    def print_recursive(self, indent=0, print_content=False, diff_status = False, ignore_list = []):
+    def print_recursive(self, indent=0, print_content=False, diff_status = False, ignore_list: List[str] = []):
         """递归打印repo对象"""
 
         def print_indent(indent=0):

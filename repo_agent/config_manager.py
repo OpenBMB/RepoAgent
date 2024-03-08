@@ -20,13 +20,13 @@ def get_config_path() -> Path:
     os_name = os.name
     if os_name == 'posix':
         # 对于 Unix 和 macOS，使用家目录
-        home_config_path = Path.home() / '.repo_agent'
+        home_config_path = Path.home() / '.repoagent'
     elif os_name == 'nt':
         # 对于 Windows，使用 APPDATA 目录
-        home_config_path = Path(os.getenv('APPDATA')) / 'repo_agent' # type: ignore
+        home_config_path = Path(os.getenv('APPDATA')) / 'repoagent' # type: ignore
     else:
         # 如果操作系统检测失败，默认使用一个本地目录
-        home_config_path = Path.cwd() / 'repo_agent'
+        home_config_path = Path.cwd() / 'repoagent'
     
     # 确保配置目录存在
     home_config_path.mkdir(parents=True, exist_ok=True)

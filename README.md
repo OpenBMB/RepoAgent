@@ -1,4 +1,4 @@
-<h1 align="center"><em> RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation.</em></h1>
+<h1 align="center"><em> RepoAgent: An LLM-Powered Framework for Repository-level Code Documentation Generation.</em></h1>
 
 <p align="center">
   <img src="https://img.shields.io/pypi/dm/repoagent" alt="PyPI - Downloads"/>
@@ -123,7 +123,7 @@ Enter the base URL [https://api.openai.com/v1]:
 
 Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
-repo_agent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+repoagent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
 ```
 
 The run command supports the following optional flags (if set, will override config defaults):
@@ -174,7 +174,7 @@ repos:
     hooks:
     - id: repo-agent
       name: RepoAgent
-      entry: python path/to/your/repo_agent/runner.py
+      entry: repoagent
       language: system
       # You can specify the file types that trigger the hook, but currently only python is supported.
       types: [python]

@@ -1,4 +1,4 @@
-<h1 align="center"><em>RepoAgent：一个用于代码库级别代码文档生成的LLM驱动开源框架</em></h1>
+<h1 align="center"><em>RepoAgent：一个用于代码库级别代码文档生成的LLM驱动框架</em></h1>
 
 <p align="center">
   <img src="https://img.shields.io/pypi/dm/repoagent" alt="PyPI - 下载量"/>
@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README.md">英文说明</a>
+  <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README.md">English README</a>
    • 
   <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README_CN.md">简体中文说明</a>
 </p>
@@ -134,9 +134,9 @@ run 命令支持以下可选标志（如果设置，将覆盖配置默认值）�
 你也可以尝试以下功能
 
 ```sh
-python -m repo_agent clean # 此命令将删除与repoagent相关的缓存
-python -m repo_agent print # 此命令将打印repo-agent如何解析目标仓库
-python -m repo_agent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
+repoagent clean # 此命令将删除与repoagent相关的缓存
+repoagent print # 此命令将打印repo-agent如何解析目标仓库
+repoagent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
 ```
 
 如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
@@ -163,7 +163,7 @@ repos:
     hooks:
     - id: repo-agent
       name: RepoAgent
-      entry: python path/to/your/repo_agent/runner.py
+      entry: repoagent
       language: system
       # 可以指定钩子触发的文件类型，但是目前只支持python
       types: [python]

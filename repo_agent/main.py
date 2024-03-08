@@ -58,7 +58,7 @@ def language_prompt(default_language):
 @click.group()
 @click.version_option(version_number)
 def cli():
-    """An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation."""
+    """An LLM-Powered Framework for Repository-level Code Documentation Generation."""
     pass
 
 
@@ -81,7 +81,7 @@ def configure():
         ignore_list=click.prompt(
             "Enter files or directories to ignore, separated by commas",
             default=",".join(
-                str(path) for path in project_settings_default_instance.ignore_list
+                str(path) for path in []
             ),
         ).split(","),
         language=language_prompt(
