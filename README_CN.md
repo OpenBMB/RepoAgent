@@ -93,10 +93,11 @@ pip install repoagent
 
 ### 配置RepoAgent
 
-当前可以可以配置 OpenAI API 来使用 RepoAgent
+在配置RepoAgent具体参数之前，请先确保已经在命令行配置 OpenAI API 作为环境变量：
 
 ```sh
 export OPENAI_API_KEY=YOUR_API_KEY # on Linux/Mac
+
 set OPENAI_API_KEY=YOUR_API_KEY # on Windows
 $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ```
@@ -124,7 +125,7 @@ run 命令支持以下可选标志（如果设置，将覆盖配置默认值）�
 - `-t`, `--temperature` FLOAT：设置模型的生成温度。较低的值使模型更确定性。默认值：`0.2`
 - `-r`, `--request-timeout` INTEGER：定义 API 请求的超时时间（秒）。默认值：`60`
 - `-b`, `--base-url` TEXT：API 调用的基础 URL。默认值：`https://api.openai.com/v1`
-- `-tp`, `--target-repo-path` PATH：目标仓库的文件系统路径。用作文档生成的根路径。默认值：`/home/test/arno`
+- `-tp`, `--target-repo-path` PATH：目标仓库的文件系统路径。用作文档生成的根路径。默认值：`path/to/your/target/repository`
 - `-hp`, `--hierarchy-path` TEXT：项目层级文件的名称或路径，用于组织文档结构。默认值：`.project_doc_record`
 - `-mdp`, `--markdown-docs-path` TEXT：Markdown 文档将被存储或生成的文件夹路径。默认值：`markdown_docs`
 - `-i`, `--ignore-list` TEXT：在文档生成过程中要忽略的文件或目录列表，用逗号分隔。
@@ -135,11 +136,11 @@ run 命令支持以下可选标志（如果设置，将覆盖配置默认值）�
 
 ```sh
 repoagent clean # 此命令将删除与repoagent相关的缓存
-repoagent print # 此命令将打印repo-agent如何解析目标仓库
+repoagent print-hierarchy # 此命令将打印repoagent解析出的目标仓库
 repoagent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
 ```
 
-如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个名为Markdown_Docs的文件夹，用于存放文档。
+如果您是第一次对目标仓库生成文档，此时RepoAgent会自动生成一个维护全局结构信息的json文件，并在目标仓库根目录下创建一个文件夹用于存放文档。
 全局结构信息json文件和文档文件夹的路径都可以在`config.yml`中进行配置。
 
 当您首次完成对目标仓库生成全局文档后，或您clone下来的项目已经包含了全局文档信息后，就可以通过**pre-commit**配置目标仓库**hook**和团队一起无缝自动维护一个项目内部文档了！
@@ -165,6 +166,7 @@ repos:
       name: RepoAgent
       entry: repoagent
       language: system
+      pass_filenames: false # 阻止pre commit传入文件名作为参数
       # 可以指定钩子触发的文件类型，但是目前只支持python
       types: [python]
 ```

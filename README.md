@@ -94,7 +94,7 @@ If you're looking to contribute or set up a development environment:
 
 ### Configuring RepoAgent
 
-You can use RepoAgent with OpenAI API for the moment.
+Before configuring specific parameters for RepoAgent, please ensure that the OpenAI API is configured as an environment variable in the command line:
 
 ```sh
 export OPENAI_API_KEY=YOUR_API_KEY # on Linux/Mac
@@ -102,7 +102,7 @@ set OPENAI_API_KEY=YOUR_API_KEY # on Windows
 $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ```
 
-Use `repoagent configure` if you need to running parameters.
+Use `repoagent configure` if you need to modify the running parameters.
 
 ```sh
 Enter the path to target repository: 
@@ -132,7 +132,7 @@ The run command supports the following optional flags (if set, will override con
 - `-t`, `--temperature` FLOAT: Sets the generation temperature for the model. Lower values make the model more deterministic. Default: `0.2`
 - `-r`, `--request-timeout` INTEGER: Defines the timeout in seconds for the API request. Default: `60`
 - `-b`, `--base-url` TEXT: The base URL for the API calls. Default: `https://api.openai.com/v1`
-- `-tp`, `--target-repo-path` PATH: The file system path to the target repository. Used as the root for documentation generation. Default: `/home/test/arno`
+- `-tp`, `--target-repo-path` PATH: The file system path to the target repository. Used as the root for documentation generation. Default: `path/to/your/target/repository`
 - `-hp`, `--hierarchy-path` TEXT: The name or path for the project hierarchy file, used to organize documentation structure. Default: `.project_doc_record`
 - `-mdp`, `--markdown-docs-path` TEXT: The folder path where Markdown documentation will be stored or generated. Default: `markdown_docs`
 - `-i`, `--ignore-list` TEXT: A list of files or directories to ignore during documentation generation, separated by commas.
@@ -143,9 +143,9 @@ The run command supports the following optional flags (if set, will override con
 You can also try the following feature
 
 ```sh
-repo_agent clean # Remove repoagent-related cache
-repo_agent print-hierarchy # Print how repo-agent parse the target repo
-repo_agent diff # Check what docs will be updated/generated based on current code change
+repoagent clean # Remove repoagent-related cache
+repoagent print-hierarchy # Print how repo-agent parse the target repo
+repoagent diff # Check what docs will be updated/generated based on current code change
 ```
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
@@ -176,6 +176,7 @@ repos:
       name: RepoAgent
       entry: repoagent
       language: system
+      pass_filenames: false # prevent from passing filenames to the hook
       # You can specify the file types that trigger the hook, but currently only python is supported.
       types: [python]
 ```
