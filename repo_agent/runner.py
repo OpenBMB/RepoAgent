@@ -70,22 +70,29 @@ class Runner:
 
     def generate_doc_for_a_single_item(self, doc_item: DocItem):
         """为一个对象生成文档"""
-        rel_file_path = doc_item.get_full_name()
+        try:
 
-        if not need_to_generate(doc_item, setting.project.ignore_list):
-            print(f"Content ignored/Document generated, skipping: {doc_item.get_full_name()}")
-        else:
-            print(f" -- Generating document  {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
-            file_handler = FileHandler(setting.project.target_repo, rel_file_path)
-            response_message = self.chat_engine.generate_doc(
-                doc_item=doc_item,
-                file_handler=file_handler,
-            )
-            doc_item.md_content.append(response_message.content)
-            doc_item.item_status = DocItemStatus.doc_up_to_date
-            self.meta_info.checkpoint(
-                target_dir_path=self.absolute_project_hierarchy_path
-            )
+            rel_file_path = doc_item.get_full_name()
+
+            if not need_to_generate(doc_item, setting.project.ignore_list):
+                print(f"Content ignored/Document generated, skipping: {doc_item.get_full_name()}")
+            else:
+                print(f" -- Generating document  {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
+                file_handler = FileHandler(setting.project.target_repo, rel_file_path)
+                response_message = self.chat_engine.generate_doc(
+                    doc_item=doc_item,
+                    file_handler=file_handler,
+                )
+                doc_item.md_content.append(response_message.content)
+                doc_item.item_status = DocItemStatus.doc_up_to_date
+                self.meta_info.checkpoint(
+                    target_dir_path=self.absolute_project_hierarchy_path
+                )
+        except Exception as e:
+            logger.info(f"Document generation failed after multiple attempts, skipping: {doc_item.get_full_name()}")
+            logger.error("Error:", e)
+            doc_item.item_status = DocItemStatus.doc_has_not_been_generated
+
 
     def first_generate(self):
         """

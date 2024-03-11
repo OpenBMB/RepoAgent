@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/images/RepoAgent.png" alt="RepoAgent"/>
+  <img src="https://raw.githubusercontent.com/OpenBMB/RepoAgent/main/assets/images/RepoAgent.png" alt="RepoAgent"/>
 </p>
 
 <p align="center">
@@ -194,11 +194,11 @@ You just need to follow the normal git workflow: git add, git commit -m "your co
 The RepoAgent hook will automatically trigger at git commit, detect the files you added in the previous step, and generate corresponding documents.
 
 After execution, RepoAgent will automatically modify the staged files in the target repository and formally submit the commit. After the execution is completed, the green "Passed" will be displayed, as shown in the figure below:
-![Execution Result](assets/images/ExecutionResult.png)
+![Execution Result](https://raw.githubusercontent.com/OpenBMB/RepoAgent/main/assets/images/ExecutionResult.png)
 
 The generated document will be stored in the specified folder in the root directory of the target warehouse. The rendering of the generated document is as shown below:
-![Documentation](assets/images/Doc_example.png)
-![Documentation](assets/images/8_documents.png)
+![Documentation](https://raw.githubusercontent.com/OpenBMB/RepoAgent/main/assets/images/Doc_example.png)
+![Documentation](https://raw.githubusercontent.com/OpenBMB/RepoAgent/main/assets/images/8_documents.png)
 
 We utilized the default model **gpt-3.5-turbo** to generate documentation for the [**XAgent**](https://github.com/OpenBMB/XAgent) project, which comprises approximately **270,000 lines** of code. You can view the results of this generation in the Markdown_Docs directory of the XAgent project on GitHub. For enhanced documentation quality, we suggest considering more advanced models like **gpt-4-1106** or **gpt-4-0125-preview**.
 
@@ -216,7 +216,6 @@ repoagent chat-with-repo
 
 ## ✅ Future Work
 
-- [x] Support install and configure via `pip install repoagent`
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
 - [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
