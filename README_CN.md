@@ -119,6 +119,13 @@ Enter the request timeout (seconds) [60.0]:
 Enter the base URL [https://api.openai.com/v1]: 
 ```
 
+## 运行RepoAgent
+
+进入RepoAgent根目录并在终端尝试以下命令：
+```sh
+repoagent run # 这条命令会生成文档或自动更新文档 (pre-commit-hook 会自动调用它)
+```
+
 run 命令支持以下可选标志（如果设置，将覆盖配置默认值）：
 
 - `-m`, `--model` TEXT：指定用于完成的模型。默认值：`gpt-3.5-turbo`
@@ -145,7 +152,7 @@ repoagent diff # 此命令将检查基于当前代码更改将更新/生成哪�
 
 当您首次完成对目标仓库生成全局文档后，或您clone下来的项目已经包含了全局文档信息后，就可以通过**pre-commit**配置目标仓库**hook**和团队一起无缝自动维护一个项目内部文档了！
 
-## 配置目标仓库
+### 配置目标仓库
 
 RepoAgent目前支持对项目的文档生成和自动维护，因此需要对目标仓库进行一定的配置。
 
