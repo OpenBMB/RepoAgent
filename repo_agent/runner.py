@@ -73,9 +73,9 @@ class Runner:
         rel_file_path = doc_item.get_full_name()
 
         if not need_to_generate(doc_item, setting.project.ignore_list):
-            print(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
+            print(f"Content ignored/Document generated, skipping: {doc_item.get_full_name()}")
         else:
-            print(f" -- 正在生成文档 {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
+            print(f" -- Generating document  {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
             file_handler = FileHandler(setting.project.target_repo, rel_file_path)
             response_message = self.chat_engine.generate_doc(
                 doc_item=doc_item,
@@ -135,7 +135,7 @@ class Runner:
                 target_dir_path=self.absolute_project_hierarchy_path
             )
             logger.info(
-                f"成功生成了 {before_task_len - len(task_manager.task_dict)} 个文档"
+                f"Successfully generated {before_task_len - len(task_manager.task_dict)} documents."
             )
 
         except BaseException as e:
@@ -191,7 +191,7 @@ class Runner:
                 markdown = ""
                 for _, child in file_item.children.items():
                     markdown += to_markdown(child, 2)
-                assert markdown != None, f"markdown内容为空，文件路径为{rel_file_path}"
+                assert markdown != None, f"Markdown content is empty, the file path is: {rel_file_path}"
                 # 写入markdown内容到.md文件
                 file_path = os.path.join(
                     setting.project.markdown_docs_name,
@@ -256,7 +256,7 @@ class Runner:
             new_meta_info.load_doc_from_older_meta(self.meta_info)
 
             self.meta_info = new_meta_info # 更新自身的meta_info信息为new的信息
-            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后正在生成文档的过程中
+            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后Generating document 的过程中
 
         # 处理任务队列
         check_task_available_func = partial(need_to_generate, ignore_list=setting.project.ignore_list)
@@ -301,7 +301,7 @@ class Runner:
         git_add_result = self.change_detector.add_unstaged_files()
 
         if len(git_add_result) > 0:
-            logger.info(f"已添加 {[file for file in git_add_result]} 到暂存区")
+            logger.info(f"Added {[file for file in git_add_result]} to the staging area.")
 
         # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
 
@@ -339,7 +339,7 @@ class Runner:
         # 将新的项写入json文件
         with open(self.project_manager.project_hierarchy, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
-        logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
+        logger.info(f"The structural information of the newly added file {file_handler.file_path} has been written into a JSON file.")
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(
             file_path=file_handler.file_path

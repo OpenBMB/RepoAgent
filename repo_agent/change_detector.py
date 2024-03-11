@@ -213,7 +213,7 @@ class ChangeDetector:
 
         for unstaged_file in unstaged_files:
             # 连接repo_path和unstaged_file以获取完整的绝对路径
-            if unstaged_file.startswith(setting.project.markdown_docs_name):
+            if unstaged_file.startswith(setting.project.markdown_docs_name) or unstaged_file.startswith(setting.project.hierarchy_name):
                 # abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
                 # # # 获取相对于仓库根目录的相对路径
                 # # rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
