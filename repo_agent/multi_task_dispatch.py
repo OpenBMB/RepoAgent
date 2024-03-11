@@ -1,11 +1,11 @@
 from __future__ import annotations
+
+import random
 import threading
 import time
-import random
-from typing import List, Callable, Dict, Any
-from colorama import Fore, Style
+from typing import Any, Callable, Dict, List
 
-from repo_agent.log import logger
+from colorama import Fore, Style
 
 
 class Task:

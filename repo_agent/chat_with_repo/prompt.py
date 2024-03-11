@@ -1,6 +1,7 @@
 from llama_index.llms import OpenAI
-from repo_agent.log import logger
+
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
+from repo_agent.log import logger
 
 
 class TextAnalysisTool:

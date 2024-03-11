@@ -1,10 +1,12 @@
-import git
-import re, os
+import os
+import re
 import subprocess
+
+import git
 from colorama import Fore, Style
 
-from repo_agent.config import CONFIG
 from repo_agent.file_handler import FileHandler
+from repo_agent.settings import setting
 
 
 class ChangeDetector:
@@ -166,7 +168,7 @@ class ChangeDetector:
         print(f"{Fore.LIGHTYELLOW_EX}target_repo_path{Style.RESET_ALL}: {self.repo_path}")
         print(f"{Fore.LIGHTMAGENTA_EX}already_staged_files{Style.RESET_ALL}:{staged_files}")
 
-        project_hierarchy = CONFIG["project_hierarchy"]
+        project_hierarchy = setting.project.hierarchy_name
         # diffs是所有未暂存更改文件的列表。这些更改文件是相对于工作区（working directory）的，也就是说，它们是自上次提交（commit）以来在工作区发生的更改，但还没有被添加到暂存区（staging area）
         # 比如原本存在的md文件现在由于代码的变更发生了更新，就会标记为未暂存diff
         diffs = self.repo.index.diff(None)
@@ -178,7 +180,7 @@ class ChangeDetector:
         # 处理untrack_files中的内容
         for untracked_file in untracked_files:
             # 连接repo_path和untracked_file以获取完整的绝对路径
-            if untracked_file.startswith(CONFIG["Markdown_Docs_folder"]):
+            if untracked_file.startswith(setting.project.markdown_docs_name):
                 to_be_staged_files.append(untracked_file)
             continue
             print(f"rel_untracked_file:{rel_untracked_file}")
@@ -187,7 +189,7 @@ class ChangeDetector:
             if rel_untracked_file.endswith(".md"):
                 # 把rel_untracked_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
                 rel_untracked_file = os.path.relpath(
-                    rel_untracked_file, CONFIG["Markdown_Docs_folder"]
+                    rel_untracked_file, setting.project.markdown_docs_name
                 )
                 corresponding_py_file = os.path.splitext(rel_untracked_file)[0] + ".py"
                 print(
@@ -198,7 +200,7 @@ class ChangeDetector:
                     to_be_staged_files.append(
                         os.path.join(
                             self.repo_path.lstrip("/"),
-                            CONFIG["Markdown_Docs_folder"],
+                            setting.project.markdown_docs_name,
                             rel_untracked_file,
                         )
                     )
@@ -211,7 +213,7 @@ class ChangeDetector:
 
         for unstaged_file in unstaged_files:
             # 连接repo_path和unstaged_file以获取完整的绝对路径
-            if unstaged_file.startswith(CONFIG["Markdown_Docs_folder"]):
+            if unstaged_file.startswith(setting.project.markdown_docs_name) or unstaged_file.startswith(setting.project.hierarchy_name):
                 # abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
                 # # # 获取相对于仓库根目录的相对路径
                 # # rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
@@ -227,7 +229,7 @@ class ChangeDetector:
             if unstaged_file.endswith(".md"):
                 # 把rel_unstaged_file从CONFIG['Markdown_Docs_folder']中拆离出来。判断是否能跟暂存区中的某一个.py文件对应上
                 rel_unstaged_file = os.path.relpath(
-                    rel_unstaged_file, CONFIG["Markdown_Docs_folder"]
+                    rel_unstaged_file, setting.project.markdown_docs_name
                 )
                 corresponding_py_file = os.path.splitext(rel_unstaged_file)[0] + ".py"
                 print(f"corresponding_py_file:{corresponding_py_file}")
@@ -236,7 +238,7 @@ class ChangeDetector:
                     to_be_staged_files.append(
                         os.path.join(
                             self.repo_path.lstrip("/"),
-                            CONFIG["Markdown_Docs_folder"],
+                            setting.project.markdown_docs_name,
                             rel_unstaged_file,
                         )
                     )

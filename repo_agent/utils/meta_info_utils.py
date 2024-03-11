@@ -1,11 +1,11 @@
+import itertools
 import os
+
 import git
 from colorama import Fore, Style
-import itertools
-from typing import List
 
-from repo_agent.config import CONFIG
 from repo_agent.log import logger
+from repo_agent.settings import setting
 
 latest_verison_substring = "_latest_version.py"
 
@@ -19,7 +19,7 @@ def make_fake_files():
     """
     delete_fake_files()
     
-    repo = git.Repo(CONFIG["repo_path"])
+    repo = git.Repo(setting.project.target_repo)
     unstaged_changes = repo.index.diff(None) #在git status里，但是有修改没提交
     untracked_files = repo.untracked_files #在文件系统里，但没在git里的文件
 
@@ -44,15 +44,15 @@ def make_fake_files():
         if now_file_path.endswith(".py"):
             raw_file_content = diff_file.a_blob.data_stream.read().decode("utf-8")
             latest_file_path = now_file_path[:-3] + latest_verison_substring
-            if os.path.exists(os.path.join(CONFIG["repo_path"],now_file_path)):
-                os.rename(os.path.join(CONFIG["repo_path"],now_file_path), os.path.join(CONFIG["repo_path"], latest_file_path))
+            if os.path.exists(os.path.join(setting.project.target_repo,now_file_path)):
+                os.rename(os.path.join(setting.project.target_repo,now_file_path), os.path.join(setting.project.target_repo, latest_file_path))
                 
                 print(f"{Fore.LIGHTMAGENTA_EX}[Save Latest Version of Code]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}")
             else:
                 print(f"{Fore.LIGHTMAGENTA_EX}[Create Temp-File for Deleted(But not Staged) Files]: {Style.RESET_ALL}{now_file_path} -> {latest_file_path}") 
-                with open(os.path.join(CONFIG["repo_path"],latest_file_path), "w") as writer:
+                with open(os.path.join(setting.project.target_repo,latest_file_path), "w") as writer:
                     pass
-            with open(os.path.join(CONFIG["repo_path"],now_file_path), "w") as writer:
+            with open(os.path.join(setting.project.target_repo,now_file_path), "w") as writer:
                 writer.write(raw_file_content)
             file_path_reflections[now_file_path] = latest_file_path #real指向fake
     return file_path_reflections, jump_files
@@ -72,10 +72,10 @@ def delete_fake_files():
                 origin_name = fi_d.replace(latest_verison_substring, ".py")
                 os.remove(origin_name)
                 if os.path.getsize(fi_d) == 0:
-                    print(f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(CONFIG['repo_path']):]}, {origin_name[len(CONFIG['repo_path']):]}")
+                    print(f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(setting.project.target_repo):]}, {origin_name[len(setting.project.target_repo):]}")
                     os.remove(fi_d)
                 else:
-                    print(f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(CONFIG['repo_path']):]} <- {fi_d[len(CONFIG['repo_path']):]}")
+                    print(f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(setting.project.target_repo):]} <- {fi_d[len(setting.project.target_repo):]}")
                     os.rename(fi_d, origin_name)
 
-    gci(CONFIG["repo_path"])
+    gci(setting.project.target_repo)

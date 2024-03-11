@@ -1,26 +1,26 @@
 # FileHandler 类，实现对文件的读写操作，这里的文件包括markdown文件和python文件
 # repo_agent/file_handler.py
-import git
-import os, json
 import ast
-from tqdm import tqdm
+import json
+import os
+
+import git
 from colorama import Fore, Style
-import threading
-from typing import Dict
-from repo_agent.utils.meta_info_utils import latest_verison_substring
-from repo_agent.config import CONFIG
-from repo_agent.log import logger
+from tqdm import tqdm
+
+from repo_agent.settings import setting
 from repo_agent.utils.gitignore_checker import GitignoreChecker
+from repo_agent.utils.meta_info_utils import latest_verison_substring
 
 
-# 这个类会在遍历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
 class FileHandler:
+    """
+    历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
+    """
     def __init__(self, repo_path, file_path):
         self.file_path = file_path  # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierarchy = os.path.join(
-            repo_path, CONFIG["project_hierarchy"], "project_hierarchy.json"
-        )
+        self.project_hierarchy = setting.project.target_repo / setting.project.hierarchy_name
 
     def read_file(self):
         """
@@ -265,7 +265,7 @@ class FileHandler:
             # elif not_ignored_files.endswith(latest_version):
             #     """如果某文件被删除但没有暂存，文件系统有fake_file但没有对应的原始文件"""
             #     for k,v in file_path_reflections.items():
-            #         if v == not_ignored_files and not os.path.exists(os.path.join(CONFIG["repo_path"], not_ignored_files)):
+            #         if v == not_ignored_files and not os.path.exists(os.path.join(setting.project.target_repo, not_ignored_files)):
             #             print(f"{Fore.LIGHTYELLOW_EX}[Unstaged DeleteFile] load fake-file-content: {Style.RESET_ALL}{k}")
             #             normal_file_names = k #原来的名字
             #             break
@@ -345,46 +345,12 @@ class FileHandler:
 
         return markdown
 
-    # def convert_all_to_markdown_files_from_json(self):
-    #     """
-    #     Converts all files to markdown format based on the JSON data.
-
-    #     Reads the project hierarchy from a JSON file, checks if the Markdown_docs folder exists,
-    #     creates it if it doesn't, and then iterates through each file in the JSON data.
-    #     For each file, it converts the file to markdown format and writes it to the Markdown_docs folder.
-
-    #     Args:
-    #         self (object): The file_handler object.
-
-    #     Returns:
-    #         None
-    #     """
-    #     with open(self.project_hierarchy, 'r', encoding='utf-8') as f:
-    #         json_data = json.load(f)
-
-    #     # 检查根目录是否存在Markdown_docs文件夹，如果不存在则创建
-    #     markdown_docs_path = os.path.join(self.repo_path, CONFIG['Markdown_Docs_folder'])
-    #     if not os.path.exists(markdown_docs_path):
-    #         os.mkdir(markdown_docs_path)
-
-    #     # 遍历json_data["files"]列表中的每个字典
-    #     for rel_file_path, file_dict in json_data.items():
-    #         md_path = os.path.join(markdown_docs_path, rel_file_path.replace('.py', '.md'))
-    #         markdown = self.convert_to_markdown_file(rel_file_path)
-
-    #         # 检查目录是否存在，如果不存在，就创建它
-    #         os.makedirs(os.path.dirname(md_path), exist_ok=True)
-
-    #         # 将markdown文档写入到Markdown_docs文件夹中
-    #         with open(md_path, 'w', encoding='utf-8') as f:
-    #             f.write(markdown)
-
 
 if __name__ == "__main__":
     # 打开py文件读取源代码
     # file_handler = FileHandler('/path/to/repo', '/path/to/file.py')
 
-    file_handler = FileHandler(CONFIG["repo_path"], "XAgent/engines/pipeline_old.py")
+    file_handler = FileHandler(setting.project.target_repo, "XAgent/engines/pipeline_old.py")
     # file_handler.generate_markdown_from_json()
     file_handler.convert_all_to_markdown_files_from_json()
     # code_content = file_handler.read_file()

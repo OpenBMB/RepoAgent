@@ -1,11 +1,13 @@
-from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
-from repo_agent.chat_with_repo.vectordb import ChromaManager
-from repo_agent.chat_with_repo.prompt import TextAnalysisTool
-from repo_agent.log import logger
+import json
+
 from llama_index import PromptTemplate
 from llama_index.llms import OpenAI
-import json
 from openai import OpenAI as AI
+
+from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
+from repo_agent.chat_with_repo.prompt import TextAnalysisTool
+from repo_agent.chat_with_repo.vectordb import ChromaManager
+from repo_agent.log import logger
 
 
 class RepoAssistant:

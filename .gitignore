@@ -1,6 +1,6 @@
 # 忽略私人配置文件，包含有api_key等信息
-config private.yml
-private.yml
+config private.toml
+private.toml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -181,4 +181,5 @@ prompt_output/
 log.txt
 .chroma_db
 config.yml
+config.toml
 .pre-commit-config.yaml

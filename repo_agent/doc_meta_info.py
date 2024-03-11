@@ -1,23 +1,26 @@
 """存储doc对应的信息，同时处理引用的关系
 """
 from __future__ import annotations
+
+import json
+import os
 import threading
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Callable, Optional
-from colorama import Fore, Style
-from enum import Enum, unique, auto
-import time
-from prettytable import PrettyTable
-import os
-import json
+from enum import Enum, auto, unique
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
 import jedi
+from colorama import Fore, Style
+from prettytable import PrettyTable
 from tqdm import tqdm
 
-from repo_agent.log import logger
-from repo_agent.utils.meta_info_utils import latest_verison_substring
-from repo_agent.config import CONFIG
 from repo_agent.file_handler import FileHandler
-from repo_agent.multi_task_dispatch import TaskManager, Task
+from repo_agent.log import logger
+from repo_agent.multi_task_dispatch import Task, TaskManager
+from repo_agent.settings import setting
+from repo_agent.utils.meta_info_utils import latest_verison_substring
+
 
 @unique
 class EdgeType(Enum):
@@ -62,9 +65,9 @@ class DocItemType(Enum):
             color = Fore.BLUE
         return color + self.name + Style.RESET_ALL
 
-    def get_edge_type(
+    def get_edge_type(self,
         from_item_type: DocItemType, to_item_type: DocItemType
-    ) -> EdgeType:
+    ):
         pass
 
 
@@ -77,7 +80,7 @@ class DocItemStatus(Enum):
     referencer_not_exist = auto()  # 曾经引用他的obj被删除了，或者不再引用他了
 
 
-def need_to_generate(doc_item: DocItem, ignore_list: List) -> bool:
+def need_to_generate(doc_item: DocItem, ignore_list: List[str]  = []) -> bool:
     """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
     if doc_item.item_status == DocItemStatus.doc_up_to_date:
         return False
@@ -233,14 +236,14 @@ class DocItem:
         return now
     
     @staticmethod
-    def check_has_task(now_item: DocItem, ignore_list) -> bool:
+    def check_has_task(now_item: DocItem, ignore_list: List[str] = []):
         if need_to_generate(now_item, ignore_list=ignore_list):
             now_item.has_task = True
         for _, child in now_item.children.items():
             DocItem.check_has_task(child, ignore_list)
             now_item.has_task = child.has_task or now_item.has_task
 
-    def print_recursive(self, indent=0, print_content=False, diff_status = False, ignore_list = []):
+    def print_recursive(self, indent=0, print_content=False, diff_status = False, ignore_list: List[str] = []):
         """递归打印repo对象"""
 
         def print_indent(indent=0):
@@ -249,7 +252,7 @@ class DocItem:
             return "  " * indent + "|-"
         print_obj_name = self.obj_name
         if self.item_type == DocItemType._repo:
-            print_obj_name = CONFIG["repo_path"]
+            print_obj_name = setting.project.target_repo
         if diff_status and need_to_generate(self, ignore_list=ignore_list):
             print(
                 print_indent(indent) + f"{self.item_type.print_self()}: {print_obj_name} : {self.item_status.name}",
@@ -316,7 +319,7 @@ class MetaInfo:
     @staticmethod
     def init_meta_info(file_path_reflections, jump_files) -> MetaInfo:
         """从一个仓库path中初始化metainfo"""
-        project_abs_path = CONFIG["repo_path"]
+        project_abs_path = setting.project.target_repo
         print(f"{Fore.LIGHTRED_EX}Initializing MetaInfo: {Style.RESET_ALL}from {project_abs_path}")
         file_handler = FileHandler(project_abs_path, None)
         repo_structure = file_handler.generate_overall_structure(file_path_reflections, jump_files)
@@ -327,7 +330,7 @@ class MetaInfo:
         return metainfo
 
     @staticmethod
-    def from_checkpoint_path(checkpoint_dir_path: str) -> MetaInfo:
+    def from_checkpoint_path(checkpoint_dir_path: str | Path ) -> MetaInfo:
         """从已有的metainfo dir里面读取metainfo"""
         project_hierarchy_json_path = os.path.join(
             checkpoint_dir_path, "project_hierarchy.json"
@@ -341,7 +344,7 @@ class MetaInfo:
             os.path.join(checkpoint_dir_path, "meta-info.json"), "r", encoding="utf-8"
         ) as reader:
             meta_data = json.load(reader)
-            metainfo.repo_path = CONFIG["repo_path"]
+            metainfo.repo_path = str(setting.project.target_repo)  # Convert DirectoryPath to string
             metainfo.document_version = meta_data["doc_version"]
             metainfo.fake_file_reflection = meta_data["fake_file_reflection"]
             metainfo.jump_files = meta_data["jump_files"]
@@ -353,7 +356,7 @@ class MetaInfo:
         )
         return metainfo
 
-    def checkpoint(self, target_dir_path: str, flash_reference_relation=False):
+    def checkpoint(self, target_dir_path: str | Path, flash_reference_relation=False):
         """
         Save the MetaInfo object to the specified directory.
 
@@ -782,10 +785,10 @@ class MetaInfo:
 
         for file_name, file_content in tqdm(project_hierarchy_json.items(),desc="parsing parent relationship"): 
             # 首先parse file archi
-            if not os.path.exists(os.path.join(CONFIG["repo_path"], file_name)):
+            if not os.path.exists(os.path.join(setting.project.target_repo, file_name)):
                 logger.info(f"deleted content: {file_name}")
                 continue
-            elif os.path.getsize(os.path.join(CONFIG["repo_path"], file_name)) == 0:
+            elif os.path.getsize(os.path.join(setting.project.target_repo, file_name)) == 0:
                 logger.info(f"blank content: {file_name}")
                 continue
 

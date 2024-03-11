@@ -1,71 +1,51 @@
-import threading
-import os, json
 import json
-import git
-import itertools
-from tqdm import tqdm
-from typing import List
-from functools import partial
+import os
+import shutil
 import subprocess
-import shutil  
-from concurrent.futures import ThreadPoolExecutor
-from colorama import Fore, Style
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
-from repo_agent.file_handler import FileHandler
-from repo_agent.utils.meta_info_utils import latest_verison_substring, make_fake_files, delete_fake_files
+from colorama import Fore, Style
+from tqdm import tqdm
+
 from repo_agent.change_detector import ChangeDetector
-from repo_agent.project_manager import ProjectManager
 from repo_agent.chat_engine import ChatEngine
-from repo_agent.doc_meta_info import MetaInfo, DocItem, DocItemType, DocItemStatus, need_to_generate
+from repo_agent.doc_meta_info import DocItem, DocItemStatus, MetaInfo, need_to_generate
+from repo_agent.file_handler import FileHandler
 from repo_agent.log import logger
-from repo_agent.config import CONFIG
 from repo_agent.multi_task_dispatch import worker
-
-
-
-
-def load_whitelist():
-    if CONFIG["whitelist_path"] != None:
-        assert os.path.exists(
-            CONFIG["whitelist_path"]
-        ), f"whitelist_path must be a json-file,and must exists: {CONFIG['whitelist_path']}"
-        with open(CONFIG["whitelist_path"], "r") as reader:
-            white_list_json_data = json.load(reader)
-
-        return white_list_json_data
-    else:
-        return None
+from repo_agent.project_manager import ProjectManager
+from repo_agent.settings import setting
+from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
 
 
 class Runner:
     def __init__(self):
-        self.project_manager = ProjectManager(
-            repo_path=CONFIG["repo_path"], project_hierarchy=CONFIG["project_hierarchy"]
-        )
-        self.change_detector = ChangeDetector(repo_path=CONFIG["repo_path"])
-        self.chat_engine = ChatEngine(CONFIG=CONFIG)
+        self.absolute_project_hierarchy_path = setting.project.target_repo / setting.project.hierarchy_name
 
-        if not os.path.exists(
-            os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
-        ):
+        self.project_manager = ProjectManager(
+            repo_path=setting.project.target_repo, 
+            project_hierarchy=setting.project.hierarchy_name
+        )
+        self.change_detector = ChangeDetector(repo_path=setting.project.target_repo)
+        self.chat_engine = ChatEngine(project_manager=self.project_manager)
+
+        
+        if not self.absolute_project_hierarchy_path.exists():
             file_path_reflections, jump_files = make_fake_files()
             self.meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
             self.meta_info.checkpoint(
-                target_dir_path=os.path.join(
-                    CONFIG["repo_path"], CONFIG["project_hierarchy"]
-                )
+                target_dir_path=self.absolute_project_hierarchy_path
             )
         else: # 如果存在全局结构信息文件夹.project_hierarchy，就从中加载
             self.meta_info = MetaInfo.from_checkpoint_path(
-                os.path.join(CONFIG["repo_path"], CONFIG["project_hierarchy"])
+                self.absolute_project_hierarchy_path
             )
 
-        self.meta_info.white_list = load_whitelist()
         self.meta_info.checkpoint(  # 更新白名单后也要重新将全局信息写入到.project_doc_record文件夹中
-            target_dir_path=os.path.join(
-                CONFIG["repo_path"], CONFIG["project_hierarchy"]
-            )
+            target_dir_path=self.absolute_project_hierarchy_path
         )
         self.runner_lock = threading.Lock()
 
@@ -90,30 +70,22 @@ class Runner:
 
     def generate_doc_for_a_single_item(self, doc_item: DocItem):
         """为一个对象生成文档"""
-        try:
-            rel_file_path = doc_item.get_full_name()
+        rel_file_path = doc_item.get_full_name()
 
-            ignore_list = CONFIG.get("ignore_list", [])
-            if not need_to_generate(doc_item, ignore_list):
-                print(f"内容被忽略/文档已生成，跳过：{doc_item.get_full_name()}")
-            else:
-                print(f" -- 正在生成文档 {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
-                file_handler = FileHandler(CONFIG["repo_path"], rel_file_path)
-                response_message = self.chat_engine.generate_doc(
-                    doc_item=doc_item,
-                    file_handler=file_handler,
-                )
-                doc_item.md_content.append(response_message.content)
-                doc_item.item_status = DocItemStatus.doc_up_to_date
-                self.meta_info.checkpoint(
-                    target_dir_path=os.path.join(
-                        CONFIG["repo_path"], CONFIG["project_hierarchy"]
-                    )
-                )
-        except Exception as e:
-            logger.info(f" 多次尝试后生成文档失败，跳过：{doc_item.get_full_name()}")
-            logger.info("Error:", e)
-            doc_item.item_status = DocItemStatus.doc_has_not_been_generated
+        if not need_to_generate(doc_item, setting.project.ignore_list):
+            print(f"Content ignored/Document generated, skipping: {doc_item.get_full_name()}")
+        else:
+            print(f" -- Generating document  {Fore.LIGHTYELLOW_EX}{doc_item.item_type.name}: {doc_item.get_full_name()}{Style.RESET_ALL}")
+            file_handler = FileHandler(setting.project.target_repo, rel_file_path)
+            response_message = self.chat_engine.generate_doc(
+                doc_item=doc_item,
+                file_handler=file_handler,
+            )
+            doc_item.md_content.append(response_message.content)
+            doc_item.item_status = DocItemStatus.doc_up_to_date
+            self.meta_info.checkpoint(
+                target_dir_path=self.absolute_project_hierarchy_path
+            )
 
     def first_generate(self):
         """
@@ -123,8 +95,7 @@ class Runner:
         **注意**：这个生成first_generate的过程中，目标仓库代码不能修改。也就是说，一个document的生成过程必须绑定代码为一个版本。
         """
         logger.info("Starting to generate documentation")
-        ignore_list = CONFIG.get("ignore_list", [])
-        check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
+        check_task_available_func = partial(need_to_generate, ignore_list=setting.project.ignore_list)
         task_manager = self.meta_info.get_topology(
             check_task_available_func
         )  # 将按照此顺序生成文档
@@ -149,7 +120,7 @@ class Runner:
                         self.generate_doc_for_a_single_item,
                     ),
                 )
-                for process_id in range(CONFIG["max_thread_count"])
+                for process_id in range(setting.project.max_thread_count)
             ]
             for thread in threads:
                 thread.start()
@@ -161,12 +132,10 @@ class Runner:
             )
             self.meta_info.in_generation_process = False
             self.meta_info.checkpoint(
-                target_dir_path=os.path.join(
-                    CONFIG["repo_path"], CONFIG["project_hierarchy"]
-                )
+                target_dir_path=self.absolute_project_hierarchy_path
             )
             logger.info(
-                f"成功生成了 {before_task_len - len(task_manager.task_dict)} 个文档"
+                f"Successfully generated {before_task_len - len(task_manager.task_dict)} documents."
             )
 
         except BaseException as e:
@@ -178,8 +147,8 @@ class Runner:
         """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
         with self.runner_lock:
             # 首先删除doc下所有内容，然后再重新写入
-            markdown_folder = os.path.join(CONFIG["repo_path"],CONFIG["Markdown_Docs_folder"])
-            if os.path.exists(markdown_folder):
+            markdown_folder = setting.project.target_repo / setting.project.markdown_docs_name
+            if markdown_folder.exists():
                 shutil.rmtree(markdown_folder)  
             os.mkdir(markdown_folder)  
 
@@ -201,7 +170,6 @@ class Runner:
                     continue
                 rel_file_path = file_item.get_full_name()
 
-                # file_handler = FileHandler(CONFIG['repo_path'], rel_file_path)
                 def to_markdown(item: DocItem, now_level: int) -> str:
                     markdown_content = ""
                     markdown_content += (
@@ -223,22 +191,22 @@ class Runner:
                 markdown = ""
                 for _, child in file_item.children.items():
                     markdown += to_markdown(child, 2)
-                assert markdown != None, f"markdown内容为空，文件路径为{rel_file_path}"
+                assert markdown != None, f"Markdown content is empty, the file path is: {rel_file_path}"
                 # 写入markdown内容到.md文件
                 file_path = os.path.join(
-                    CONFIG["Markdown_Docs_folder"],
+                    setting.project.markdown_docs_name,
                     file_item.get_file_name().replace(".py", ".md"),
                 )
                 if file_path.startswith("/"):
                     # 移除开头的 '/'
                     file_path = file_path[1:]
-                abs_file_path = os.path.join(CONFIG["repo_path"], file_path)
+                abs_file_path = setting.project.target_repo / file_path
                 os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
                 with open(abs_file_path, "w", encoding="utf-8") as file:
                     file.write(markdown)
 
             logger.info(
-                f"markdown document has been refreshed at {CONFIG['Markdown_Docs_folder']}"
+                f"markdown document has been refreshed at {setting.project.markdown_docs_name}"
             )
 
     def git_commit(self, commit_message):
@@ -264,9 +232,7 @@ class Runner:
             # 根据document version自动检测是否仍在最初生成的process里(是否为第一次生成)
             self.first_generate() # 如果是第一次做文档生成任务，就通过first_generate生成所有文档
             self.meta_info.checkpoint(
-                target_dir_path=os.path.join(
-                    CONFIG["repo_path"], CONFIG["project_hierarchy"]
-                ),
+                target_dir_path=self.absolute_project_hierarchy_path,
                 flash_reference_relation=True,
             ) # 这一步将生成后的meta信息（包含引用关系）写入到.project_doc_record文件夹中
             return
@@ -290,11 +256,10 @@ class Runner:
             new_meta_info.load_doc_from_older_meta(self.meta_info)
 
             self.meta_info = new_meta_info # 更新自身的meta_info信息为new的信息
-            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后正在生成文档的过程中
+            self.meta_info.in_generation_process = True # 将in_generation_process设置为True，表示检测到变更后Generating document 的过程中
 
         # 处理任务队列
-        ignore_list = CONFIG.get("ignore_list", [])
-        check_task_available_func = partial(need_to_generate, ignore_list=ignore_list)
+        check_task_available_func = partial(need_to_generate, ignore_list=setting.project.ignore_list)
 
         task_manager = self.meta_info.get_task_manager(self.meta_info.target_repo_hierarchical_tree,task_available_func=check_task_available_func)
         
@@ -310,7 +275,7 @@ class Runner:
                 target=worker,
                 args=(task_manager, process_id, self.generate_doc_for_a_single_item),
             )
-            for process_id in range(CONFIG["max_thread_count"])
+            for process_id in range(setting.project.max_thread_count)
         ]
         for thread in threads:
             thread.start()
@@ -321,9 +286,7 @@ class Runner:
         self.meta_info.document_version = self.change_detector.repo.head.commit.hexsha
 
         self.meta_info.checkpoint(
-            target_dir_path=os.path.join(
-                CONFIG["repo_path"], CONFIG["project_hierarchy"]
-            ),
+            target_dir_path=self.absolute_project_hierarchy_path,
             flash_reference_relation=True,
         )
         logger.info(f"Doc has been forwarded to the latest version")
@@ -338,7 +301,7 @@ class Runner:
         git_add_result = self.change_detector.add_unstaged_files()
 
         if len(git_add_result) > 0:
-            logger.info(f"已添加 {[file for file in git_add_result]} 到暂存区")
+            logger.info(f"Added {[file for file in git_add_result]} to the staging area.")
 
         # self.git_commit(f"Update documentation for {file_handler.file_path}") # 提交变更
 
@@ -376,7 +339,7 @@ class Runner:
         # 将新的项写入json文件
         with open(self.project_manager.project_hierarchy, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)
-        logger.info(f"已将新增文件 {file_handler.file_path} 的结构信息写入json文件。")
+        logger.info(f"The structural information of the newly added file {file_handler.file_path} has been written into a JSON file.")
         # 将变更部分的json文件内容转换成markdown内容
         markdown = file_handler.convert_to_markdown_file(
             file_path=file_handler.file_path
@@ -385,7 +348,7 @@ class Runner:
         file_handler.write_file(
             os.path.join(
                 self.project_manager.repo_path,
-                CONFIG["Markdown_Docs_folder"],
+                setting.project.markdown_docs_name,
                 file_handler.file_path.replace(".py", ".md"),
             ),
             markdown,
@@ -443,7 +406,7 @@ class Runner:
             # 将markdown内容写入.md文件
             file_handler.write_file(
                 os.path.join(
-                    CONFIG["Markdown_Docs_folder"],
+                    setting.project.markdown_docs_name,
                     file_handler.file_path.replace(".py", ".md"),
                 ),
                 markdown,
