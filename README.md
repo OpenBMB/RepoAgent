@@ -1,4 +1,6 @@
-<h1 align="center"><em> RepoAgent: An LLM-Powered Framework for Repository-level Code Documentation Generation.</em></h1>
+<h1 align="center">
+  <img src="https://github.com/OpenBMB/RepoAgent/assets/138990495/06bc2449-c82d-4b9e-8c83-27640e541451" width="50" alt="RepoAgent logo"/> <em>RepoAgent: An LLM-Powered Framework for Repository-level Code Documentation Generation.</em>
+</h1>
 
 <p align="center">
   <img src="https://img.shields.io/pypi/dm/repoagent" alt="PyPI - Downloads"/>
@@ -25,6 +27,10 @@
    • 
   <a href="https://github.com/LOGIC-10/RepoAgent/blob/main/README_CN.md">简体中文 readme</a>
 </p>
+
+## :tv: Demo
+
+[![Watch the video](https://img.youtube.com/vi/YPPJBVOP71M/hqdefault.jpg)](https://youtu.be/YPPJBVOP71M)
 
 ## 👾 Background
 
