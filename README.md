@@ -233,6 +233,7 @@ Here are featured cases that have adopted RepoAgent.
 - [MiniCPM](https://github.com/OpenBMB/MiniCPM): An edge-side LLM of 2B size, comparable to 7B model.
 - [ChatDev](https://github.com/OpenBMB/ChatDev): Collaborative AI agents for software development.
 - [XAgent](https://github.com/OpenBMB/XAgent): An Autonomous LLM Agent for Complex Task Solving.
+- [EasyRL4Rec](https://github.com/chongminggao/EasyRL4Rec): A user-friendly RL library for recommender systems.
 
 ## 📊 Citation
 
