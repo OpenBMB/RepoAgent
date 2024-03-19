@@ -224,7 +224,7 @@ repoagent chat_with_repo
 - [MiniCPM](https://github.com/OpenBMB/MiniCPM): 一个端侧大语言模型，大小为2B，效果可与7B模型媲美。
 - [ChatDev](https://github.com/OpenBMB/ChatDev): 用于软件开发的协作式AI智能体。
 - [XAgent](https://github.com/OpenBMB/XAgent): 一个用于解决复杂任务的自主大型语言模型智能体。
-- [EasyRL4Rec](https://github.com/chongminggao/EasyRL4Rec): A user-friendly RL library for recommender systems.
+- [EasyRL4Rec](https://github.com/chongminggao/EasyRL4Rec): 一个用户友好的推荐系统强化学习库。
 
 # 📊 引用我们
 ```bibtex
