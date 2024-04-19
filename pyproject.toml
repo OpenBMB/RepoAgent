@@ -22,6 +22,7 @@ dependencies = [
     "tomli>=2.0.1",
     "tomli-w>=1.0.0",
     "llama-index<0.10.0",
+    "colorama>=0.4.6",
 ]
 name = "repoagent"
 version = "0.1.3"
