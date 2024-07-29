@@ -47,7 +47,7 @@ class RepoAssistant:
             response_format={"type": "json_object"},
             temperature=0,
             messages=[
-            {"role": "system", "content": "You are an expert relevance ranker. Given a list of documents and a query, your job is to determine how relevant each document is for answering the query. Your output is JSON, which is a list of documents.  Each document has two fields, content and score.  relevance_score is from 0.0 to 100.0. Higher relevance means higher score."},
+            {"role": "system", "content": "You are an expert relevance ranker. Given a list of documents and a query, your job is to determine how relevant each document is for answering the query. Your output is JSON, which is a list of documents.  Each document has two fields, content and relevance_score.  relevance_score is from 0.0 to 100.0. Higher relevance means higher score."},
             {"role": "user", "content": f"Query: {query} Docs: {docs}"}
             ]
         )
