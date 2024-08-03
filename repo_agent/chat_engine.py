@@ -5,11 +5,13 @@ import time
 from dataclasses import dataclass
 
 import tiktoken
-from openai import APIConnectionError, OpenAI
+from openai import APIConnectionError
 
 from repo_agent.doc_meta_info import DocItem
 from repo_agent.log import logger
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
+from repo_agent.response_generators.response_generator_factory import \
+    ResponseGeneratorFactory
 from repo_agent.settings import max_input_tokens_map, setting
 
 
@@ -68,28 +70,10 @@ class ChatEngine:
 
         return sys_prompt
 
-    def generate_response(self, model, sys_prompt, usr_prompt, max_tokens):
-        client = OpenAI(
-            api_key=setting.chat_completion.openai_api_key.get_secret_value(),
-            base_url=str(setting.chat_completion.base_url),
-            timeout=setting.chat_completion.request_timeout,
-        )
-
-        messages = [
-            {"role": "system", "content": sys_prompt},
-            {"role": "user", "content": usr_prompt},
-        ]
-
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=setting.chat_completion.temperature,
-            max_tokens=max_tokens,
-        )
-
-        response_message = response.choices[0].message
-
-        return response_message
+    @staticmethod
+    def generate_response(model, sys_prompt, usr_prompt, max_tokens):
+        response_generator = ResponseGeneratorFactory.create(setting, model)
+        return response_generator.generate(model, sys_prompt, usr_prompt, max_tokens)
 
     def attempt_generate_response(
         self, model, sys_prompt, usr_prompt, max_tokens, max_attempts=5

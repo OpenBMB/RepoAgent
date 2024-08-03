@@ -23,6 +23,8 @@ dependencies = [
     "tomli-w>=1.0.0",
     "llama-index<0.10.0",
     "colorama>=0.4.6",
+    "transformers>=4.43.3",
+    "torch>=2.4.0",
 ]
 name = "repoagent"
 version = "0.1.3"

@@ -71,7 +71,7 @@ class ChatCompletionSettings(BaseSettings):
     temperature: PositiveFloat = 0.2
     request_timeout: PositiveFloat = 60.0
     base_url: HttpUrl = "https://api.openai.com/v1"  # type: ignore
-    openai_api_key: SecretStr = Field(..., exclude=True)
+    api_key: SecretStr = Field(..., exclude=True)
 
     @field_serializer("base_url")
     def serialize_base_url(self, base_url: HttpUrl):
