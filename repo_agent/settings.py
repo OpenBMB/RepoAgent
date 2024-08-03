@@ -67,7 +67,7 @@ class ProjectSettings(BaseSettings):
 
 
 class ChatCompletionSettings(BaseSettings):
-    model: str = "gpt-3.5-turbo"
+    model: str = "gpt-4o-mini"
     temperature: PositiveFloat = 0.2
     request_timeout: PositiveFloat = 60.0
     base_url: HttpUrl = "https://api.openai.com/v1"  # type: ignore
@@ -102,4 +102,7 @@ max_input_tokens_map = {
     "gpt-4-1106": 131072,
     "gpt-4-0125-preview": 131072,
     "gpt-4-turbo-preview": 131072,
+    "gpt-4o": 131072,
+    "gpt-4o-mini": 131072,
+    "google/gemma-2-2b-it": 8192,
 }
