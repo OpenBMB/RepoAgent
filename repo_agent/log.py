@@ -1,9 +1,9 @@
-# repo_agent/log.py
 import logging
 import sys
-
+from datetime import datetime
 from loguru import logger
 
+# Configure Loguru logger
 logger = logger.opt(colors=False)
 
 """
@@ -54,8 +54,8 @@ class InterceptHandler(logging.Handler):
 
         # Find caller from where the logged message originated
         frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__: # type: ignore
-            frame = frame.f_back # type: ignore
+        while frame.f_code.co_filename == logging.__file__:  # type: ignore
+            frame = frame.f_back  # type: ignore
             depth += 1
 
         # Log to Loguru
@@ -65,13 +65,18 @@ class InterceptHandler(logging.Handler):
 
 
 def set_logger_level_from_config(log_level):
-
     logger.remove()
     logger.add(sys.stderr, level=log_level)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f".log/{timestamp}.log"
+
+    # Add file handler with dynamic filename
+    logger.add(filename, level=log_level, rotation="1 day",
+               retention="7 days", compression="zip")
 
     # Intercept standard logging
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
     logger.success(f"Log level set to {log_level}!")
-
 
