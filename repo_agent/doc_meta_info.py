@@ -19,7 +19,7 @@ from repo_agent.file_handler import FileHandler
 from repo_agent.log import logger
 from repo_agent.multi_task_dispatch import Task, TaskManager
 from repo_agent.settings import setting
-from repo_agent.utils.meta_info_utils import latest_verison_substring
+from repo_agent.utils.meta_info_utils import latest_version_substring
 
 
 @unique
@@ -453,7 +453,7 @@ class MetaInfo:
             2. 如果检测到的引用信息来源于一个jump-files, 忽略它
             3. 如果检测到一个引用来源于fake-file,则认为他的母文件是原来的文件
             """
-            assert not file_node.get_full_name().endswith(latest_verison_substring)
+            assert not file_node.get_full_name().endswith(latest_version_substring)
 
             ref_count = 0
             rel_file_path = file_node.get_full_name()

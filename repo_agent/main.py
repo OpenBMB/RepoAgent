@@ -123,13 +123,15 @@ def configure():
             type=int,
         ),
         base_url=click.prompt(
-            "Enter the base URL", default=str(chat_completion_default_instance.base_url)
+            "Enter the base URL",
+            default=str(chat_completion_default_instance.base_url)
         ),
     )
     logger.success("Chat completion settings saved successfully.")
 
     update_setting = Setting(
-        project=project_settings_instance, chat_completion=chat_completion_instance
+        project=project_settings_instance,
+        chat_completion=chat_completion_instance
     )
 
     write_config(update_setting.model_dump())
@@ -215,26 +217,28 @@ def configure():
     default=setting.project.log_level,
     show_default=True,
     help="Sets the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL) for the application. Default is INFO.",
-    type=click.Choice([level.value for level in LogLevel], case_sensitive=False),
+    type=click.Choice([level.value for level in LogLevel],
+                      case_sensitive=False),
 )
 def run(
-    model,
-    temperature,
-    request_timeout,
-    base_url,
-    target_repo_path,
-    hierarchy_path,
-    markdown_docs_path,
-    ignore_list,
-    language,
-    log_level,
+        model,
+        temperature,
+        request_timeout,
+        base_url,
+        target_repo_path,
+        hierarchy_path,
+        markdown_docs_path,
+        ignore_list,
+        language,
+        log_level,
 ):
     """Run the program with the specified parameters."""
     project_settings = ProjectSettings(
         target_repo=target_repo_path,
         hierarchy_name=hierarchy_path,
         markdown_docs_name=markdown_docs_path,
-        ignore_list=list(ignore_list),  # convert tuple from 'multiple' option to list
+        ignore_list=list(ignore_list),
+        # convert tuple from 'multiple' option to list
         language=language,
         log_level=log_level,
     )
@@ -246,10 +250,9 @@ def run(
         base_url=base_url,
     )
 
-    settings = Setting(
-        project=project_settings, chat_completion=chat_completion_settings
-    )
-    write_config(settings.model_dump())
+    setting.project = project_settings
+    setting.chat_completion = chat_completion_settings
+
     set_logger_level_from_config(log_level=setting.project.log_level)
 
     runner = Runner()
@@ -295,7 +298,8 @@ def diff():
             diff_status=True, ignore_list=setting.project.ignore_list
         )
     else:
-        click.echo("No docs will be generated/updated, check your source-code update")
+        click.echo(
+            "No docs will be generated/updated, check your source-code update")
 
 
 @cli.command()

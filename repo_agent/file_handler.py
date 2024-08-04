@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from repo_agent.settings import setting
 from repo_agent.utils.gitignore_checker import GitignoreChecker
-from repo_agent.utils.meta_info_utils import latest_verison_substring
+from repo_agent.utils.meta_info_utils import latest_version_substring
 
 
 class FileHandler:
@@ -259,7 +259,7 @@ class FileHandler:
             if not_ignored_files in jump_files:
                 print(f"{Fore.LIGHTYELLOW_EX}[File-Handler] Unstaged AddFile, ignore this file: {Style.RESET_ALL}{normal_file_names}")
                 continue
-            elif not_ignored_files.endswith(latest_verison_substring):
+            elif not_ignored_files.endswith(latest_version_substring):
                 print(f"{Fore.LIGHTYELLOW_EX}[File-Handler] Skip Latest Version, Using Git-Status Version]: {Style.RESET_ALL}{normal_file_names}")
                 continue
             # elif not_ignored_files.endswith(latest_version):

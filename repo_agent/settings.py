@@ -15,7 +15,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings
 
-from repo_agent.config_manager import read_config, write_config
+from repo_agent.config_manager import write_config
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent.joinpath(".env"))
@@ -88,7 +88,15 @@ class Setting(BaseSettings):
     chat_completion: ChatCompletionSettings = {}  # type: ignore
 
 
-_config_data = read_config()
+_config_data = {'project': {
+    'target_repo': "",
+    'hierarchy_name': '.project_doc_record',
+    'markdown_docs_name': "markdown_docs", 'ignore_list': [],
+    'language': 'English', 'max_thread_count': 4, 'max_document_tokens': 1024,
+    'log_level': 'INFO'}, 'chat_completion': {'model': 'gpt-4o-mini',
+                                              'temperature': 0.2,
+                                              'request_timeout': 60.0,
+                                              'base_url': 'https://api.openai.com/v1'}}
 setting = Setting.model_validate(_config_data)
 
 if _config_data == {}:

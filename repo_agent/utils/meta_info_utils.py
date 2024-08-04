@@ -8,7 +8,7 @@ from colorama import Fore, Style
 from repo_agent.log import logger
 from repo_agent.settings import setting
 
-latest_verison_substring = "_latest_version.py"
+latest_version_substring = "_latest_version.py"
 
 
 def make_fake_files():
@@ -32,7 +32,7 @@ def make_fake_files():
             jump_files.append(file_name)
     for diff_file in unstaged_changes.iter_change_type(
             'A'):  # 新增的、没有add的文件，都不处理
-        if diff_file.a_path.endswith(latest_verison_substring):
+        if diff_file.a_path.endswith(latest_version_substring):
             logger.error(
                 "FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
             exit()
@@ -42,7 +42,7 @@ def make_fake_files():
     for diff_file in itertools.chain(unstaged_changes.iter_change_type('M'),
                                      unstaged_changes.iter_change_type(
                                              'D')):  # 获取修改过的文件
-        if diff_file.a_path.endswith(latest_verison_substring):
+        if diff_file.a_path.endswith(latest_version_substring):
             logger.error(
                 "FAKE_FILE_IN_GIT_STATUS detected! suggest to use `delete_fake_files` and re-generate document")
             exit()
@@ -50,7 +50,7 @@ def make_fake_files():
         if now_file_path.endswith(".py"):
             raw_file_content = diff_file.a_blob.data_stream.read().decode(
                 "utf-8")
-            latest_file_path = now_file_path[:-3] + latest_verison_substring
+            latest_file_path = now_file_path[:-3] + latest_version_substring
             if os.path.exists(
                     os.path.join(setting.project.target_repo, now_file_path)):
                 os.rename(
@@ -85,8 +85,8 @@ def delete_fake_files():
             fi_d = os.path.join(filepath, fi)
             if os.path.isdir(fi_d):
                 gci(fi_d)
-            elif fi_d.endswith(latest_verison_substring):
-                origin_name = fi_d.replace(latest_verison_substring, ".py")
+            elif fi_d.endswith(latest_version_substring):
+                origin_name = fi_d.replace(latest_version_substring, ".py")
                 os.remove(origin_name)
                 if os.path.getsize(fi_d) == 0:
                     print(
