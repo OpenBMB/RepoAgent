@@ -20,9 +20,3 @@ class ResponseGenerator(ABC):
     @abstractmethod
     def is_valid(cls, model: str) -> bool:
         pass
-
-    def _get_messages(self, sys_prompt: str, usr_prompt: str) -> list[dict[str, str]]:
-        return [
-            {"role": "system", "content": sys_prompt},
-            {"role": "user", "content": usr_prompt},
-        ]

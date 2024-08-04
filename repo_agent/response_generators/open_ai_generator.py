@@ -8,7 +8,7 @@ class OpenaiGenerator(ResponseGenerator):
     def generate(self, model: str, sys_prompt: str, usr_prompt: str,
                  max_tokens: int) -> Optional[Response]:
         client = OpenAI(
-            api_key=self.settings.chat_completion.api_key.get_secret_value(),
+            api_key=self.settings.chat_completion.openai_api_key.get_secret_value(),
             base_url=str(self.settings.chat_completion.base_url),
             timeout=self.settings.chat_completion.request_timeout,
         )
@@ -29,4 +29,10 @@ class OpenaiGenerator(ResponseGenerator):
     @classmethod
     def is_valid(cls, model: str) -> bool:
         return model.startswith("gpt")
+
+    def _get_messages(self, sys_prompt: str, usr_prompt: str) -> list[dict[str, str]]:
+        return [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": usr_prompt},
+        ]
         

@@ -2,7 +2,7 @@ from importlib import metadata
 
 import click
 from iso639 import Language, LanguageNotFoundError
-from loguru import logger
+from pydantic import PositiveInt
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -13,7 +13,7 @@ from repo_agent.chat_with_repo import main as run_chat_with_repo
 from repo_agent.config_manager import write_config
 from repo_agent.doc_meta_info import DocItem, MetaInfo
 from repo_agent.log import logger, set_logger_level_from_config
-from repo_agent.runner import Runner, delete_fake_files
+from repo_agent.runner import Runner
 from repo_agent.settings import (
     ChatCompletionSettings,
     LogLevel,
@@ -220,6 +220,14 @@ def configure():
     type=click.Choice([level.value for level in LogLevel],
                       case_sensitive=False),
 )
+@click.option(
+    "--max_thread_count",
+    "-mtc",
+    default=setting.project.max_thread_count,
+    show_default=True,
+    help="Sets max thread count. Default is 4.",
+    type=PositiveInt,
+)
 def run(
         model,
         temperature,
@@ -231,6 +239,7 @@ def run(
         ignore_list,
         language,
         log_level,
+        max_thread_count,
 ):
     """Run the program with the specified parameters."""
     project_settings = ProjectSettings(
@@ -241,6 +250,7 @@ def run(
         # convert tuple from 'multiple' option to list
         language=language,
         log_level=log_level,
+        max_thread_count=max_thread_count,
     )
 
     chat_completion_settings = ChatCompletionSettings(

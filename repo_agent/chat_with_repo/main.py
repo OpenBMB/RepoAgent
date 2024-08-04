@@ -4,7 +4,7 @@ from repo_agent.settings import setting
 
 
 def main():
-    api_key = setting.chat_completion.api_key.get_secret_value()
+    api_key = setting.chat_completion.openai_api_key.get_secret_value()
     api_base = str(setting.chat_completion.base_url)
     db_path = (
         setting.project.target_repo
