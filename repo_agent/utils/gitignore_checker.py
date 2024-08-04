@@ -1,6 +1,8 @@
 import fnmatch
 import os
 
+from repo_agent.settings import setting
+
 
 class GitignoreChecker:
     def __init__(self, directory: str, gitignore_path: str):
@@ -14,6 +16,7 @@ class GitignoreChecker:
         self.directory = directory
         self.gitignore_path = gitignore_path
         self.folder_patterns, self.file_patterns = self._load_gitignore_patterns()
+        self.folder_patterns += setting.project.ignore_list
 
     def _load_gitignore_patterns(self) -> tuple:
         """

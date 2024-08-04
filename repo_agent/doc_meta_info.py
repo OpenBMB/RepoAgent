@@ -80,7 +80,7 @@ class DocItemStatus(Enum):
     referencer_not_exist = auto()  # 曾经引用他的obj被删除了，或者不再引用他了
 
 
-def need_to_generate(doc_item: DocItem, ignore_list: List[str]  = []) -> bool:
+def need_to_generate(doc_item: DocItem, ignore_list: List[str] = []) -> bool:
     """只生成item的，文件及更高粒度都跳过。另外如果属于一个blacklist的文件也跳过"""
     if doc_item.item_status == DocItemStatus.doc_up_to_date:
         return False
