@@ -1,3 +1,4 @@
+import os
 from enum import StrEnum
 from pathlib import Path
 
@@ -75,7 +76,7 @@ class ChatCompletionSettings(BaseSettings):
     temperature: PositiveFloat = 0.2
     request_timeout: PositiveFloat = 60.0
     base_url: HttpUrl = "https://api.openai.com/v1"  # type: ignore
-    api_key: SecretStr = Field(..., exclude=True)
+    api_key: SecretStr = Field(os.getenv("OPENAI_API_KEY"), exclude=True)
 
     @field_serializer("base_url")
     def serialize_base_url(self, base_url: HttpUrl):
