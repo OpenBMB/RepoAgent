@@ -21,4 +21,4 @@ class GemmaGenerator(ResponseGenerator):
 
     @classmethod
     def is_valid(cls, model: str) -> bool:
-        return not model.startswith("google/gemma")
+        return model.startswith("google/gemma")
