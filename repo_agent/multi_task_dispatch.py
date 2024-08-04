@@ -142,7 +142,7 @@ if __name__ == "__main__":
     i5 = task_manager.add_task(some_function, [i2, i3]) # type: ignore
     i6 = task_manager.add_task(some_function, [i1]) # type: ignore
 
-    threads = [threading.Thread(target=worker, args=(task_manager,)) for _ in range(4)]
+    threads = [threading.Thread(target=worker, args=(task_manager,), daemon=True) for _ in range(4)]
     for thread in threads:
         thread.start()
     for thread in threads:

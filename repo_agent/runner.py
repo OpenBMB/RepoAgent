@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import threading
 import time
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -90,6 +91,7 @@ class Runner:
                 )
         except Exception as e:
             logger.info(f"Document generation failed after multiple attempts, skipping: {doc_item.get_full_name()}")
+            print(traceback.format_exc())
             logger.error("Error:", e)
             doc_item.item_status = DocItemStatus.doc_has_not_been_generated
 
@@ -126,6 +128,7 @@ class Runner:
                         process_id,
                         self.generate_doc_for_a_single_item,
                     ),
+                    daemon=True
                 )
                 for process_id in range(setting.project.max_thread_count)
             ]
@@ -281,6 +284,7 @@ class Runner:
             threading.Thread(
                 target=worker,
                 args=(task_manager, process_id, self.generate_doc_for_a_single_item),
+                daemon=True
             )
             for process_id in range(setting.project.max_thread_count)
         ]

@@ -4,7 +4,8 @@ import sys
 
 from loguru import logger
 
-logger = logger.opt(colors=True)
+logger = logger.opt(colors=False)
+
 """
 RepoAgent 日志记录器对象。
 
