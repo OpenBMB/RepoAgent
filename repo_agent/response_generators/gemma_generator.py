@@ -1,5 +1,3 @@
-from typing import Optional
-
 from transformers import pipeline
 import torch
 from repo_agent.response_generators.response import Response
@@ -9,7 +7,7 @@ from repo_agent.response_generators.response_generator import ResponseGenerator
 class GemmaGenerator(ResponseGenerator):
     def generate(self, model: str, sys_prompt: str, usr_prompt: str,
                  max_tokens: int) -> Response:
-        hf_token = self.setting.chat_completion.api_key.get_secret_value()
+        hf_token = self.settings.chat_completion.api_key.get_secret_value()
         pipe = pipeline(
             "text-generation",
             model=model,

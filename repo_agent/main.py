@@ -230,7 +230,8 @@ def run(
     log_level,
 ):
     """Run the program with the specified parameters."""
-
+    print(target_repo_path)
+    raise ValueError
     project_settings = ProjectSettings(
         target_repo=target_repo_path,
         hierarchy_name=hierarchy_path,
