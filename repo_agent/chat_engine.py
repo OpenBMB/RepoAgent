@@ -12,7 +12,7 @@ from repo_agent.log import logger
 from repo_agent.prompt import SYS_PROMPT, USR_PROMPT
 from repo_agent.response_generators.response_generator_factory import \
     ResponseGeneratorFactory
-from repo_agent.settings import max_input_tokens_map, setting
+from repo_agent.settings import setting
 
 
 def get_import_statements():
@@ -228,63 +228,15 @@ class ChatEngine:
         usr_prompt = USR_PROMPT.format(language=setting.project.language)
 
         model = setting.chat_completion.model
-        max_input_length = max_input_tokens_map.get(model, 4096) - max_tokens
 
         total_tokens = self.num_tokens_from_string(
             sys_prompt
         ) + self.num_tokens_from_string(usr_prompt)
 
-        # 如果总tokens超过当前模型的限制，则尝试寻找较大模型或者缩减输入
-        if total_tokens >= max_input_length:
-            # 查找一个拥有更大输入限制的模型
-            larger_models = {
-                k: v
-                for k, v in max_input_tokens_map.items()
-                if (v - max_tokens) > total_tokens
-            }  # 抽取出所有上下文长度大于当前总输入tokens的模型
-            for model_name, max_input_length in larger_models.items():
-                if max_input_length - max_tokens > total_tokens:
-                    try:
-                        # Attempt to make a request with the larger model
-                        logger.info(
-                            f"Trying model {model_name} for large-context processing."
-                        )
-                        response_message = self.attempt_generate_response(
-                            model_name, sys_prompt, usr_prompt, max_tokens
-                        )  # response_message在attempt_generate_response中已经被校验过了
-                        return response_message
-                    except Exception as e:
-                        # 否则直接跳过，尝试下一个模型
-                        continue  # Try the next model
-            # If no larger models succeed, fallback to original model
-            # 对于最初的model模型，尝试缩减输入长度
-            for shorten_attempt in range(2):
-                shorten_success = False
-                sys_prompt = self.reduce_input_length(shorten_attempt, prompt_data)
-                # 重新计算 tokens
-                total_tokens = self.num_tokens_from_string(
-                    sys_prompt
-                ) + self.num_tokens_from_string(usr_prompt)
-                # 检查是否满足要求
-                if total_tokens < max_input_length:
-                    shorten_success = True
-                    # 如满足要求直接发送请求来生成文档
-                    response_message = self.attempt_generate_response(
-                        model, sys_prompt, usr_prompt, max_tokens
-                    )
-
-            if not shorten_success:
-                # 意味着这个doc_item无法生成doc（因为代码本身的长度就超过了模型的限制）
-                # 返回一个自定义的response_message对象，它的content是"Tried to generate the document, but the code is too long to process."
-                # 在其他代码调用的时候使用的是response_message.content，所以必须确保content能通过这种方式从response_message中被读取出来
-                response_message = ResponseMessage(
-                    "Tried to generate the document, but the code is too long to process."
-                )
-                return response_message
-
-        else:  # 如果总tokens没有超过模型限制，直接发送请求
-            response_message = self.attempt_generate_response(
-                model, sys_prompt, usr_prompt, max_tokens
-            )
-
+        logger.info(
+            f"Trying model {model_name} for large-context processing."
+        )
+        response_message = self.attempt_generate_response(
+            model_name, sys_prompt, usr_prompt, max_tokens
+        )  # response_message在attempt_generate_response中已经被校验过了
         return response_message

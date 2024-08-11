@@ -25,6 +25,7 @@ dependencies = [
     "colorama>=0.4.6",
     "transformers>=4.43.3",
     "torch>=2.4.0",
+    "langchain>=0.2.12",
 ]
 name = "repoagent"
 version = "0.1.3"

@@ -6,8 +6,8 @@ class ResponseGeneratorFactory:
     @classmethod
     def create(cls, settings: Setting, model: str) -> ResponseGenerator:
         for class_ in ResponseGenerator.__subclasses__():
-            if class_.is_valid(model):
-                return class_(settings)
+            if class_(settings).is_valid(model):
+                return instance
         raise ValueError(f"{model=} is not valid")
 
 
