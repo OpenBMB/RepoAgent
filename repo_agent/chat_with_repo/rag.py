@@ -1,7 +1,7 @@
 import json
 
-from llama_index import PromptTemplate
-from llama_index.llms import OpenAI
+from llama_index.core import PromptTemplate
+from llama_index.llms.openai import OpenAI
 from openai import OpenAI as AI
 
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor

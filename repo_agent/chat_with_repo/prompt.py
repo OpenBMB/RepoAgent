@@ -1,11 +1,12 @@
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 
 from repo_agent.chat_with_repo.json_handler import JsonFileProcessor
 from repo_agent.log import logger
 
 
 class TextAnalysisTool:
-    def __init__(self, llm, db_path):
+    def __init__(self, llm: FunctionCallingLLM, db_path):
         self.jsonsearch = JsonFileProcessor(db_path)
         self.llm = llm
         self.db_path = db_path
