@@ -10,6 +10,7 @@ from pydantic import (
     SecretStr,
     field_serializer,
     field_validator,
+    FieldSerializationInfo
 )
 from pydantic_settings import BaseSettings
 
@@ -35,7 +36,7 @@ class ProjectSettings(BaseSettings):
     log_level: LogLevel = LogLevel.INFO
 
     @field_serializer("ignore_list")
-    def serialize_ignore_list(self, ignore_list: list[str] = []):
+    def serialize_ignore_list(self, ignore_list: list[str], info: FieldSerializationInfo):
         if ignore_list == [""]:
             self.ignore_list = []  # If the ignore_list is empty, set it to an empty list
             return [] 
@@ -62,7 +63,7 @@ class ProjectSettings(BaseSettings):
         raise ValueError(f"Invalid log level: {v}")
 
     @field_serializer("target_repo")
-    def serialize_target_repo(self, target_repo: DirectoryPath):
+    def serialize_target_repo(self, target_repo: DirectoryPath, info: FieldSerializationInfo):
         return str(target_repo)
 
 
