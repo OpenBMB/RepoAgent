@@ -6,7 +6,7 @@ import git
 from colorama import Fore, Style
 
 from repo_agent.file_handler import FileHandler
-from repo_agent.settings import setting
+from repo_agent.settings import SettingsManager
 
 
 class ChangeDetector:
@@ -67,7 +67,7 @@ class ChangeDetector:
 
         if is_new_file:
             # For new files, first add them to the staging area.
-            add_command = f'git -C {repo.working_dir} add {file_path}'
+            add_command = f"git -C {repo.working_dir} add {file_path}"
             subprocess.run(add_command, shell=True, check=True)
 
             # Get the diff from the staging area.
@@ -165,8 +165,14 @@ class ChangeDetector:
         to_be_staged_files = []
         # staged_files是已经暂存的文件，通常这里是作者做了更改后git add 的.py文件 或其他文件
         staged_files = [item.a_path for item in self.repo.index.diff("HEAD")]
-        print(f"{Fore.LIGHTYELLOW_EX}target_repo_path{Style.RESET_ALL}: {self.repo_path}")
-        print(f"{Fore.LIGHTMAGENTA_EX}already_staged_files{Style.RESET_ALL}:{staged_files}")
+        print(
+            f"{Fore.LIGHTYELLOW_EX}target_repo_path{Style.RESET_ALL}: {self.repo_path}"
+        )
+        print(
+            f"{Fore.LIGHTMAGENTA_EX}already_staged_files{Style.RESET_ALL}:{staged_files}"
+        )
+
+        setting = SettingsManager.get_setting()
 
         project_hierarchy = setting.project.hierarchy_name
         # diffs是所有未暂存更改文件的列表。这些更改文件是相对于工作区（working directory）的，也就是说，它们是自上次提交（commit）以来在工作区发生的更改，但还没有被添加到暂存区（staging area）
@@ -213,12 +219,14 @@ class ChangeDetector:
 
         for unstaged_file in unstaged_files:
             # 连接repo_path和unstaged_file以获取完整的绝对路径
-            if unstaged_file.startswith(setting.project.markdown_docs_name) or unstaged_file.startswith(setting.project.hierarchy_name):
+            if unstaged_file.startswith(
+                setting.project.markdown_docs_name
+            ) or unstaged_file.startswith(setting.project.hierarchy_name):
                 # abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
                 # # # 获取相对于仓库根目录的相对路径
                 # # rel_unstaged_file = os.path.relpath(abs_unstaged_file, self.repo_path)
                 to_be_staged_files.append(unstaged_file)
-            elif unstaged_file == project_hierarchy: #project_hierarchy永远add
+            elif unstaged_file == project_hierarchy:  # project_hierarchy永远add
                 to_be_staged_files.append(unstaged_file)
             continue
             abs_unstaged_file = os.path.join(self.repo_path, unstaged_file)
@@ -242,9 +250,11 @@ class ChangeDetector:
                             rel_unstaged_file,
                         )
                     )
-            elif unstaged_file == project_hierarchy: #project_hierarchy永远add
+            elif unstaged_file == project_hierarchy:  # project_hierarchy永远add
                 to_be_staged_files.append(unstaged_file)
-        print(f"{Fore.LIGHTRED_EX}newly_staged_files{Style.RESET_ALL}: {to_be_staged_files}")
+        print(
+            f"{Fore.LIGHTRED_EX}newly_staged_files{Style.RESET_ALL}: {to_be_staged_files}"
+        )
         return to_be_staged_files
 
     def add_unstaged_files(self):
@@ -253,7 +263,7 @@ class ChangeDetector:
         """
         unstaged_files_meeting_conditions = self.get_to_be_staged_files()
         for file_path in unstaged_files_meeting_conditions:
-            add_command = f'git -C {self.repo.working_dir} add {file_path}'
+            add_command = f"git -C {self.repo.working_dir} add {file_path}"
             subprocess.run(add_command, shell=True, check=True)
         return unstaged_files_meeting_conditions
 
