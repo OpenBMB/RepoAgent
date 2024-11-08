@@ -9,19 +9,16 @@ license = {text = "Apache-2.0"}
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "loguru>=0.7.2",
-    "openai>=1.54.1",
     "markdown>=3.5.2",
-    "pyyaml>=6.0.1",
     "jedi>=0.19.1",
     "GitPython>=3.1.41",
     "prettytable>=3.9.0",
     "pydantic-settings>=2.2.1",
-    "tomli>=2.0.1",
-    "tomli-w>=1.0.0",
     "colorama>=0.4.6",
     "click>=8.1.7",
     "tiktoken>=0.8.0",
     "python-iso639>=2024.10.22",
+    "llama-index-llms-openai>=0.2.16",
 ]
 name = "repoagent"
 version = "0.1.4"

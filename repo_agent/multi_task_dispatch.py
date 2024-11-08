@@ -88,19 +88,19 @@ class TaskManager:
             return None, -1
 
     def mark_completed(self, task_id: int):
-            """
-            Marks a task as completed and removes it from the task dictionary.
+        """
+        Marks a task as completed and removes it from the task dictionary.
 
-            Args:
-                task_id (int): The ID of the task to mark as completed.
+        Args:
+            task_id (int): The ID of the task to mark as completed.
 
-            """
-            with self.task_lock:
-                target_task = self.task_dict[task_id]
-                for task in self.task_dict.values():
-                    if target_task in task.dependencies:
-                        task.dependencies.remove(target_task)
-                self.task_dict.pop(task_id) # 从任务字典中移除
+        """
+        with self.task_lock:
+            target_task = self.task_dict[task_id]
+            for task in self.task_dict.values():
+                if target_task in task.dependencies:
+                    task.dependencies.remove(target_task)
+            self.task_dict.pop(task_id)  # 从任务字典中移除
 
 
 def worker(task_manager, process_id: int, handler: Callable):
@@ -135,12 +135,12 @@ if __name__ == "__main__":
         time.sleep(random.random() * 3)
 
     # 添加任务，例如：
-    i1 = task_manager.add_task(some_function, []) # type: ignore
-    i2 = task_manager.add_task(some_function, []) # type: ignore
-    i3 = task_manager.add_task(some_function, [i1]) # type: ignore
-    i4 = task_manager.add_task(some_function, [i2, i3]) # type: ignore
-    i5 = task_manager.add_task(some_function, [i2, i3]) # type: ignore
-    i6 = task_manager.add_task(some_function, [i1]) # type: ignore
+    i1 = task_manager.add_task(some_function, [])  # type: ignore
+    i2 = task_manager.add_task(some_function, [])  # type: ignore
+    i3 = task_manager.add_task(some_function, [i1])  # type: ignore
+    i4 = task_manager.add_task(some_function, [i2, i3])  # type: ignore
+    i5 = task_manager.add_task(some_function, [i2, i3])  # type: ignore
+    i6 = task_manager.add_task(some_function, [i1])  # type: ignore
 
     threads = [threading.Thread(target=worker, args=(task_manager,)) for _ in range(4)]
     for thread in threads:

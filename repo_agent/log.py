@@ -53,8 +53,8 @@ class InterceptHandler(logging.Handler):
 
         # Find caller from where the logged message originated
         frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__: # type: ignore
-            frame = frame.f_back # type: ignore
+        while frame.f_code.co_filename == logging.__file__:  # type: ignore
+            frame = frame.f_back  # type: ignore
             depth += 1
 
         # Log to Loguru
@@ -64,7 +64,6 @@ class InterceptHandler(logging.Handler):
 
 
 def set_logger_level_from_config(log_level):
-
     logger.remove()
     logger.add(sys.stderr, level=log_level)
 
@@ -72,5 +71,3 @@ def set_logger_level_from_config(log_level):
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
     logger.success(f"Log level set to {log_level}!")
-
-

@@ -1,58 +1,16 @@
-from importlib import metadata
-
 import click
-from iso639 import Language, LanguageNotFoundError
-from loguru import logger
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-)
-
-from repo_agent.chat_with_repo import main as run_chat_with_repo
-from repo_agent.config_manager import write_config
-from repo_agent.doc_meta_info import DocItem, MetaInfo
-from repo_agent.log import logger, set_logger_level_from_config
+from repo_agent.log import logger
 from repo_agent.runner import Runner, delete_fake_files
-from repo_agent.settings import (
-    ChatCompletionSettings,
-    LogLevel,
-    ProjectSettings,
-    Setting,
-    setting,
-)
+from pydantic import ValidationError
+from repo_agent.settings import SettingsManager
+from importlib import metadata
+from repo_agent.doc_meta_info import DocItem, MetaInfo
 from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
 
-# 尝试获取版本号，如果失败，则使用默认版本号。
 try:
     version_number = metadata.version("repoagent")
 except metadata.PackageNotFoundError:
     version_number = "0.0.0"
-
-project_settings_default_instance = ProjectSettings()
-chat_completion_default_instance = ChatCompletionSettings()
-
-
-@retry(
-    retry=retry_if_exception_type(LanguageNotFoundError),
-    stop=stop_after_attempt(3),
-    retry_error_callback=lambda _: click.echo(
-        "Failed to find the language after several attempts."
-    ),
-)
-def language_prompt(default_language):
-    language_code = click.prompt(
-        "Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English')",
-        default=default_language,
-    )
-    try:
-        language_name = Language.match(language_code).name
-        return language_name
-    except LanguageNotFoundError:
-        click.echo(
-            "Invalid language input. Please enter a valid ISO 639 code or language name."
-        )
-        raise
 
 
 @click.group()
@@ -62,197 +20,48 @@ def cli():
     pass
 
 
-@cli.command()
-def configure():
-    """Configure the agent's parameters."""
-    project_settings_instance = ProjectSettings(
-        target_repo=click.prompt(
-            "Enter the path to target repository",
-            type=click.Path(exists=True, file_okay=False, dir_okay=True),
+def handle_setting_error(e: ValidationError):
+    """Handle configuration errors for settings."""
+    # 打印通用的错误消息
+    click.echo(
+        click.style(
+            "Configuration error detected. Please check your settings.",
+            fg="red",
+            bold=True,
         ),
-        hierarchy_name=click.prompt(
-            "Enter the project hierarchy file name",
-            default=project_settings_default_instance.hierarchy_name,
-        ),
-        markdown_docs_name=click.prompt(
-            "Enter the Markdown documents folder name",
-            default=project_settings_default_instance.markdown_docs_name,
-        ),
-        ignore_list=click.prompt(
-            "Enter files or directories to ignore, separated by commas",
-            default=",".join(
-                str(path) for path in []
-            ),
-        ).split(","),
-        language=language_prompt(
-            default_language=project_settings_default_instance.language
-        ),
-        max_thread_count=click.prompt(
-            "Enter the maximum number of threads",
-            default=project_settings_default_instance.max_thread_count,
-            type=click.INT,
-        ),
-        max_document_tokens=click.prompt(
-            "Enter the maximum number of document tokens",
-            default=project_settings_default_instance.max_document_tokens,
-            type=click.INT,
-        ),
-        log_level=click.prompt(
-            "Enter the log level",
-            type=click.Choice(
-                [level.value for level in LogLevel], case_sensitive=False
-            ),
-            default=project_settings_default_instance.log_level.value,
-        ),
+        err=True,
+        color=True,
     )
 
-    logger.success("Project settings saved successfully.")
+    # 输出更详细的字段缺失信息，使用颜色区分
+    for error in e.errors():
+        field = error["loc"][-1]
+        if error["type"] == "missing":
+            message = click.style(
+                f"Missing required field `{field}`. Please set the `{field}` environment variable.",
+                fg="yellow",
+            )
+        else:
+            message = click.style(error["msg"], fg="yellow")
+        click.echo(message, err=True, color=True)
 
-    chat_completion_instance = ChatCompletionSettings(
-        model=click.prompt(
-            "Enter the model", default=chat_completion_default_instance.model
-        ),
-        temperature=click.prompt(
-            "Enter the temperature",
-            default=chat_completion_default_instance.temperature,
-            type=float,
-        ),
-        request_timeout=click.prompt(
-            "Enter the request timeout (seconds)",
-            default=chat_completion_default_instance.request_timeout,
-            type=int,
-        ),
-        base_url=click.prompt(
-            "Enter the base URL", default=str(chat_completion_default_instance.base_url)
-        ),
+    # 使用 ClickException 优雅地退出程序
+    raise click.ClickException(
+        click.style("Program terminated due to configuration errors.", fg="red")
     )
-    logger.success("Chat completion settings saved successfully.")
-
-    update_setting = Setting(
-        project=project_settings_instance, chat_completion=chat_completion_instance
-    )
-
-    write_config(update_setting.model_dump())
 
 
 @cli.command()
-@click.option(
-    "--model",
-    "-m",
-    default=setting.chat_completion.model,
-    show_default=True,
-    help="Specifies the model to use for completion.",
-    type=str,
-)
-@click.option(
-    "--temperature",
-    "-t",
-    default=setting.chat_completion.temperature,
-    show_default=True,
-    help="Sets the generation temperature for the model. Lower values make the model more deterministic.",
-    type=float,
-)
-@click.option(
-    "--request-timeout",
-    "-r",
-    default=setting.chat_completion.request_timeout,
-    show_default=True,
-    help="Defines the timeout in seconds for the API request.",
-    type=int,
-)
-@click.option(
-    "--base-url",
-    "-b",
-    default=setting.chat_completion.base_url,
-    show_default=True,
-    help="The base URL for the API calls.",
-    type=str,
-)
-@click.option(
-    "--target-repo-path",
-    "-tp",
-    default=setting.project.target_repo,
-    show_default=True,
-    help="The file system path to the target repository. This path is used as the root for documentation generation.",
-    type=click.Path(),
-)
-@click.option(
-    "--hierarchy-path",
-    "-hp",
-    default=setting.project.hierarchy_name,
-    show_default=True,
-    help="The name or path for the project hierarchy file, used to organize documentation structure.",
-    type=str,
-)
-@click.option(
-    "--markdown-docs-path",
-    "-mdp",
-    default=setting.project.markdown_docs_name,
-    show_default=True,
-    help="The folder path where Markdown documentation will be stored or generated.",
-    type=str,
-)
-@click.option(
-    "--ignore-list",
-    "-i",
-    default=setting.project.ignore_list,
-    show_default=True,
-    help="A list of files or directories to ignore during documentation generation, separated by commas.",
-    multiple=True,
-    type=str,
-)
-@click.option(
-    "--language",
-    "-l",
-    default=setting.project.language,
-    show_default=True,
-    help="The ISO 639 code or language name for the documentation. ",
-    type=str,
-)
-@click.option(
-    "--log-level",
-    "-ll",
-    default=setting.project.log_level,
-    show_default=True,
-    help="Sets the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL) for the application. Default is INFO.",
-    type=click.Choice([level.value for level in LogLevel], case_sensitive=False),
-)
-def run(
-    model,
-    temperature,
-    request_timeout,
-    base_url,
-    target_repo_path,
-    hierarchy_path,
-    markdown_docs_path,
-    ignore_list,
-    language,
-    log_level,
-):
+def run():
     """Run the program with the specified parameters."""
+    try:
+        # 调用 SettingsManager.get_setting() 来获取配置
+        setting = SettingsManager.get_setting()
+    except ValidationError as e:
+        handle_setting_error(e)
+        return
 
-    project_settings = ProjectSettings(
-        target_repo=target_repo_path,
-        hierarchy_name=hierarchy_path,
-        markdown_docs_name=markdown_docs_path,
-        ignore_list=list(ignore_list),  # convert tuple from 'multiple' option to list
-        language=language,
-        log_level=log_level,
-    )
-
-    chat_completion_settings = ChatCompletionSettings(
-        model=model,
-        temperature=temperature,
-        request_timeout=request_timeout,
-        base_url=base_url,
-    )
-
-    settings = Setting(
-        project=project_settings, chat_completion=chat_completion_settings
-    )
-    write_config(settings.model_dump())
-    set_logger_level_from_config(log_level=setting.project.log_level)
-
+    # 如果设置成功，则运行任务
     runner = Runner()
     runner.run()
     logger.success("Documentation task completed.")
@@ -268,6 +77,13 @@ def clean():
 @cli.command()
 def print_hierarchy():
     """Print the hierarchy of the target repository."""
+    try:
+        # 调用 SettingsManager.get_setting() 来获取配置
+        setting = SettingsManager.get_setting()
+    except ValidationError as e:
+        handle_setting_error(e)
+        return
+
     runner = Runner()
     runner.meta_info.target_repo_hierarchical_tree.print_recursive()
     logger.success("Hierarchy printed.")
@@ -276,6 +92,13 @@ def print_hierarchy():
 @cli.command()
 def diff():
     """Check for changes and print which documents will be updated or generated."""
+    try:
+        # 调用 SettingsManager.get_setting() 来获取配置
+        setting = SettingsManager.get_setting()
+    except ValidationError as e:
+        handle_setting_error(e)
+        return
+
     runner = Runner()
     if runner.meta_info.in_generation_process:  # 如果不是在生成过程中，就开始检测变更
         click.echo("This command only supports pre-check")
@@ -285,6 +108,8 @@ def diff():
     new_meta_info = MetaInfo.init_meta_info(file_path_reflections, jump_files)
     new_meta_info.load_doc_from_older_meta(runner.meta_info)
     delete_fake_files()
+
+    setting = SettingsManager.get_setting()
 
     DocItem.check_has_task(
         new_meta_info.target_repo_hierarchical_tree,
@@ -297,12 +122,6 @@ def diff():
         )
     else:
         click.echo("No docs will be generated/updated, check your source-code update")
-
-
-@cli.command()
-def chat_with_repo():
-    """Automatic Q&A for Issues and Code Explanation."""
-    run_chat_with_repo()
 
 
 if __name__ == "__main__":
