@@ -11,7 +11,7 @@ from tqdm import tqdm
 from repo_agent.settings import SettingsManager
 from repo_agent.utils.gitignore_checker import GitignoreChecker
 from repo_agent.utils.meta_info_utils import latest_verison_substring
-
+from repo_agent.log import logger
 
 class FileHandler:
     """
@@ -296,7 +296,7 @@ class FileHandler:
                     not_ignored_files
                 )
             except Exception as e:
-                print(
+                logger.error(
                     f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}"
                 )
                 continue

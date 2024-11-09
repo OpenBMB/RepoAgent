@@ -1,10 +1,12 @@
-import click
-from repo_agent.log import logger
-from repo_agent.runner import Runner, delete_fake_files
-from pydantic import ValidationError
-from repo_agent.settings import SettingsManager
 from importlib import metadata
+
+import click
+from pydantic import ValidationError
+
 from repo_agent.doc_meta_info import DocItem, MetaInfo
+from repo_agent.log import logger, set_logger_level_from_config
+from repo_agent.runner import Runner, delete_fake_files
+from repo_agent.settings import SettingsManager
 from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
 
 try:
@@ -57,6 +59,7 @@ def run():
     try:
         # 调用 SettingsManager.get_setting() 来获取配置
         setting = SettingsManager.get_setting()
+        set_logger_level_from_config(log_level=setting.project.log_level)
     except ValidationError as e:
         handle_setting_error(e)
         return

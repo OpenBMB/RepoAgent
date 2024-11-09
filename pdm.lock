@@ -5,11 +5,7 @@
 groups = ["default", "dev", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.5.0"
-<<<<<<< HEAD
-content_hash = "sha256:876695fb810cf4656cadeddb35e5010c8cc214ad96d675375c7024da1b2d7ed1"
-=======
-content_hash = "sha256:01d74d2643582c53e4cdca17e41d7092db25d296bf516570bce9d9b0b670fefe"
->>>>>>> c661b77 (feat(settings): implement lazy loading and refactor `max_input_tokens_map` as Pydantic model fields)
+content_hash = "sha256:5e66e9c6a5c9c8d95ba265649cf27832086d6ce55c7e4e0e474b6d63c756add6"
 
 [[metadata.targets]]
 requires_python = "~=3.10"

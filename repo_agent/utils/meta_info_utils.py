@@ -95,12 +95,12 @@ def delete_fake_files():
                 os.remove(origin_name)
                 if os.path.getsize(fi_d) == 0:
                     print(
-                        f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(setting.project.target_repo):]}, {origin_name[len(setting.project.target_repo):]}"
+                        f"{Fore.LIGHTRED_EX}[Deleting Temp File]: {Style.RESET_ALL}{fi_d[len(str(setting.project.target_repo)):]}, {origin_name[len(str(setting.project.target_repo)):]}"
                     )  # type: ignore
                     os.remove(fi_d)
                 else:
                     print(
-                        f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(setting.project.target_repo):]} <- {fi_d[len(setting.project.target_repo):]}"
+                        f"{Fore.LIGHTRED_EX}[Recovering Latest Version]: {Style.RESET_ALL}{origin_name[len(str(setting.project.target_repo)):]} <- {fi_d[len(str(setting.project.target_repo)):]}"
                     )  # type: ignore
                     os.rename(fi_d, origin_name)
 
