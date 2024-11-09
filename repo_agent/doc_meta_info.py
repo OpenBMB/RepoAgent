@@ -20,7 +20,6 @@ from repo_agent.log import logger
 from repo_agent.multi_task_dispatch import Task, TaskManager
 from repo_agent.settings import SettingsManager
 from repo_agent.utils.meta_info_utils import latest_verison_substring
-from pathlib import Path
 
 
 @unique
@@ -317,8 +316,8 @@ def find_all_referencer(
         ]
     except Exception as e:
         # 打印错误信息和相关参数
-        logger.info(f"Error occurred: {e}")
-        logger.info(
+        logger.error(f"Error occurred: {e}")
+        logger.error(
             f"Parameters: variable_name={variable_name}, file_path={file_path}, line_number={line_number}, column_number={column_number}"
         )
         return []

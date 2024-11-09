@@ -1,6 +1,10 @@
 from enum import StrEnum
+from typing import List, Optional
+
 from iso639 import Language, LanguageNotFoundError
 from pydantic import (
+    BaseModel,
+    ConfigDict,
     DirectoryPath,
     Field,
     HttpUrl,
@@ -8,11 +12,8 @@ from pydantic import (
     PositiveInt,
     SecretStr,
     field_validator,
-    BaseModel,
-    ConfigDict,
 )
 from pydantic_settings import BaseSettings
-from typing import Optional, List
 
 
 class LogLevel(StrEnum):
@@ -28,7 +29,7 @@ class ProjectSettings(BaseSettings):
     hierarchy_name: str = ".project_doc_record"
     markdown_docs_name: str = "markdown_docs"
     ignore_list: list[str] = []
-    language: str = "Chinese"
+    language: str = "English"
     max_thread_count: PositiveInt = 4
     # NOTE: Temporarily disabling the limit on prompt tokens as the model context window is sufficiently large
     # max_document_tokens: PositiveInt = 16384
@@ -82,7 +83,7 @@ class MaxInputTokens(BaseModel):
 class ChatCompletionSettings(BaseSettings):
     model: str = "gpt-4o-mini"
     temperature: PositiveFloat = 0.2
-    request_timeout: PositiveFloat = 60.0
+    request_timeout: PositiveInt = 60
     openai_base_url: str = "https://api.openai.com/v1"
     openai_api_key: SecretStr = Field(..., exclude=True)
 

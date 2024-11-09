@@ -1,13 +1,9 @@
-import tiktoken
-
 from llama_index.llms.openai import OpenAI
-from llama_index.core import Settings
-from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 
 from repo_agent.doc_meta_info import DocItem
+from repo_agent.log import logger
 from repo_agent.prompt import chat_template
 from repo_agent.settings import SettingsManager
-from repo_agent.log import logger
 
 
 class ChatEngine:
@@ -25,18 +21,6 @@ class ChatEngine:
             model=setting.chat_completion.model,
             temperature=setting.chat_completion.temperature,
         )
-
-        self.token_counter = TokenCountingHandler(
-            tokenizer=tiktoken.encoding_for_model(setting.chat_completion.model).encode
-        )
-        Settings.llm = self.llm
-        Settings.callback_manager = CallbackManager([self.token_counter])
-
-    def num_tokens_from_string(self, string: str, encoding_name="cl100k_base") -> int:
-        """Returns the number of tokens in a text string."""
-        encoding = tiktoken.get_encoding(encoding_name)
-        num_tokens = len(encoding.encode(string))
-        return num_tokens
 
     def build_prompt(self, doc_item: DocItem):
         """Builds and returns the system and user prompts based on the DocItem."""
@@ -130,12 +114,17 @@ class ChatEngine:
     def generate_doc(self, doc_item: DocItem):
         """Generates documentation for a given DocItem."""
         messages = self.build_prompt(doc_item)
-        response = self.llm.chat(messages)
-        logger.info(f"LLM Prompt Tokens: {self.token_counter.prompt_llm_token_count}")
-        logger.info(
-            f"LLM Completion Tokens: {self.token_counter.completion_llm_token_count}"
-        )
-        logger.info(
-            f"Total LLM Token Count: {self.token_counter.total_llm_token_count}"
-        )
-        return response
+
+        try:
+            response = self.llm.chat(messages)
+            logger.debug(f"LLM Prompt Tokens: {response.raw.usage.prompt_tokens}")  # type: ignore #
+            logger.debug(
+                f"LLM Completion Tokens: {response.raw.usage.completion_tokens}"  # type: ignore #
+            )
+            logger.debug(
+                f"Total LLM Token Count: {response.raw.usage.total_tokens}"  # type: ignore #
+            )
+            return response.message.content
+        except Exception as e:
+            logger.error(f"Error in llamaindex chat call: {e}")
+            raise
