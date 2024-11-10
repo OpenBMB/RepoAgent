@@ -65,6 +65,7 @@ class MaxInputTokens(BaseModel):
     gpt_4o: int = Field(128000, alias="gpt-4o")  # type: ignore
     o1_preview: int = Field(128000, alias="o1-preview")  # type: ignore
     o1_mini: int = Field(128000, alias="o1-mini")  # type: ignore
+    glm_4_flash: int = Field(128000, alias="glm-4-flash")  # type: ignore
 
     @classmethod
     def get_valid_models(cls) -> List[str]:

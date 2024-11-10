@@ -1,7 +1,7 @@
 # repo_agent/log.py
+import inspect
 import logging
 import sys
-import inspect
 
 from loguru import logger
 
@@ -43,6 +43,7 @@ RepoAgent 日志记录器对象。
 
 """
 
+
 class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         # Get corresponding Loguru level if it exists.
@@ -58,16 +59,18 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
 
 
 def set_logger_level_from_config(log_level):
     """
     Configures the loguru logger with specified log level and integrates it with the standard logging module.
-    
+
     Args:
         log_level (str): The log level to set for loguru (e.g., "DEBUG", "INFO", "WARNING").
-        
+
     This function:
     - Removes any existing loguru handlers to ensure a clean slate.
     - Adds a new handler to loguru, directing output to stderr with the specified level.
@@ -78,7 +81,9 @@ def set_logger_level_from_config(log_level):
       all logs consistently across the application.
     """
     logger.remove()
-    logger.add(sys.stderr, level=log_level, enqueue=True, backtrace=False, diagnose=False)
+    logger.add(
+        sys.stderr, level=log_level, enqueue=True, backtrace=False, diagnose=False
+    )
 
     # Intercept standard logging
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)

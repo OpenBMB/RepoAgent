@@ -112,8 +112,6 @@ def diff():
     new_meta_info.load_doc_from_older_meta(runner.meta_info)
     delete_fake_files()
 
-    setting = SettingsManager.get_setting()
-
     DocItem.check_has_task(
         new_meta_info.target_repo_hierarchical_tree,
         ignore_list=setting.project.ignore_list,

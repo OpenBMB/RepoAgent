@@ -45,4 +45,5 @@ message_templates = [
         role=MessageRole.USER,
     ),
 ]
+
 chat_template = ChatPromptTemplate(message_templates=message_templates)

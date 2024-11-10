@@ -395,32 +395,49 @@ class MetaInfo:
         Save the MetaInfo object to the specified directory.
 
         Args:
-            target_dir_path (str): The path to the target directory where the MetaInfo will be saved.
+            target_dir_path (str | Path): The path to the target directory where the MetaInfo will be saved.
             flash_reference_relation (bool, optional): Whether to include flash reference relation in the saved MetaInfo. Defaults to False.
         """
         with self.checkpoint_lock:
+            # 转换 target_dir_path 为 Path 对象
+            target_dir = Path(target_dir_path)
+            logger.debug(f"Checkpointing MetaInfo to directory: {target_dir}")
+
+            # 打印保存成功的信息
             print(f"{Fore.GREEN}MetaInfo is Refreshed and Saved{Style.RESET_ALL}")
-            if not os.path.exists(target_dir_path):
-                os.makedirs(target_dir_path)
+
+            # 创建目录（如果不存在）
+            if not target_dir.exists():
+                target_dir.mkdir(parents=True, exist_ok=True)
+                logger.debug(f"Created directory: {target_dir}")
+
+            # 保存 project_hierarchy.json 文件
             now_hierarchy_json = self.to_hierarchy_json(
                 flash_reference_relation=flash_reference_relation
             )
-            with open(
-                os.path.join(target_dir_path, "project_hierarchy.json"),
-                "w",
-                encoding="utf-8",
-            ) as writer:
-                json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
+            hierarchy_file = target_dir / "project_hierarchy.json"
+            try:
+                with hierarchy_file.open("w", encoding="utf-8") as writer:
+                    json.dump(now_hierarchy_json, writer, indent=2, ensure_ascii=False)
+                logger.debug(f"Saved hierarchy JSON to {hierarchy_file}")
+            except IOError as e:
+                logger.error(f"Failed to save hierarchy JSON to {hierarchy_file}: {e}")
 
-            with open(os.path.join(target_dir_path, "meta-info.json"), "w") as writer:
-                meta = {
-                    "doc_version": self.document_version,
-                    "in_generation_process": self.in_generation_process,
-                    "fake_file_reflection": self.fake_file_reflection,
-                    "jump_files": self.jump_files,
-                    "deleted_items_from_older_meta": self.deleted_items_from_older_meta,
-                }
-                json.dump(meta, writer, indent=2, ensure_ascii=False)
+            # 保存 meta-info.json 文件
+            meta_info_file = target_dir / "meta-info.json"
+            meta = {
+                "doc_version": self.document_version,
+                "in_generation_process": self.in_generation_process,
+                "fake_file_reflection": self.fake_file_reflection,
+                "jump_files": self.jump_files,
+                "deleted_items_from_older_meta": self.deleted_items_from_older_meta,
+            }
+            try:
+                with meta_info_file.open("w", encoding="utf-8") as writer:
+                    json.dump(meta, writer, indent=2, ensure_ascii=False)
+                logger.debug(f"Saved meta-info JSON to {meta_info_file}")
+            except IOError as e:
+                logger.error(f"Failed to save meta-info JSON to {meta_info_file}: {e}")
 
     def print_task_list(self, task_dict: Dict[Task]):
         """打印"""

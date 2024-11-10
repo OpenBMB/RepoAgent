@@ -1,4 +1,4 @@
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_like import OpenAILike
 
 from repo_agent.doc_meta_info import DocItem
 from repo_agent.log import logger
@@ -14,12 +14,14 @@ class ChatEngine:
     def __init__(self, project_manager):
         setting = SettingsManager.get_setting()
 
-        self.llm = OpenAI(
+        self.llm = OpenAILike(
             api_key=setting.chat_completion.openai_api_key.get_secret_value(),
             api_base=setting.chat_completion.openai_base_url,
             timeout=setting.chat_completion.request_timeout,
             model=setting.chat_completion.model,
             temperature=setting.chat_completion.temperature,
+            max_retries=1,
+            is_chat_model=True,
         )
 
     def build_prompt(self, doc_item: DocItem):

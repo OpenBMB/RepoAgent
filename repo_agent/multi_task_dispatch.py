@@ -35,7 +35,6 @@ class TaskManager:
         self.task_lock = threading.Lock()
         self.now_id = 0
         self.query_id = 0
-        self.sync_func = None
 
     @property
     def all_success(self) -> bool:
@@ -82,8 +81,6 @@ class TaskManager:
                     print(
                         f"{Fore.RED}[process {process_id}]{Style.RESET_ALL}: get task({task_id}), remain({len(self.task_dict)})"
                     )
-                    if self.query_id % 10 == 0:
-                        self.sync_func()
                     return self.task_dict[task_id], task_id
             return None, -1
 
