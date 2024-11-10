@@ -19,6 +19,7 @@ from repo_agent.multi_task_dispatch import worker
 from repo_agent.project_manager import ProjectManager
 from repo_agent.settings import SettingsManager
 from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
+from pathlib import Path
 
 
 class Runner:
@@ -99,19 +100,13 @@ class Runner:
 
     def first_generate(self):
         """
-        生成所有文档,
-        如果生成结束，self.meta_info.document_version会变成0(之前是-1)
-        每生成一个obj的doc，会实时同步回文件系统里。如果中间报错了，下次会自动load，按照文件顺序接着生成。
-        **注意**：这个生成first_generate的过程中，目标仓库代码不能修改。也就是说，一个document的生成过程必须绑定代码为一个版本。
+        生成所有文档，完成后刷新并保存文件系统中的文档信息。
         """
         logger.info("Starting to generate documentation")
         check_task_available_func = partial(
             need_to_generate, ignore_list=self.setting.project.ignore_list
         )
-        task_manager = self.meta_info.get_topology(
-            check_task_available_func
-        )  # 将按照此顺序生成文档
-        # topology_list = [item for item in topology_list if need_to_generate(item, ignore_list)]
+        task_manager = self.meta_info.get_topology(check_task_available_func)
         before_task_len = len(task_manager.task_dict)
 
         if not self.meta_info.in_generation_process:
@@ -122,7 +117,7 @@ class Runner:
         self.meta_info.print_task_list(task_manager.task_dict)
 
         try:
-            task_manager.sync_func = self.markdown_refresh
+            # 创建并启动线程
             threads = [
                 threading.Thread(
                     target=worker,
@@ -139,6 +134,10 @@ class Runner:
             for thread in threads:
                 thread.join()
 
+            # 所有任务完成后刷新文档
+            self.markdown_refresh()
+            
+            # 更新文档版本
             self.meta_info.document_version = (
                 self.change_detector.repo.head.commit.hexsha
             )
@@ -151,80 +150,87 @@ class Runner:
             )
 
         except BaseException as e:
-            logger.info(
-                f"Finding an error as {e}, {before_task_len - len(task_manager.task_dict)} docs are generated at this time"
+            logger.error(
+                f"An error occurred: {e}. {before_task_len - len(task_manager.task_dict)} docs are generated at this time"
             )
 
     def markdown_refresh(self):
-        """将目前最新的document信息写入到一个markdown格式的文件夹里(不管markdown内容是不是变化了)"""
+        """刷新最新的文档信息到markdown格式文件夹中"""
         with self.runner_lock:
-            # 首先删除doc下所有内容，然后再重新写入
-            markdown_folder = (
-                self.setting.project.target_repo
-                / self.setting.project.markdown_docs_name
-            )
+            # 定义 markdown 文件夹路径
+            markdown_folder = Path(self.setting.project.target_repo) / self.setting.project.markdown_docs_name
+            
+            # 删除并重新创建目录
             if markdown_folder.exists():
+                logger.debug(f"Deleting existing contents of {markdown_folder}")
                 shutil.rmtree(markdown_folder)
-            os.mkdir(markdown_folder)
+            markdown_folder.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Created markdown folder at {markdown_folder}")
 
-            file_item_list = self.meta_info.get_all_files()
-            for file_item in tqdm(file_item_list):
-
-                def recursive_check(
-                    doc_item: DocItem,
-                ) -> bool:  # 检查一个file内是否存在doc
-                    if doc_item.md_content != []:
+        # 遍历文件列表生成 markdown
+        file_item_list = self.meta_info.get_all_files()
+        logger.debug(f"Found {len(file_item_list)} files to process.")
+        
+        for file_item in tqdm(file_item_list):
+            # 检查文档内容
+            def recursive_check(doc_item) -> bool:
+                if doc_item.md_content:
+                    return True
+                for child in doc_item.children.values():
+                    if recursive_check(child):
                         return True
-                    for _, child in doc_item.children.items():
-                        if recursive_check(child):
-                            return True
-                    return False
+                return False
 
-                if recursive_check(file_item) == False:
-                    # logger.info(f"不存在文档内容，跳过：{file_item.get_full_name()}")
-                    continue
-                rel_file_path = file_item.get_full_name()
+            if not recursive_check(file_item):
+                logger.debug(f"No documentation content for: {file_item.get_full_name()}, skipping.")
+                continue
 
-                def to_markdown(item: DocItem, now_level: int) -> str:
-                    markdown_content = ""
-                    markdown_content += (
-                        "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
-                    )
-                    if (
-                        "params" in item.content.keys()
-                        and len(item.content["params"]) > 0
-                    ):
-                        markdown_content += f"({', '.join(item.content['params'])})"
-                    markdown_content += "\n"
-                    markdown_content += f"{item.md_content[-1] if len(item.md_content) >0 else 'Doc is waiting to be generated...'}\n"
-                    for _, child in item.children.items():
-                        markdown_content += to_markdown(child, now_level + 1)
-                        markdown_content += "***\n"
+            # 生成 markdown 内容
+            markdown = ""
+            for child in file_item.children.values():
+                markdown += self.to_markdown(child, 2)
 
-                    return markdown_content
+            if not markdown:
+                logger.warning(f"No markdown content generated for: {file_item.get_full_name()}")
+                continue
 
-                markdown = ""
-                for _, child in file_item.children.items():
-                    markdown += to_markdown(child, 2)
-                assert (
-                    markdown != None
-                ), f"Markdown content is empty, the file path is: {rel_file_path}"
-                # 写入markdown内容到.md文件
-                file_path = os.path.join(
-                    self.setting.project.markdown_docs_name,
-                    file_item.get_file_name().replace(".py", ".md"),
-                )
-                if file_path.startswith("/"):
-                    # 移除开头的 '/'
-                    file_path = file_path[1:]
-                abs_file_path = self.setting.project.target_repo / file_path
-                os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
-                with open(abs_file_path, "w", encoding="utf-8") as file:
-                    file.write(markdown)
+            # 确定并创建文件路径
+            file_path = Path(self.setting.project.markdown_docs_name) / file_item.get_file_name().replace(".py", ".md")
+            abs_file_path = self.setting.project.target_repo / file_path
+            logger.debug(f"Writing markdown to: {abs_file_path}")
 
-            logger.info(
-                f"markdown document has been refreshed at {self.setting.project.markdown_docs_name}"
-            )
+            # 确保目录存在
+            abs_file_path.parent.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Ensured directory exists: {abs_file_path.parent}")
+
+            # 使用锁保护文件写入操作
+            with self.runner_lock:
+                for attempt in range(3):  # 最多重试3次
+                    try:
+                        with open(abs_file_path, "w", encoding="utf-8") as file:
+                            file.write(markdown)
+                        logger.debug(f"Successfully wrote to {abs_file_path}")
+                        break
+                    except IOError as e:
+                        logger.error(f"Failed to write {abs_file_path} on attempt {attempt + 1}: {e}")
+                        time.sleep(1)  # 延迟再试
+
+        logger.info(f"Markdown documents have been refreshed at {self.setting.project.markdown_docs_name}")
+
+    def to_markdown(self, item, now_level: int) -> str:
+        """将文件内容转化为 markdown 格式的文本"""
+        markdown_content = "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
+        if "params" in item.content.keys() and item.content["params"]:
+            markdown_content += f"({', '.join(item.content['params'])})"
+        markdown_content += "\n"
+        if item.md_content:
+            markdown_content += f"{item.md_content[-1]}\n"
+        else:
+            markdown_content += "Doc is waiting to be generated...\n"
+        for child in item.children.values():
+            markdown_content += self.to_markdown(child, now_level + 1)
+            markdown_content += "***\n"
+        return markdown_content
 
     def git_commit(self, commit_message):
         try:
@@ -297,7 +303,6 @@ class Runner:
                 "No tasks in the queue, all documents are completed and up to date."
             )
 
-        task_manager.sync_func = self.markdown_refresh
         threads = [
             threading.Thread(
                 target=worker,
