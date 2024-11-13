@@ -55,6 +55,10 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 ### Installation Method
 
+#### Using GitHub Actions
+
+This repository supports GitHub Actions for automating workflows such as building, testing, and deploying. For detailed instructions on setting up and using GitHub Actions with this repository, please refer to the [actions/run-repoagent](https://github.com/Umpire2018/setup-repoagent/actions).
+
 #### Using pip (Recommended for Users)
 
 Install the `repoagent` package directly using pip:
@@ -184,7 +188,7 @@ We utilized the default model **gpt-3.5-turbo** to generate documentation for th
 
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
-- [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
+- [x] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
 
 ## 🥰 Featured Cases
 
