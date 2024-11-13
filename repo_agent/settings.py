@@ -1,10 +1,8 @@
 from enum import StrEnum
-from typing import List, Optional
+from typing import Optional
 
 from iso639 import Language, LanguageNotFoundError
 from pydantic import (
-    BaseModel,
-    ConfigDict,
     DirectoryPath,
     Field,
     HttpUrl,
@@ -58,31 +56,8 @@ class ProjectSettings(BaseSettings):
         raise ValueError(f"Invalid log level: {v}")
 
 
-class MaxInputTokens(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    gpt_4o_mini: int = Field(128000, alias="gpt-4o-mini")  # type: ignore
-    gpt_4o: int = Field(128000, alias="gpt-4o")  # type: ignore
-    o1_preview: int = Field(128000, alias="o1-preview")  # type: ignore
-    o1_mini: int = Field(128000, alias="o1-mini")  # type: ignore
-    glm_4_flash: int = Field(128000, alias="glm-4-flash")  # type: ignore
-
-    @classmethod
-    def get_valid_models(cls) -> List[str]:
-        # Use model_fields to get all field aliases or names
-        return [
-            field.alias if field.alias else name
-            for name, field in cls.model_fields.items()
-        ]
-
-    @classmethod
-    def get_token_limit(cls, model_name: str) -> int:
-        instance = cls()
-        return getattr(instance, model_name.replace("-", "_"))
-
-
 class ChatCompletionSettings(BaseSettings):
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o-mini"  # NOTE: No model restrictions for user flexibility, but it's recommended to use models with a larger context window.
     temperature: PositiveFloat = 0.2
     request_timeout: PositiveInt = 60
     openai_base_url: str = "https://api.openai.com/v1"
@@ -92,18 +67,6 @@ class ChatCompletionSettings(BaseSettings):
     @classmethod
     def convert_base_url_to_str(cls, openai_base_url: HttpUrl) -> str:
         return str(openai_base_url)
-
-    @field_validator("model")
-    @classmethod
-    def validate_model(cls, value: str) -> str:
-        valid_models = MaxInputTokens.get_valid_models()
-        if value not in valid_models:
-            raise ValueError(f"Invalid model '{value}'. Must be one of {valid_models}.")
-        return value
-
-    def get_token_limit(self) -> int:
-        # Retrieve the token limit based on the model value
-        return MaxInputTokens.get_token_limit(self.model)
 
 
 class Setting(BaseSettings):

@@ -136,7 +136,7 @@ class Runner:
 
             # 所有任务完成后刷新文档
             self.markdown_refresh()
-            
+
             # 更新文档版本
             self.meta_info.document_version = (
                 self.change_detector.repo.head.commit.hexsha
@@ -158,8 +158,11 @@ class Runner:
         """刷新最新的文档信息到markdown格式文件夹中"""
         with self.runner_lock:
             # 定义 markdown 文件夹路径
-            markdown_folder = Path(self.setting.project.target_repo) / self.setting.project.markdown_docs_name
-            
+            markdown_folder = (
+                Path(self.setting.project.target_repo)
+                / self.setting.project.markdown_docs_name
+            )
+
             # 删除并重新创建目录
             if markdown_folder.exists():
                 logger.debug(f"Deleting existing contents of {markdown_folder}")
@@ -170,7 +173,7 @@ class Runner:
         # 遍历文件列表生成 markdown
         file_item_list = self.meta_info.get_all_files()
         logger.debug(f"Found {len(file_item_list)} files to process.")
-        
+
         for file_item in tqdm(file_item_list):
             # 检查文档内容
             def recursive_check(doc_item) -> bool:
@@ -182,7 +185,9 @@ class Runner:
                 return False
 
             if not recursive_check(file_item):
-                logger.debug(f"No documentation content for: {file_item.get_full_name()}, skipping.")
+                logger.debug(
+                    f"No documentation content for: {file_item.get_full_name()}, skipping."
+                )
                 continue
 
             # 生成 markdown 内容
@@ -191,11 +196,15 @@ class Runner:
                 markdown += self.to_markdown(child, 2)
 
             if not markdown:
-                logger.warning(f"No markdown content generated for: {file_item.get_full_name()}")
+                logger.warning(
+                    f"No markdown content generated for: {file_item.get_full_name()}"
+                )
                 continue
 
             # 确定并创建文件路径
-            file_path = Path(self.setting.project.markdown_docs_name) / file_item.get_file_name().replace(".py", ".md")
+            file_path = Path(
+                self.setting.project.markdown_docs_name
+            ) / file_item.get_file_name().replace(".py", ".md")
             abs_file_path = self.setting.project.target_repo / file_path
             logger.debug(f"Writing markdown to: {abs_file_path}")
 
@@ -212,14 +221,20 @@ class Runner:
                         logger.debug(f"Successfully wrote to {abs_file_path}")
                         break
                     except IOError as e:
-                        logger.error(f"Failed to write {abs_file_path} on attempt {attempt + 1}: {e}")
+                        logger.error(
+                            f"Failed to write {abs_file_path} on attempt {attempt + 1}: {e}"
+                        )
                         time.sleep(1)  # 延迟再试
 
-        logger.info(f"Markdown documents have been refreshed at {self.setting.project.markdown_docs_name}")
+        logger.info(
+            f"Markdown documents have been refreshed at {self.setting.project.markdown_docs_name}"
+        )
 
     def to_markdown(self, item, now_level: int) -> str:
         """将文件内容转化为 markdown 格式的文本"""
-        markdown_content = "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
+        markdown_content = (
+            "#" * now_level + f" {item.item_type.to_str()} {item.obj_name}"
+        )
         if "params" in item.content.keys() and item.content["params"]:
             markdown_content += f"({', '.join(item.content['params'])})"
         markdown_content += "\n"
