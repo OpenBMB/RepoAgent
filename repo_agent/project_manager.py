@@ -12,28 +12,29 @@ class ProjectManager:
         )
 
     def get_project_structure(self):
-            """
-            Returns the structure of the project by recursively walking through the directory tree.
+        """
+        Returns the structure of the project by recursively walking through the directory tree.
 
-            Returns:
-                str: The project structure as a string.
-            """
-            def walk_dir(root, prefix=""):
-                structure.append(prefix + os.path.basename(root))
-                new_prefix = prefix + "  "
-                for name in sorted(os.listdir(root)):
-                    if name.startswith("."):  # 忽略隐藏文件和目录
-                        continue
-                    path = os.path.join(root, name)
-                    if os.path.isdir(path):
-                        walk_dir(path, new_prefix)
-                    elif os.path.isfile(path) and name.endswith(".py"):
-                        structure.append(new_prefix + name)
+        Returns:
+            str: The project structure as a string.
+        """
 
-            structure = []
-            walk_dir(self.repo_path)
-            return "\n".join(structure)
-    
+        def walk_dir(root, prefix=""):
+            structure.append(prefix + os.path.basename(root))
+            new_prefix = prefix + "  "
+            for name in sorted(os.listdir(root)):
+                if name.startswith("."):  # 忽略隐藏文件和目录
+                    continue
+                path = os.path.join(root, name)
+                if os.path.isdir(path):
+                    walk_dir(path, new_prefix)
+                elif os.path.isfile(path) and name.endswith(".py"):
+                    structure.append(new_prefix + name)
+
+        structure = []
+        walk_dir(self.repo_path)
+        return "\n".join(structure)
+
     def build_path_tree(self, who_reference_me, reference_who, doc_item_path):
         from collections import defaultdict
 

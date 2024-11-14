@@ -1,7 +1,10 @@
-import unittest
 import os
-from repo_agent.change_detector import ChangeDetector
+import unittest
+
 from git import Repo
+
+from repo_agent.change_detector import ChangeDetector
+
 
 class TestChangeDetector(unittest.TestCase):
     @classmethod

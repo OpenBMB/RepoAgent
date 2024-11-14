@@ -1,169 +1,143 @@
 ## ClassDef GitignoreChecker
-**GitignoreChecker**: The function of GitignoreChecker is to check files and folders against patterns specified in a `.gitignore` file to determine which ones should be ignored.
+**GitignoreChecker**: The function of GitignoreChecker is to check files and folders in a specified directory against patterns defined in a .gitignore file, identifying which files are not ignored and have a specific extension.
 
-**Attributes**:
-- `directory`: The directory to be checked against the `.gitignore` patterns.
-- `gitignore_path`: The path to the `.gitignore` file used for checking ignore patterns.
-- `folder_patterns`: A list of folder-specific patterns extracted from the `.gitignore` file.
-- `file_patterns`: A list of file-specific patterns extracted from the `.gitignore` file.
+**attributes**: The attributes of this Class.
+· directory: The directory to be checked for files and folders.
+· gitignore_path: The path to the .gitignore file.
+· folder_patterns: A list of folder patterns extracted from the .gitignore file.
+· file_patterns: A list of file patterns extracted from the .gitignore file.
 
-**Code Description**:
-The `GitignoreChecker` class is designed to facilitate the identification of files and directories that should be ignored based on the patterns specified in a `.gitignore` file. This is particularly useful in projects where certain files or directories are not meant to be processed or included in version control.
+**Code Description**: The GitignoreChecker class is designed to facilitate the checking of files and folders in a specified directory against the rules defined in a .gitignore file. Upon initialization, it requires two parameters: the directory to be checked and the path to the .gitignore file. The constructor reads the .gitignore file, parsing its contents to separate folder patterns from file patterns.
 
-Upon initialization, the class takes two parameters: the directory to check and the path to the `.gitignore` file. It then loads and parses the `.gitignore` file, separating the ignore patterns into those applicable to folders and those applicable to files.
+The class contains several methods:
+- `_load_gitignore_patterns`: This method attempts to load the .gitignore file from the specified path. If the file is not found, it falls back to a default .gitignore file located two directories up from the current file. It returns a tuple containing lists of folder and file patterns.
+- `_parse_gitignore`: This static method processes the content of the .gitignore file, extracting valid patterns while ignoring comments and empty lines.
+- `_split_gitignore_patterns`: This static method takes a list of patterns and categorizes them into folder patterns (ending with a '/') and file patterns.
+- `_is_ignored`: This static method checks if a given path matches any of the provided patterns, determining if the path should be ignored based on whether it is a directory or a file.
+- `check_files_and_folders`: This method walks through the specified directory, checking each file and folder against the extracted patterns. It returns a list of file paths that are not ignored and have a '.py' extension, with paths being relative to the specified directory.
 
-The core functionality of the class is encapsulated in the `check_files_and_folders` method, which traverses the specified directory, checking each file and folder against the `.gitignore` patterns. Files that do not match any of the ignore patterns and have a `.py` extension are considered not ignored and are returned as a list of paths relative to the specified directory.
+The GitignoreChecker is utilized in the `generate_overall_structure` method of the FileHandler class. In this context, it is instantiated to check the repository's directory for files that are not ignored by the .gitignore rules. The method iterates over the list of non-ignored files, performing additional checks and processing for each file, ultimately contributing to the generation of the repository's overall structure.
 
-This class is utilized in the project within the `generate_overall_structure` method of a `FileHandler` object. In this context, the `GitignoreChecker` is used to filter out files that should be ignored based on the `.gitignore` file of a repository. This ensures that only relevant files are processed for generating the overall structure of the repository, excluding files specified in `.gitignore`.
+**Note**: When using the GitignoreChecker, ensure that the specified .gitignore file is accessible and correctly formatted to avoid falling back to the default path unintentionally.
 
-**Note**:
-- The class provides a fallback mechanism for loading a default `.gitignore` file if the specified one is not found. This ensures that the class functions even in the absence of a specified `.gitignore` path.
-- The ignore checking mechanism is sensitive to both folder-specific and file-specific patterns, accurately reflecting the behavior of `.gitignore` processing in version control systems.
-
-**Output Example**:
-Assuming a directory structure with some Python files and a `.gitignore` file specifying to ignore all `.log` files, an example output of the `check_files_and_folders` method might look like this:
-```python
-['src/main.py', 'tests/test_main.py']
+**Output Example**: An example output of the `check_files_and_folders` method might look like this:
 ```
-This output indicates that `main.py` in the `src` directory and `test_main.py` in the `tests` directory are not ignored by the `.gitignore` file and have the `.py` extension, making them relevant for further processing.
+[
+    "src/module1.py",
+    "src/module2.py",
+    "tests/test_module1.py"
+]
+``` 
+This output indicates that the listed Python files are not ignored according to the rules defined in the .gitignore file.
 ### FunctionDef __init__(self, directory, gitignore_path)
 **__init__**: The function of __init__ is to initialize the GitignoreChecker with a specific directory and the path to a .gitignore file.
 
-**Parameters**:
-- **directory (str)**: The directory that will be checked against the patterns defined in the .gitignore file.
-- **gitignore_path (str)**: The filesystem path to the .gitignore file that contains patterns to be used for checking.
+**parameters**: The parameters of this Function.
+· directory: The directory to be checked.
+· gitignore_path: The path to the .gitignore file.
 
-**Code Description**: The `__init__` method is the constructor for the GitignoreChecker class, setting up the initial state of an instance by storing the provided directory and .gitignore file path. Upon initialization, it also calls the `_load_gitignore_patterns` method, which is responsible for loading and parsing the .gitignore file specified by the `gitignore_path` parameter. This method categorizes the patterns found in the .gitignore file into two lists: one for folder patterns and another for file patterns. These lists are then stored as instance attributes (`self.folder_patterns` and `self.file_patterns`), making them accessible to other methods within the class. This setup allows the GitignoreChecker to efficiently determine whether files or directories within the specified directory should be ignored based on the patterns defined in the .gitignore file.
+**Code Description**: The __init__ method is the constructor for the GitignoreChecker class. It takes two parameters: `directory`, which specifies the directory that will be checked for files and folders to ignore, and `gitignore_path`, which indicates the location of the .gitignore file that contains the ignore patterns. Upon initialization, these parameters are assigned to instance variables `self.directory` and `self.gitignore_path`, respectively.
 
-The `_load_gitignore_patterns` method, which is called during initialization, plays a crucial role in the functionality of the GitignoreChecker. It ensures that the patterns from the .gitignore file are correctly loaded, parsed, and categorized, enabling the GitignoreChecker to perform its primary function of checking files and directories against these patterns. This method handles the reading of the .gitignore file, gracefully managing cases where the file might not be found at the specified path by attempting to fall back to a default path. After loading the content of the .gitignore file, it processes this content to extract and categorize the ignore patterns, which are then used throughout the lifetime of the GitignoreChecker instance to evaluate whether specific files or directories are ignored.
+Additionally, the constructor calls the private method `_load_gitignore_patterns`, which is responsible for loading and parsing the .gitignore file. This method returns a tuple containing two lists: one for folder patterns and another for file patterns. These lists are then assigned to the instance variables `self.folder_patterns` and `self.file_patterns`. This structured approach ensures that the GitignoreChecker has immediate access to the relevant patterns for processing files and directories according to the rules defined in the .gitignore file.
 
-**Note**: It is essential to provide valid paths for both the directory and the .gitignore file when creating an instance of GitignoreChecker. Incorrect paths or inaccessible files could lead to unexpected behavior, as the GitignoreChecker relies on these paths to function correctly. The effectiveness of the GitignoreChecker is directly related to the accuracy and comprehensiveness of the patterns defined in the .gitignore file, as these patterns determine which files and directories are ignored during checks.
+The `_load_gitignore_patterns` method is crucial for the initialization process, as it ensures that the patterns are correctly loaded and categorized. If the specified .gitignore file is not found, the method will attempt to load a default .gitignore file from a predetermined location, ensuring that the GitignoreChecker can still function even in the absence of a user-defined file.
+
+**Note**: It is important to ensure that the provided .gitignore file is correctly formatted and accessible at the specified path to avoid falling back to the default file unintentionally. Proper handling of file paths and existence checks is essential for the reliable operation of the GitignoreChecker.
 ***
 ### FunctionDef _load_gitignore_patterns(self)
-**_load_gitignore_patterns**: The function of _load_gitignore_patterns is to load and parse the .gitignore file, categorizing its patterns into folder and file patterns.
+**_load_gitignore_patterns**: The function of _load_gitignore_patterns is to load and parse the .gitignore file, then split the patterns into folder and file patterns.
 
-**Parameters**: This function does not accept any parameters as it is designed to be called within an instance of its class, utilizing instance attributes for its operations.
+**parameters**: The parameters of this Function.
+· self: An instance of the GitignoreChecker class, which contains the attributes necessary for loading the .gitignore file.
 
-**Code Description**: The `_load_gitignore_patterns` function is a crucial component of the GitignoreChecker class, responsible for handling .gitignore files within a given project. It operates by attempting to open and read the .gitignore file specified by the `gitignore_path` attribute of the GitignoreChecker instance. If the file is not found at the specified path, the function falls back to a default path, which is constructed relative to the file location of the function itself. This ensures that the function has a robust mechanism for locating a .gitignore file even in cases where the specified path is incorrect or the file has been moved.
+**Code Description**: The _load_gitignore_patterns method is responsible for reading the content of a .gitignore file from a specified path. If the specified file is not found, it falls back to a default .gitignore file located two directories up from the current file's directory. The method attempts to open the .gitignore file in read mode with UTF-8 encoding. If successful, it reads the entire content of the file into a string variable named gitignore_content. In the event of a FileNotFoundError, the method constructs a default path and attempts to read from that file instead.
 
-Upon successfully opening the .gitignore file, the function reads its content as a string. This content is then passed to the `_parse_gitignore` method, which extracts individual patterns from the .gitignore file, ignoring comments and empty lines. The extracted patterns are then further processed by the `_split_gitignore_patterns` method, which categorizes them into two lists: one for folder patterns and another for file patterns. This categorization is based on the syntax used in .gitignore files, where patterns intended to match directories typically end with a forward slash.
+Once the content of the .gitignore file is obtained, the method calls the _parse_gitignore function, passing the gitignore_content as an argument. This function processes the content and returns a list of patterns that are relevant for ignoring files and directories. Subsequently, the _load_gitignore_patterns method calls the _split_gitignore_patterns function, providing it with the list of patterns. This function categorizes the patterns into two separate lists: one for folder patterns and another for file patterns. Finally, _load_gitignore_patterns returns a tuple containing these two lists.
 
-The function ultimately returns a tuple containing these two lists, providing a structured way to access and utilize the parsed .gitignore patterns within other parts of the GitignoreChecker class or by external callers.
+This method is invoked during the initialization of the GitignoreChecker class, where it is used to populate the folder_patterns and file_patterns attributes with the relevant patterns extracted from the .gitignore file. This structured approach ensures that the patterns are readily available for further processing or application within the project.
 
-**Note**: It is important to note that this function relies on the correct setting of the `gitignore_path` attribute during the initialization of the GitignoreChecker instance. Incorrect paths or inaccessible files will trigger the fallback mechanism, which may not always result in the desired .gitignore file being used. Additionally, the function assumes that the .gitignore file follows the standard syntax and conventions, as the parsing logic is designed with these assumptions in mind.
+**Note**: It is essential to ensure that the .gitignore file is properly formatted and accessible at the specified path to avoid falling back to the default file unintentionally.
 
-**Output Example**: While the function does not produce a visual output, an example return value could be as follows, given a .gitignore file containing patterns for ignoring log files and a node_modules directory:
+**Output Example**: An example of the return value from _load_gitignore_patterns could be:
 ```python
-(["node_modules"], ["*.log"])
+(['src', 'docs'], ['README.md', 'LICENSE'])
 ```
-This example demonstrates how the function separates directory-specific patterns (e.g., "node_modules/") from file-specific patterns (e.g., "*.log"), facilitating targeted application of these patterns in file system operations or checks performed by the GitignoreChecker.
+In this example, the method would return a tuple where the first list contains folder patterns 'src' and 'docs', while the second list contains file patterns 'README.md' and 'LICENSE'.
 ***
 ### FunctionDef _parse_gitignore(gitignore_content)
-**_parse_gitignore**: The function of _parse_gitignore is to parse the content of a .gitignore file and return a list of patterns found within it.
+**_parse_gitignore**: The function of _parse_gitignore is to parse the content of a .gitignore file and return a list of patterns.
 
-**Parameters**:
-- **gitignore_content (str)**: The content of the .gitignore file as a string.
+**parameters**: The parameters of this Function.
+· gitignore_content: A string representing the content of the .gitignore file.
 
-**Code Description**:
-The `_parse_gitignore` function is designed to process the content of a .gitignore file, which is passed to it as a string. It aims to extract and return all the valid patterns specified within the file, ignoring any lines that are either empty or start with a hash symbol (`#`), which are considered comments in the context of a .gitignore file.
+**Code Description**: The _parse_gitignore function is designed to process the content of a .gitignore file, which typically contains rules for ignoring files and directories in a Git repository. The function takes a single argument, gitignore_content, which is expected to be a string containing the raw text of the .gitignore file.
 
-The function begins by initializing an empty list named `patterns`. It then splits the input string `gitignore_content` into individual lines and iterates over each line. Each line is stripped of leading and trailing whitespace using the `strip()` method to ensure that empty lines or lines with only whitespace are not processed further.
+The function begins by initializing an empty list called patterns. It then splits the gitignore_content into individual lines using the splitlines() method. For each line, it performs the following operations:
+1. It trims any leading or trailing whitespace using the strip() method.
+2. It checks if the line is not empty and does not start with a "#" character, which denotes a comment in .gitignore files.
+3. If the line meets these criteria, it appends the line to the patterns list.
 
-For each line, if it is not empty and does not start with a `#`, it is considered a valid pattern and is appended to the `patterns` list. This process effectively filters out comments and empty lines from the .gitignore content, focusing only on the patterns meant to be used for ignoring files and directories in Git operations.
+Once all lines have been processed, the function returns the patterns list, which contains only the relevant patterns extracted from the .gitignore content.
 
-This function is called by `_load_gitignore_patterns` within the same `GitignoreChecker` class. The `_load_gitignore_patterns` function is responsible for reading the .gitignore file's content and then utilizing `_parse_gitignore` to parse this content into a list of patterns. After parsing, `_load_gitignore_patterns` further processes these patterns to categorize them into folder and file patterns, showcasing a practical application of the `_parse_gitignore` function within the project's workflow.
+The _parse_gitignore function is called by the _load_gitignore_patterns method within the GitignoreChecker class. The _load_gitignore_patterns method is responsible for loading the content of a .gitignore file from a specified path. After reading the file content, it invokes _parse_gitignore to extract the patterns before further processing them. This relationship highlights the utility of _parse_gitignore as a helper function that simplifies the task of filtering out valid patterns from the potentially noisy content of a .gitignore file.
 
-**Note**:
-- The function assumes that the input string `gitignore_content` correctly represents the content of a .gitignore file. It does not perform any validation on the format of the .gitignore content itself.
-- Lines that are purely whitespace or start with `#` are ignored, as they are considered comments or empty lines in the context of a .gitignore file.
+**Note**: It is important to ensure that the input to _parse_gitignore is a properly formatted string representing the content of a .gitignore file. Lines that are empty or comments will be ignored in the output.
 
-**Output Example**:
-If the content of a .gitignore file is as follows:
+**Output Example**: An example of the return value from _parse_gitignore could be:
+```python
+["*.log", "temp/", "build/", "# Ignore all .env files"]
 ```
-# This is a comment
-*.log
-temp/
-```
-Then, calling `_parse_gitignore` with this content as input would return the following list:
-```
-["*.log", "temp/"]
-```
+In this example, the function would return a list containing the patterns that are relevant for ignoring files and directories, excluding any comments or empty lines.
 ***
 ### FunctionDef _split_gitignore_patterns(gitignore_patterns)
-**_split_gitignore_patterns**: The function of _split_gitignore_patterns is to divide .gitignore patterns into two distinct lists based on whether they apply to folders or files.
+**_split_gitignore_patterns**: The function of _split_gitignore_patterns is to separate .gitignore patterns into distinct lists for folder patterns and file patterns.
 
-**Parameters**:
-- **gitignore_patterns (list)**: A list of patterns extracted from a .gitignore file.
+**parameters**: The parameters of this Function.
+· gitignore_patterns: A list of patterns extracted from the .gitignore file.
 
-**Code Description**:
-The `_split_gitignore_patterns` function plays a crucial role in handling .gitignore patterns within the GitignoreChecker class. It takes a single parameter, `gitignore_patterns`, which is expected to be a list of strings. Each string in this list represents a pattern found in a .gitignore file.
+**Code Description**: The _split_gitignore_patterns function takes a list of patterns from a .gitignore file as input. It iterates through each pattern and checks whether it ends with a forward slash ("/"). If a pattern ends with "/", it is identified as a folder pattern, and the trailing slash is removed before appending it to the folder_patterns list. If a pattern does not end with "/", it is treated as a file pattern and is added to the file_patterns list. The function ultimately returns a tuple containing two lists: the first list includes all folder patterns, while the second list contains all file patterns.
 
-The function categorizes these patterns into two types: folder patterns and file patterns. This categorization is based on the observation that folder patterns in .gitignore files typically end with a forward slash ("/"). Therefore, the function iterates over each pattern in the provided list, checking if it ends with a "/". If it does, the pattern is considered a folder pattern, and the trailing slash is removed before adding it to the `folder_patterns` list. Patterns that do not end with a slash are treated as file patterns and are added directly to the `file_patterns` list.
+This function is called by the _load_gitignore_patterns method within the GitignoreChecker class. The _load_gitignore_patterns method is responsible for loading and parsing the contents of a .gitignore file. After reading the file, it utilizes the _parse_gitignore method to extract the patterns from the content. Once the patterns are obtained, _load_gitignore_patterns calls _split_gitignore_patterns to categorize these patterns into folder and file patterns before returning them as a tuple. This structured approach ensures that the patterns are organized for further processing or application within the project.
 
-This separation is essential for the GitignoreChecker's functionality, as it allows the checker to apply the correct patterns to directories and files when determining what to ignore.
+**Note**: It is important to ensure that the input list of gitignore_patterns is properly formatted according to .gitignore syntax to achieve accurate results when splitting the patterns.
 
-The function is called by `_load_gitignore_patterns`, another method within the GitignoreChecker class. `_load_gitignore_patterns` is responsible for reading the .gitignore file, parsing its contents into patterns, and then utilizing `_split_gitignore_patterns` to categorize these patterns appropriately. This separation of concerns enhances the modularity and readability of the code, allowing for easier maintenance and updates.
-
-**Note**:
-- It is important to ensure that the `gitignore_patterns` list is correctly populated with patterns from a .gitignore file before calling this function. Incorrect or malformed patterns may lead to unexpected behavior.
-- The function assumes that all folder patterns in the .gitignore file are correctly suffixed with a "/", which is a common convention but may not always be the case in every .gitignore file.
-
-**Output Example**:
-Given an input list `[".DS_Store", "node_modules/", "*.log"]`, the function would return the following tuple:
-- Folder patterns: `["node_modules"]`
-- File patterns: `[".DS_Store", "*.log"]`
-
-This output demonstrates how the function effectively separates folder-specific patterns from file-specific patterns, allowing for targeted application of these patterns in subsequent operations.
+**Output Example**: An example of the function's return value could be:
+```python
+(['src', 'docs'], ['README.md', 'LICENSE'])
+```
+In this example, the first list contains folder patterns 'src' and 'docs', while the second list contains file patterns 'README.md' and 'LICENSE'.
 ***
 ### FunctionDef _is_ignored(path, patterns, is_dir)
-**_is_ignored**: The function of _is_ignored is to determine if a given path matches any patterns specified, indicating whether it should be ignored or not.
+**_is_ignored**: The function of _is_ignored is to determine if a given path matches any specified patterns, indicating whether the path should be ignored.
 
-**Parameters**:
-- **path (str)**: The path to check against the patterns. This could be a file or directory path.
-- **patterns (list)**: A list of patterns to check the path against. These patterns can be simple strings or patterns that match filenames or directories.
-- **is_dir (bool)**: A boolean flag indicating whether the path being checked is a directory. Defaults to False.
+**parameters**: The parameters of this Function.
+· parameter1: path (str) - The path to check against the patterns.
+· parameter2: patterns (list) - A list of patterns that the path will be checked against.
+· parameter3: is_dir (bool) - A boolean indicating if the path is a directory; defaults to False.
 
-**Code Description**:
-The `_is_ignored` function is a utility designed to assess if a specific path should be ignored based on a list of patterns. It operates by iterating through each pattern provided in the `patterns` list and using the `fnmatch.fnmatch` method to check if the `path` matches any of these patterns. If a match is found, the function immediately returns `True`, indicating the path matches a pattern and should be ignored.
+**Code Description**: The _is_ignored function checks if the provided path matches any of the patterns in the given list. It utilizes the fnmatch module to perform pattern matching. The function iterates through each pattern in the patterns list and checks if the path matches the pattern directly. If the path is a directory (indicated by the is_dir parameter being True), it also checks if the pattern ends with a slash ("/") and if the path matches the pattern without the trailing slash. If any match is found, the function returns True, indicating that the path should be ignored. If no matches are found after checking all patterns, it returns False.
 
-Additionally, the function has a special consideration for directories. If the `is_dir` flag is set to `True` and a pattern ends with a "/", indicating it is intended to match directories, the function also checks if the path matches the pattern without the trailing slash. This allows for more flexible directory matching, accommodating patterns that are specifically meant to apply to directories.
+This function is called by the check_files_and_folders method within the GitignoreChecker class. The check_files_and_folders method is responsible for traversing a specified directory and checking each file and folder against the patterns defined for files and folders. It uses _is_ignored to filter out any directories and files that should be ignored based on the patterns provided. The result of this method is a list of files that are not ignored and have a '.py' extension, thus ensuring that only relevant files are returned for further processing.
 
-In the context of its usage within the project, specifically by the `check_files_and_folders` method of the `GitignoreChecker` class, `_is_ignored` plays a critical role in filtering out files and directories that should be ignored based on patterns derived from a `.gitignore` file or similar. This method utilizes `_is_ignored` to efficiently exclude ignored directories from further processing and to filter out individual files that do not match the desired criteria (in this case, files that are not ignored and have a '.py' extension).
+**Note**: It is important to ensure that the patterns provided are correctly formatted for fnmatch to work as expected. Additionally, the is_dir parameter should be set appropriately when checking directory paths to ensure accurate matching.
 
-**Note**:
-- It is important to ensure that the patterns provided to `_is_ignored` are correctly formatted and meaningful in the context of the file system and naming conventions being used. Incorrect patterns may lead to unexpected behavior.
-- The function assumes that the path and patterns are provided in a compatible format for `fnmatch.fnmatch`. Adjustments may be needed if working with raw patterns from a `.gitignore` file or similar sources.
-
-**Output Example**:
-```python
-# Assuming the patterns list contains patterns to ignore Python bytecode and directory 'build/'
-patterns = ['*.pyc', 'build/']
-print(_is_ignored('example.pyc', patterns))  # Output: True
-print(_is_ignored('build', patterns, is_dir=True))  # Output: True
-print(_is_ignored('src/example.py', patterns))  # Output: False
-```
+**Output Example**: If the function is called with the path "src/main.py" and the patterns ["*.py", "test/"], the expected return value would be True if "src/main.py" matches any of the patterns, indicating that it is not ignored. If the path were "src/test.py" and the patterns were ["test/"], the function would return True, indicating that it should be ignored.
 ***
 ### FunctionDef check_files_and_folders(self)
-**check_files_and_folders**: The function of check_files_and_folders is to identify and return a list of Python files in a given directory that are not ignored by gitignore patterns.
+**check_files_and_folders**: The function of check_files_and_folders is to check all files and folders in the specified directory against the defined gitignore patterns and return a list of files that are not ignored and have the '.py' extension.
 
-**Parameters**: This function does not accept any parameters except for the implicit `self` parameter, as it is a method of a class and operates on the class's instance variables.
+**parameters**: The parameters of this Function.
+· parameter1: None - This function does not take any parameters directly as it operates on the instance's attributes.
 
-**Code Description**: The `check_files_and_folders` method is designed to traverse a directory structure recursively, starting from a base directory specified in the instance variable `self.directory`. It filters out both files and directories that match patterns specified in a `.gitignore` file or equivalent, focusing specifically on files with a `.py` extension that are not meant to be ignored according to these patterns.
+**Code Description**: The check_files_and_folders method is responsible for traversing the directory specified by the instance variable self.directory. It utilizes the os.walk function to iterate through all directories and files within the specified path. For each directory, it filters out those that should be ignored based on the patterns defined in self.folder_patterns by calling the _is_ignored method with the is_dir parameter set to True.
 
-The method utilizes the `os.walk` function to iterate through the directory tree. For each directory encountered, it filters out subdirectories that should be ignored, based on the `self._is_ignored` method, which checks against `self.folder_patterns`. This ensures that the traversal does not descend into ignored directories, optimizing the process.
+For each file encountered, the method constructs the full file path and its relative path to the base directory. It then checks if the file should be ignored by calling the _is_ignored method again, this time with the file name and the patterns defined in self.file_patterns. Additionally, it checks if the file has a '.py' extension. If both conditions are satisfied (the file is not ignored and has a '.py' extension), the relative path of the file is added to the not_ignored_files list.
 
-For each file encountered in the traversal, the method constructs its full path and then its relative path with respect to `self.directory`. It then checks if the file should be ignored, using the `self._is_ignored` method with `self.file_patterns`. If a file is not to be ignored and has a `.py` extension, its relative path is added to the list `not_ignored_files`.
+The method ultimately returns a list of paths to Python files that are not ignored, allowing further processing of relevant files in the project.
 
-Finally, the method returns the list of relative paths to Python files that are not ignored. This list can be used for further processing, such as analyzing the Python files' structure or content.
+This method is called by the generate_overall_structure method in the FileHandler class. In this context, it is used to gather a list of files that should be processed from a repository, excluding any files that are ignored according to the gitignore patterns. The results from check_files_and_folders are then iterated over, and each file is further processed to generate the overall structure of the repository.
 
-**Note**: 
-- The effectiveness of this method relies on the accurate specification of ignore patterns in `self.file_patterns` and `self.folder_patterns`, which should be derived from a `.gitignore` file or similar. Incorrect or incomplete patterns may result in unwanted files being included or desired files being excluded.
-- The method assumes that the base directory (`self.directory`) is correctly set and accessible. Errors in setting this path could lead to incorrect results or runtime errors.
-- The returned file paths are relative to `self.directory`, which may require conversion to absolute paths for certain operations outside the scope of this method.
+**Note**: It is essential to ensure that the gitignore patterns are correctly defined and formatted for accurate matching. The method relies on the _is_ignored function to determine which files and directories should be excluded based on these patterns.
 
-**Output Example**: Assuming the base directory contains several Python files and directories, some of which are ignored by gitignore patterns, an example output might look like this:
-```python
-['src/main.py', 'tests/test_main.py']
-```
-This output indicates that `main.py` in the `src` directory and `test_main.py` in the `tests` directory are the Python files not ignored by the specified patterns.
+**Output Example**: If the method is executed in a directory containing files such as "script.py", "test_script.py", and "README.md", and the gitignore patterns include "*.py", the expected return value would be a list like ["script.py", "test_script.py"] if those files are not ignored.
 ***

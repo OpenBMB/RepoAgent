@@ -1,373 +1,392 @@
 ## ClassDef FileHandler
-**FileHandler**: The function of FileHandler is to manage file operations related to a repository, including reading, writing, and analyzing file content, as well as generating file and repository structures for documentation purposes.
+# Class `FileHandler`
 
-**Attributes**:
-- `file_path`: The relative path of the file within the repository.
-- `repo_path`: The path to the root of the repository.
-- `project_hierarchy`: The path to the project hierarchy JSON file, which is used to store the structure of the project.
+The `FileHandler` class provides a set of methods to interact with files within a Git repository, specifically for handling changes, reading file contents, extracting code information, and writing back changes to the repository. This class allows for tasks such as retrieving modified file versions, extracting function and class structures from code, and generating project file structures using Abstract Syntax Tree (AST) parsing.
 
-**Code Description**:
-The FileHandler class is designed to facilitate various file operations within a software repository. It provides functionalities such as reading the content of files, writing content to files, extracting code information, and generating documentation structures based on the code.
+## Methods Overview
 
-- The `read_file` method reads the content of the file specified by `file_path` and returns it as a string.
-- The `get_obj_code_info` method extracts information about a code object, such as a function or class, from a file. It returns a dictionary containing details like the type of the code object, its name, start and end line numbers, parameters, and whether it contains a return statement.
-- The `write_file` method writes a given content to a specified file path within the repository. It ensures the creation of necessary directories.
-- The `get_modified_file_versions` method retrieves the current and previous versions of a modified file, aiding in the analysis of changes.
-- The `get_end_lineno` method calculates the end line number of a code object, which is useful for documentation and analysis purposes.
-- The `add_parent_references` method enriches the abstract syntax tree (AST) by adding parent references to each node, facilitating hierarchical analysis of code objects.
-- The `get_functions_and_classes` method parses the content of a file to identify and list all functions and classes, including their parameters and hierarchical relationships.
-- The `generate_file_structure` method generates a structured representation of the functions and classes within a file, which can be used for documentation.
-- The `generate_overall_structure` method compiles the structures of all files within the repository that are not ignored by `.gitignore` or specified to be jumped over. It is crucial for generating comprehensive documentation of the repository.
-- The `convert_to_markdown_file` method converts the structured representation of a file into markdown format, which is ready for documentation purposes.
+### `__init__(self, repo_path, file_path)`
+Initializes a `FileHandler` instance with the given repository and file path.
 
-This class is utilized in various parts of the project to handle file-related operations, especially in the context of generating and updating documentation. For instance, it is used to initialize meta information about the repository, process file changes, and generate documentation for individual code objects. Its functionalities support the automated generation of documentation by analyzing the codebase, identifying changes, and structuring the information in a human-readable format.
+#### Parameters:
+- `repo_path` (str): The absolute path to the Git repository.
+- `file_path` (str): The relative path of the file within the repository.
 
-**Note**:
-- It is important to ensure that the `repo_path` and `file_path` are correctly set to reflect the actual structure of the repository.
-- The methods that parse and analyze code (like `get_functions_and_classes`) rely on the Python AST module, which means they are primarily designed to work with Python source files.
+### `read_file(self)`
+Reads the contents of the file specified by `file_path`.
 
-**Output Example**:
-An example output of the `get_obj_code_info` method might look like this:
+#### Returns:
+- `str`: The content of the current file.
+
+### `get_obj_code_info(self, code_type, code_name, start_line, end_line, params, file_path=None)`
+Retrieves detailed information about a given code object (e.g., function or class) in the file.
+
+#### Parameters:
+- `code_type` (str): The type of the code object (e.g., 'FunctionDef', 'ClassDef').
+- `code_name` (str): The name of the code object.
+- `start_line` (int): The starting line number of the code object.
+- `end_line` (int): The ending line number of the code object.
+- `params` (list): A list of parameters associated with the code object.
+- `file_path` (str, optional): The path to the file containing the code object. Defaults to `None`, in which case the `file_path` provided during initialization is used.
+
+#### Returns:
+- `dict`: A dictionary containing information about the code object, including its content, line numbers, and parameters.
+
+### `write_file(self, file_path, content)`
+Writes the provided content to a file at the specified path.
+
+#### Parameters:
+- `file_path` (str): The relative path of the file to write to.
+- `content` (str): The content to write into the file.
+
+### `get_modified_file_versions(self)`
+Retrieves the current and previous versions of a modified file.
+
+#### Returns:
+- `tuple`: A tuple containing:
+  - `current_version` (str): The content of the current version of the file.
+  - `previous_version` (str): The content of the previous version of the file (from the last Git commit).
+
+### `get_end_lineno(self, node)`
+Gets the end line number of a given AST node.
+
+#### Parameters:
+- `node`: The AST node for which to determine the end line number.
+
+#### Returns:
+- `int`: The end line number of the node, or `-1` if no line number is available.
+
+### `add_parent_references(self, node, parent=None)`
+Recursively adds a reference to the parent node for all child nodes in an Abstract Syntax Tree (AST).
+
+#### Parameters:
+- `node`: The AST node to start from.
+- `parent` (optional): The parent node, which defaults to `None`.
+
+#### Returns:
+- `None`
+
+### `get_functions_and_classes(self, code_content)`
+Extracts all functions, classes, and their parameters from a given code content, including hierarchical relationships.
+
+#### Parameters:
+- `code_content` (str): The code content to parse.
+
+#### Returns:
+- `list`: A list of tuples, each containing:
+  - The type of the node (e.g., `FunctionDef`, `ClassDef`),
+  - The name of the node,
+  - The starting line number,
+  - The ending line number,
+  - The list of parameters (if any).
+
+### `generate_file_structure(self, file_path)`
+Generates the file structure of a given file, including all functions, classes, and their parameters.
+
+#### Parameters:
+- `file_path` (str): The relative path of the file to process.
+
+#### Returns:
+- `list`: A list of dictionaries, each containing code information for a function or class in the file.
+
+### `generate_overall_structure(self, file_path_reflections, jump_files)`
+Generates the overall file structure for a repository, parsing all relevant files and skipping files that are either ignored or not staged.
+
+#### Parameters:
+- `file_path_reflections` (dict): A dictionary mapping file paths to their corresponding reflections (for handling fake files or renamed files).
+- `jump_files` (list): A list of files to skip during processing.
+
+#### Returns:
+- `dict`: A dictionary representing the overall structure of the repository, with file paths as keys and lists of code object information as values.
+
+### `convert_to_markdown_file(self, file_path=None)`
+Converts the content of a file to markdown format.
+
+#### Parameters:
+- `file_path` (str, optional): The relative path of the file to convert. If not provided, the default `file_path` will be used.
+
+#### Returns:
+- `str`: The content of the file in markdown format.
+
+#### Raises:
+- `ValueError`: If no file object is found for the specified file path.
+
+---
+
+## Usage Example
+
 ```python
-{
-    'type': 'FunctionDef',
-    'name': 'my_function',
-    'md_content': [],
-    'code_start_line': 10,
-    'code_end_line': 20,
-    'params': ['param1', 'param2'],
-    'have_return': True,
-    'code_content': 'def my_function(param1, param2):\n    return param1 + param2',
-    'name_column': 4
-}
+# Initialize the FileHandler with the repository path and file path
+file_handler = FileHandler(repo_path="/path/to/repo", file_path="src/example.py")
+
+# Read the content of the file
+file_content = file_handler.read_file()
+
+# Get code information for a function named 'example_function'
+code_info = file_handler.get_obj_code_info(
+    code_type="FunctionDef",
+    code_name="example_function",
+    start_line=10,
+    end_line=20,
+    params=["param1", "param2"]
+)
+
+# Write new content to the file
+file_handler.write_file(file_path="src/example.py", content="new content")
+
+# Get the current and previous versions of the modified file
+current_version, previous_version = file_handler.get_modified_file_versions()
+
+# Generate the file structure for a given file
+file_structure = file_handler.generate_file_structure(file_path="src/example.py")
+
+# Generate the overall file structure for the repository, skipping specified files
+repo_structure = file_handler.generate_overall_structure(file_path_reflections={}, jump_files=["skip_file.py"])
+
+# Convert the file content to markdown
+markdown_content = file_handler.convert_to_markdown_file(file_path="src/example.py")
 ```
-This dictionary contains detailed information about a function named `my_function`, including its type, name, start and end line numbers, parameters, and its content.
+
+## Dependencies
+- `os`: For file path manipulation and file operations.
+- `gitpython`: For interacting with the Git repository.
+- `ast`: For parsing Python code into an Abstract Syntax Tree.
+- `tqdm`: For progress bar display during repository processing.
+- `logging`: For logging error messages.
+
+The `FileHandler` class provides an effective set of utilities for managing and analyzing code files in a Git repository, making it ideal for scenarios involving file change tracking, code analysis, and file versioning.
 ### FunctionDef __init__(self, repo_path, file_path)
-**__init__**: The function of __init__ is to initialize a FileHandler object with specific repository and file paths, and to set up the path for the project hierarchy configuration file.
+**__init__**: The function of __init__ is to initialize an instance of the FileHandler class with the specified repository and file paths.
 
-**Parameters**:
-- **repo_path**: The path to the root directory of the repository. This is the base path where the repository resides on the filesystem.
-- **file_path**: The path to a specific file within the repository. This path is relative to the repository's root directory.
+**parameters**: The parameters of this Function.
+· repo_path: This parameter represents the path to the repository where the project files are located. It is expected to be an absolute or relative path that points to the root of the repository.
+· file_path: This parameter is the path to a specific file within the repository. It should be a path relative to the root directory of the repository.
 
-**Code Description**:
-The `__init__` method is a constructor for the `FileHandler` class. It takes two arguments: `repo_path` and `file_path`. These parameters are essential for setting up the FileHandler object to work with files within a specific repository.
+**Code Description**: The __init__ method serves as the constructor for the FileHandler class. It initializes the instance by setting two attributes: `file_path` and `repo_path`. The `file_path` attribute is assigned the value of the `file_path` parameter, which is intended to be relative to the root directory of the repository. The `repo_path` attribute is similarly assigned the value of the `repo_path` parameter, establishing a reference to the repository's location.
 
-- `self.file_path` is assigned the value of `file_path`, which represents the path to a file relative to the root of the repository. This path is used by other methods of the `FileHandler` class to access or manipulate the specified file.
-- `self.repo_path` is assigned the value of `repo_path`, which is the absolute path to the root directory of the repository. This path is crucial for constructing absolute paths to files and directories within the repository.
-- `self.project_hierarchy` is constructed using `os.path.join` to concatenate `repo_path`, a configuration value `CONFIG["project_hierarchy"]`, and the filename `"project_hierarchy.json"`. This results in the absolute path to a JSON file that presumably contains information about the project's hierarchical structure. The `CONFIG` variable is assumed to be a global or otherwise accessible dictionary that contains configuration settings for the project, including the relative path to where project hierarchy information is stored.
+Additionally, the method retrieves the current project settings by invoking the `get_setting` method from the SettingsManager class. This call ensures that the FileHandler instance has access to the latest configuration settings defined for the project. The retrieved settings are then used to construct the `project_hierarchy` attribute, which combines the target repository path with the hierarchy name specified in the project settings. This hierarchical structure is essential for managing files and directories within the project context.
 
-**Note**:
-- It is important to ensure that `repo_path` is an absolute path to avoid any ambiguity or errors when accessing files within the repository.
-- The `file_path` should be carefully provided relative to the repository's root directory to ensure correct file access and manipulation.
-- The `CONFIG` dictionary must be properly configured and accessible within the scope of this method, specifically containing a valid path under the key `"project_hierarchy"`, for the `self.project_hierarchy` attribute to be correctly set up. This configuration is essential for the `FileHandler` to locate and interact with the project hierarchy information.
+The relationship with the SettingsManager is critical, as it centralizes the configuration management for the project. By utilizing the `get_setting` method, the FileHandler class ensures that it operates with the most up-to-date settings, which may include paths, logging configurations, and other project-specific parameters. This design promotes consistency and reduces the risk of errors that could arise from hardcoded values or outdated configurations.
+
+**Note**: It is important to ensure that the SettingsManager is properly configured before instantiating the FileHandler class. Any misconfiguration in the settings may lead to runtime errors or unexpected behavior when accessing the project hierarchy or file paths.
 ***
 ### FunctionDef read_file(self)
-**read_file**: The function of read_file is to read and return the content of a file associated with the FileHandler instance.
+**read_file**: read_file的功能是读取当前更改文件的内容。
 
-**Parameters**: This function does not take any parameters apart from the implicit `self` parameter, which represents the instance of the `FileHandler` class through which the function is called.
-
-**Code Description**: The `read_file` function is a crucial component of the FileHandler class, designed to handle the reading of file contents within a repository. It constructs an absolute file path by combining the repository path (`repo_path`) and the relative file path (`file_path`) stored within the FileHandler instance. The function then opens the file in read mode with UTF-8 encoding to ensure compatibility with a wide range of text formats and reads its entire content into a string. Finally, it returns this string to the caller.
-
-This function plays a significant role in the project, particularly in scenarios where file contents need to be processed or analyzed. For instance, in the `Runner` class's `add_new_item` method, `read_file` is used to retrieve the content of a newly added file so that its structure can be analyzed and documented. Similarly, in the `process_file_changes` method, it is employed to fetch the content of files that have been modified, allowing the system to identify structural changes and update documentation accordingly. These use cases underscore the function's importance in enabling dynamic documentation generation and update processes based on file content within the project.
-
-**Note**: It is important to ensure that the `repo_path` and `file_path` attributes of the FileHandler instance are correctly set before calling `read_file`. The function assumes these paths are valid and will raise an error if the constructed file path does not exist or is inaccessible.
-
-**Output Example**:
-Assuming the file located at the constructed absolute file path contains the text "Hello, world!", the `read_file` function would return:
-```
-"Hello, world!"
-```
-***
-### FunctionDef get_obj_code_info(self, code_type, code_name, start_line, end_line, params, file_path)
-**get_obj_code_info**: The function of `get_obj_code_info` is to retrieve and compile detailed information about a specific segment of code within a file.
-
-**Parameters**:
-- `code_type` (str): Specifies the type of the code (e.g., function, class).
-- `code_name` (str): The name identifier of the code segment.
-- `start_line` (int): The line number where the code segment begins.
-- `end_line` (int): The line number where the code segment ends.
-- `params` (str): Parameters associated with the code segment.
-- `file_path` (str, optional): The path to the file containing the code. If not provided, a default path associated with the `FileHandler` instance is used.
-
-**Code Description**:
-The `get_obj_code_info` function is designed to extract and organize information about a code segment, identified by its start and end lines within a file. This function is a critical component of the `FileHandler` class, facilitating the analysis and documentation of code structures within a repository.
-
-Upon invocation, the function initializes a dictionary to store the code information, including its type, name, parameters, and line numbers. It then reads the file, either from a specified path or a default path, and extracts the code segment's content. Additionally, it identifies the column position of the code name in its first line and checks for the presence of a return statement within the code segment.
-
-The function encapsulates this information in a dictionary, which includes the type, name, starting and ending line numbers, parameters, presence of a return statement, the actual code content, and the column position of the code name. This structured information is crucial for generating documentation and analyzing the code's structure and behavior.
-
-**Relationship with Callers**:
-- In the `generate_file_structure` method of the `FileHandler` class, `get_obj_code_info` is used to gather information about each code segment identified within a file. This information is then compiled into a list that represents the file's structure, aiding in the documentation process.
-- The `add_new_item` method in the `Runner` class utilizes `get_obj_code_info` to extract information about code segments for new projects. This information is used to generate documentation and update project structure information stored in JSON format.
-
-**Note**:
-- The function assumes that the file containing the code segment is accessible from the provided or default file path.
-- The line numbers (`start_line` and `end_line`) are inclusive and should accurately reflect the code segment's boundaries.
-- The function does not perform syntax or semantic analysis of the code content; it primarily focuses on structural and basic behavioral aspects (e.g., presence of a return statement).
-
-**Output Example**:
-```python
-{
-    "type": "function",
-    "name": "example_function",
-    "md_content": [],
-    "code_start_line": 10,
-    "code_end_line": 20,
-    "params": "param1, param2",
-    "have_return": True,
-    "code_content": "def example_function(param1, param2):\n    return param1 + param2",
-    "name_column": 4
-}
-```
-This example output represents the information dictionary for a hypothetical function `example_function`, detailing its structure and content within a file.
-***
-### FunctionDef write_file(self, file_path, content)
-**write_file**: The function of write_file is to write content to a file at a specified path.
-
-**Parameters**:
-- **file_path** (str): The relative path of the file where the content will be written.
-- **content** (str): The content to be written to the file.
+**parameters**: 该函数没有参数。
 
 **Code Description**: 
-The `write_file` function is designed to facilitate the writing of content to a file within a repository. It first checks if the provided `file_path` is an absolute path (i.e., starts with "/"). If it is, the leading "/" is removed to ensure the path is relative. This is crucial because the function constructs an absolute path by joining the `file_path` with a base path stored in `self.repo_path`, which represents the root directory of the repository.
+read_file函数用于读取指定路径的文件内容。它首先通过os.path.join方法将存储库路径（repo_path）和文件路径（file_path）组合成一个绝对文件路径（abs_file_path）。接着，函数以只读模式打开该文件，并使用UTF-8编码读取文件的全部内容。读取完成后，函数将文件内容作为字符串返回。
 
-After constructing the absolute file path, the function ensures that the directory structure needed to accommodate the file exists. This is done using `os.makedirs`, with `exist_ok=True` to avoid raising an error if the directory already exists. Finally, the content is written to the file using `open` with write ("w") mode and specifying UTF-8 encoding to support a wide range of characters.
+在项目中，read_file函数被多个对象调用。具体来说，在repo_agent/runner.py中的add_new_item和process_file_changes方法中都有调用。add_new_item方法使用read_file函数来获取文件的源代码，以便提取文件中的函数和类信息，并生成相应的文档。process_file_changes方法则在处理文件变更时调用read_file，获取整个Python文件的代码，以便分析文件的变更情况。这表明read_file函数在文件处理和文档生成的过程中起到了关键作用。
 
-This function plays a critical role in the project's file management system, particularly in the context of generating and updating documentation. It is called in two scenarios within the project:
-1. **Adding New Items**: When new projects are added to the JSON file and corresponding documentation needs to be generated, `write_file` is used to write markdown content to documentation files. This process involves generating documentation for all objects within a new file and updating the project's JSON structure to reflect these additions.
-2. **Processing File Changes**: When changes are detected in existing files, `write_file` is employed to update the markdown documentation corresponding to these files. This ensures that the project's documentation remains in sync with the codebase, reflecting any additions, deletions, or modifications to the code structures.
+**Note**: 使用该函数时，请确保提供的repo_path和file_path是有效的路径，以避免文件读取错误。
 
-**Note**: 
-- It is important to ensure that the `file_path` provided does not lead to unintended directory traversal. The function assumes that the path is relative to `self.repo_path`, and any leading "/" is removed to enforce this assumption.
-- The function overwrites the content of the file if it already exists. Care should be taken to avoid accidental data loss, especially when updating existing files.
+**Output Example**: 假设文件内容为“Hello, World!”，则该函数的返回值将是字符串“Hello, World!”。
+***
+### FunctionDef get_obj_code_info(self, code_type, code_name, start_line, end_line, params, file_path)
+**get_obj_code_info**: The function of get_obj_code_info is to retrieve detailed information about a specific code segment within a file.
+
+**parameters**: The parameters of this Function.
+· code_type: A string representing the type of the code being analyzed.
+· code_name: A string indicating the name of the code object.
+· start_line: An integer specifying the starting line number of the code segment.
+· end_line: An integer specifying the ending line number of the code segment.
+· params: A collection of parameters associated with the code.
+· file_path: An optional string that provides the path to the file. If not specified, it defaults to None.
+
+**Code Description**: The get_obj_code_info function is designed to extract and return information about a specific segment of code from a file. It takes in several parameters that define the characteristics of the code segment, including its type, name, and the range of lines it occupies. The function initializes a dictionary, code_info, to store various attributes related to the code segment.
+
+The function opens the specified file in read mode and reads all lines into a list. It then concatenates the lines from start_line to end_line to form the complete code content. Additionally, it checks for the presence of the code_name in the first line of the specified range to determine its column position. The function also checks if the code segment contains a return statement, which is a common indicator of a function's output.
+
+Finally, the function populates the code_info dictionary with the gathered information, including the type, name, start and end lines, parameters, the presence of a return statement, the code content, and the column position of the code name. The populated dictionary is then returned as the output of the function.
+
+**Note**: It is important to ensure that the specified start_line and end_line are valid and within the bounds of the file's total line count to avoid potential errors when reading the file. The file_path parameter should be correctly set to point to the desired file location.
+
+**Output Example**: A possible return value of the function could look like this:
+{
+    "type": "function",
+    "name": "calculate_sum",
+    "md_content": [],
+    "code_start_line": 10,
+    "code_end_line": 15,
+    "params": ["a", "b"],
+    "have_return": true,
+    "code_content": "def calculate_sum(a, b):\n    return a + b\n",
+    "name_column": 4
+}
+***
+### FunctionDef write_file(self, file_path, content)
+**write_file**: write_file的功能是将内容写入指定路径的文件中。
+
+**parameters**: 该函数的参数如下：
+· parameter1: file_path (str) - 文件的相对路径。
+· parameter2: content (str) - 要写入文件的内容。
+
+**Code Description**: write_file函数用于将指定内容写入到给定的文件路径。首先，该函数会检查file_path是否为绝对路径，如果是，则去掉路径开头的斜杠，以确保file_path是相对路径。接着，函数通过os.path.join将repo_path与file_path组合成绝对路径abs_file_path，并使用os.makedirs确保该路径的目录存在，如果不存在则创建它。然后，函数以写入模式打开文件，并将内容写入该文件，使用utf-8编码格式。
+
+在项目中，write_file函数被Runner类中的add_new_item和process_file_changes两个方法调用。在add_new_item方法中，write_file用于将生成的Markdown文档写入到指定的.md文件中，确保新添加的项目的文档能够被正确保存。而在process_file_changes方法中，write_file同样用于更新Markdown文档，确保在文件变更后，文档内容能够及时反映最新的代码结构信息。这两个调用场景表明，write_file函数在文件处理和文档生成中起到了重要的作用。
+
+**Note**: 使用该函数时，请确保提供的file_path是相对路径，并且确保repo_path已正确设置，以避免文件写入错误。
 ***
 ### FunctionDef get_modified_file_versions(self)
-**get_modified_file_versions**: The function retrieves the current and previous versions of a modified file within a repository.
+**get_modified_file_versions**: get_modified_file_versions的功能是获取被修改文件的当前版本和之前版本。
 
-**Parameters**: This function does not accept any parameters directly as it is designed to be called on an instance of the FileHandler class, which should have `repo_path` and `file_path` attributes already set.
+**parameters**: 该函数没有参数。
 
-**Code Description**: The `get_modified_file_versions` function is a crucial component of the FileHandler class, designed to interact with a Git repository to fetch the current and previous versions of a specified file. It first initializes a Git repository object using the `repo_path` attribute of the FileHandler instance. This repository object is then used to perform operations related to Git.
+**Code Description**: get_modified_file_versions函数用于获取指定文件的当前版本和上一个版本。首先，它通过git库获取当前工作目录中指定文件的内容，作为当前版本。然后，它通过访问git提交历史记录，获取该文件在最近一次提交中的内容，作为之前版本。如果文件在之前的提交中不存在（例如，文件是新添加的），则之前版本将被设置为None。最终，该函数返回一个包含当前版本和之前版本的元组。
 
-The function proceeds to read the current version of the file directly from the working directory using the `file_path` attribute. It opens the file in read mode, ensuring it reads text by specifying the encoding as "utf-8", and stores the content in `current_version`.
+该函数在项目中的调用场景主要出现在Runner类的get_new_objects方法中。在该方法中，get_modified_file_versions被用来获取当前和之前版本的文件内容，以便比较这两个版本之间的差异。具体来说，get_new_objects方法利用当前版本和之前版本的信息，解析出新增和删除的对象，从而实现对文件内容变化的检测。
 
-To obtain the previous version of the file, the function retrieves the last commit affecting the specified file using the `iter_commits` method of the repository object, limited to the most recent commit (`max_count=1`) that modified the specified file path. If such a commit exists, it attempts to read the file's content from this commit. If the file does not exist in the commit (indicating it might be a new addition), `previous_version` is set to None, acknowledging that there is no previous version available.
+**Note**: 使用该函数时，请确保指定的文件路径正确，并且该文件在git仓库中存在，以避免KeyError异常。
 
-This function is integral to tracking changes in files within a Git repository, especially for applications that need to analyze or process these changes, such as determining new or deleted objects in the file across versions.
-
-In the context of its calling situation within the project, specifically by the `get_new_objects` method in `runner.py`, `get_modified_file_versions` provides the necessary data to compare the current and previous versions of a Python file. This comparison is used to identify new and deleted objects (functions or classes) by parsing the content of these versions, highlighting its importance in enabling version-based analysis and processing within the project.
-
-**Note**: It is essential to ensure that the FileHandler instance calling this function has valid `repo_path` and `file_path` attributes that correctly point to the Git repository and the file of interest, respectively. Additionally, the function assumes that the file exists in the current working directory of the repository and that the repository's history is accessible for retrieving the previous version.
-
-**Output Example**:
-```python
-("<current version content>", "<previous version content>")
+**Output Example**: 可能的返回值示例为：
 ```
-In this example, the first element of the tuple is a string containing the entire content of the file as it currently exists in the working directory, and the second element is a string containing the content of the file from the last commit in which it was modified, or `None` if the file was not present in the last commit.
+(
+    "def new_function():\n    pass\n", 
+    "def old_function():\n    pass\n"
+)
+```
 ***
 ### FunctionDef get_end_lineno(self, node)
-**get_end_lineno**: The function of `get_end_lineno` is to determine the ending line number of a specified node within a file.
+**get_end_lineno**: get_end_lineno的功能是获取给定节点的结束行号。
 
-**Parameters**:
-- **node**: The node for which the end line number is to be found. This node is expected to be part of an Abstract Syntax Tree (AST) representing the structure of Python code.
+**parameters**: 此函数的参数。
+· parameter1: node - 要查找结束行号的节点。
 
-**Code Description**:
-The `get_end_lineno` function plays a crucial role in analyzing Python code by providing the ability to find the end line number of a given node within an AST. This is particularly useful when dealing with nodes that represent constructs such as functions, classes, or any block of code that spans multiple lines.
+**Code Description**: get_end_lineno函数用于获取AST（抽象语法树）节点的结束行号。首先，该函数检查传入的节点是否具有行号属性。如果节点没有行号，则返回-1，表示该节点没有有效的行号。接下来，函数初始化一个变量end_lineno为节点的行号，并遍历该节点的所有子节点。对于每个子节点，函数尝试获取其结束行号，如果子节点没有结束行号，则递归调用get_end_lineno函数来获取其结束行号。只有当子节点的结束行号有效时，end_lineno才会被更新为子节点的结束行号和当前节点的结束行号中的较大值。最终，函数返回计算得到的结束行号。
 
-The function starts by checking if the provided node has the attribute `lineno`, which is a standard attribute in AST nodes representing the starting line number. If the node does not have this attribute, the function returns `-1`, indicating that the end line number could not be determined.
+该函数在get_functions_and_classes函数中被调用，用于获取每个函数或类节点的结束行号。get_functions_and_classes函数解析整个代码内容，遍历AST树中的所有节点，并将每个函数和类的相关信息（包括开始行号和结束行号）收集到一个列表中。通过调用get_end_lineno，get_functions_and_classes能够准确地获取每个节点的结束行号，从而提供更完整的节点信息。
 
-If the node has a `lineno` attribute, the function initializes `end_lineno` with this value. It then iterates over all child nodes of the given node using `ast.iter_child_nodes(node)`. For each child node, it attempts to find the child's end line number. This is done by first trying to directly access the `end_lineno` attribute of the child. If this attribute is not present, the function recursively calls itself with the child node as the argument to determine the child's end line number.
+**Note**: 使用此代码时，请确保传入的节点是有效的AST节点，并且具有相应的行号属性，以避免返回-1的情况。
 
-During the iteration, if a child node has a valid end line number (`child_end > -1`), the function updates `end_lineno` to be the maximum of the current `end_lineno` and the child's end line number. This ensures that `end_lineno` represents the furthest line number reached by the node or any of its descendants.
-
-This function is utilized within the project, specifically in the `get_functions_and_classes` method of the `FileHandler` class. In that context, `get_end_lineno` is used to determine the ending line numbers of functions and classes within a Python file. This information, along with the starting line number, name, and parameters of the functions and classes, is compiled into a list of tuples. This list serves as a comprehensive overview of the code structure, facilitating further analysis or manipulation of the code content.
-
-**Note**:
-- The function assumes that the input `node` is part of an AST generated by the `ast` module. Therefore, it is important to ensure that the node is correctly parsed and represents a valid structure within Python code before calling this function.
-- The function's ability to accurately determine the end line number depends on the presence of `lineno` and `end_lineno` attributes in the AST nodes. These attributes are typically available in AST nodes generated for Python code but may vary based on the Python version and the specifics of the AST generation process.
-
-**Output Example**:
-If the function is called with a node representing a Python function that starts on line 10 and ends on line 20, the function would return `20`. If the node does not have a line number, the function would return `-1`.
+**Output Example**: 假设传入的节点的行号为10，且其子节点的结束行号为15，则该函数的返回值将为15。
 ***
 ### FunctionDef add_parent_references(self, node, parent)
-**add_parent_references**: The function of add_parent_references is to recursively add a parent reference to each node in an Abstract Syntax Tree (AST).
+**add_parent_references**: add_parent_references的功能是为抽象语法树（AST）中的每个节点添加父引用。
 
-**Parameters**:
-- **node**: The current node in the AST being processed.
-- **parent** (Optional): The parent node of the current node. Defaults to None if the current node is the root of the AST.
+**parameters**: 该函数的参数如下：
+· parameter1: node - 当前在AST中的节点。
+· parameter2: parent - 当前节点的父节点，默认为None。
 
-**Code Description**:
-The `add_parent_references` function is a crucial component within the `FileHandler` class, designed to enhance the AST by adding parent references to each node. This augmentation allows for backward navigation within the tree, which is not natively supported by the AST structure provided by Python's `ast` module.
+**Code Description**: add_parent_references函数用于遍历给定的抽象语法树（AST）节点，并为每个节点添加一个指向其父节点的引用。函数首先通过ast.iter_child_nodes(node)获取当前节点的所有子节点，然后将当前节点（node）赋值给每个子节点的parent属性。接着，函数递归调用自身以处理每个子节点，确保所有节点都能正确地引用其父节点。
 
-The function operates recursively, starting from a given node (typically the root of the AST) and traversing through all its child nodes. For each child node encountered, the function assigns the current node as its parent (`child.parent = node`) and then calls itself with the child node as the new current node and the current node as the new parent. This process continues until all nodes in the AST have been processed and have had parent references added to them.
+该函数在get_functions_and_classes方法中被调用。get_functions_and_classes的主要功能是解析给定的代码内容，提取出所有函数和类及其参数，并建立它们之间的层级关系。在解析AST树时，首先调用add_parent_references函数，以确保每个节点都能访问到其父节点的信息，这对于后续的层级关系分析至关重要。通过这种方式，get_functions_and_classes能够准确地构建出函数和类的层级结构，提供更清晰的代码解析结果。
 
-This function is particularly useful in scenarios where understanding the hierarchical relationship between nodes is necessary. For example, in the context of the `get_functions_and_classes` method within the same `FileHandler` class, `add_parent_references` is invoked to preprocess the AST. This preprocessing step is critical for enabling the subsequent extraction of functions, classes, and their relationships, including hierarchical ones, from the code content being analyzed. By having parent references available, it becomes feasible to navigate the AST in both directions (towards the children and towards the parent), thereby facilitating more complex analyses such as determining the scope of variables or understanding the nesting of functions and classes.
-
-**Note**:
-- It is important to ensure that the AST passed to this function is correctly formed and represents the structure of the code accurately. Malformed ASTs could lead to incorrect parent references being added or the function failing to process the tree entirely.
-- The function modifies the AST in-place by adding parent references to the nodes. Therefore, if the original AST is needed for other purposes without these modifications, it should be cloned before passing it to this function.
-- This function does not return any value as it modifies the AST in-place.
+**Note**: 使用该函数时，请确保传入的节点是有效的AST节点，并注意在递归调用时可能导致的栈溢出问题，尤其是在处理深层嵌套的AST时。
 ***
 ### FunctionDef get_functions_and_classes(self, code_content)
-**get_functions_and_classes**: The function of get_functions_and_classes is to retrieve all functions and classes from a given code content, along with their parameters (if any), and their hierarchical relationships.
+**get_functions_and_classes**: get_functions_and_classes的功能是检索所有函数、类及其参数（如果有的话）以及它们的层级关系。
 
-**Parameters**:
-- **code_content**: The code content of the whole file to be parsed. This is a string containing the source code from which functions and classes are to be extracted.
+**parameters**: 此函数的参数如下：
+· parameter1: code_content - 要解析的整个文件的代码内容。
 
-**Code Description**:
-The `get_functions_and_classes` function is designed to parse Python code content and extract a comprehensive list of functions and classes defined within. It utilizes the `ast` module to parse the given code content into an Abstract Syntax Tree (AST). Before extracting functions and classes, it calls `add_parent_references` to enhance the AST by adding parent references to each node, enabling the identification of hierarchical relationships between nodes.
+**Code Description**: get_functions_and_classes函数用于解析给定的代码内容，提取出所有函数和类的相关信息，包括它们的名称、起始行号、结束行号、父节点名称以及参数列表。该函数首先使用ast.parse将代码内容转换为抽象语法树（AST），然后调用add_parent_references函数为每个节点添加父引用，以便后续分析时能够访问到父节点的信息。
 
-The function iterates over all nodes in the AST using `ast.walk`, filtering for nodes that are instances of `ast.FunctionDef`, `ast.ClassDef`, or `ast.AsyncFunctionDef`. For each of these nodes, it determines the starting line number directly from the node's `lineno` attribute. The ending line number is obtained by calling the `get_end_lineno` method, which recursively finds the maximum line number reached by the node or any of its descendants.
+接下来，函数遍历AST树中的所有节点，检查每个节点是否为函数定义（FunctionDef）、类定义（ClassDef）或异步函数定义（AsyncFunctionDef）。对于每个符合条件的节点，函数获取其起始行号和结束行号，并提取参数列表。最终，所有收集到的信息以元组的形式存储在一个列表中并返回。
 
-Parameters of functions are extracted by iterating over `node.args.args` and collecting the `arg` attribute of each parameter. The function compiles a list of tuples, each representing a function or class. Each tuple contains the type of the node (`FunctionDef`, `ClassDef`, `AsyncFunctionDef`), the name of the node, the starting line number, the ending line number, and a list of parameters.
+该函数在多个地方被调用，例如在generate_file_structure函数中用于生成文件结构时，和在add_new_item函数中用于处理新增项目时。通过调用get_functions_and_classes，其他函数能够获取到代码中的结构信息，从而进行进一步的处理和文档生成。
 
-**Note**:
-- The function assumes the input `code_content` is valid Python code. Invalid or syntactically incorrect code may lead to parsing errors.
-- The hierarchical relationships are determined based on the AST structure. However, this version of the function does not include the parent node's name in the output tuples due to commented-out sections of the code that would otherwise perform this task.
-- The function modifies the AST in-place by adding parent references. If the original AST is needed for other purposes without these modifications, it should be cloned before passing it to this function.
+**Note**: 使用此函数时，请确保传入的代码内容是有效的Python代码，以便能够正确解析AST并提取信息。
 
-**Output Example**:
-An example output of this function could look like this:
-```python
+**Output Example**: 假设传入的代码内容包含以下函数和类定义，函数的返回值可能如下所示：
 [
-    ('FunctionDef', 'my_function', 10, 20, ['param1', 'param2']),
-    ('ClassDef', 'MyClass', 22, 30, []),
-    ('FunctionDef', 'another_function', 32, 40, ['arg1'])
+    ('FunctionDef', 'AI_give_params', 86, 95, None, ['param1', 'param2']),
+    ('ClassDef', 'PipelineEngine', 97, 104, None, []),
+    ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine', ['param1'])
 ]
-```
-This output indicates that the code contains a function named `my_function` starting at line 10 and ending at line 20 with two parameters, a class named `MyClass` between lines 22 and 30 with no parameters, and another function named `another_function` from line 32 to 40 with one parameter.
 ***
 ### FunctionDef generate_file_structure(self, file_path)
-**generate_file_structure**: The function of `generate_file_structure` is to generate the file structure for a given file path.
+**generate_file_structure**: generate_file_structure的功能是生成给定文件路径的文件结构。
 
-**Parameters**:
-- `file_path` (str): The relative path of the file for which the structure is to be generated.
+**parameters**: 此函数的参数如下：
+· parameter1: file_path (str): 文件的相对路径。
 
-**Code Description**:
-The `generate_file_structure` function is a method of the `FileHandler` class designed to analyze a file's content and extract its structural components, such as functions and classes, including their details like type, name, start and end lines, and parameters. It operates by reading the content of a file located at a specified path relative to the repository's root directory. This is achieved by combining the repository path stored in `self.repo_path` with the provided `file_path`.
+**Code Description**: generate_file_structure函数用于生成指定文件路径的文件结构信息。该函数首先打开指定路径的文件，并读取其内容。接着，它调用get_functions_and_classes方法来解析文件内容，提取出所有函数和类的相关信息，包括它们的名称、起始行号、结束行号及参数列表。解析得到的结构信息以元组的形式存储在一个列表中。
 
-Upon reading the file, the method utilizes another function, `get_functions_and_classes`, to parse the file's content and identify all functions and classes within it. This parsing process results in a list of structures, where each structure contains information about a specific code segment, such as its type (function or class), name, start line, end line, and parameters.
+在获取到所有结构信息后，函数会遍历这些信息，并调用get_obj_code_info方法来获取每个对象的详细代码信息，包括对象的类型、名称、起始和结束行号、参数等。最终，所有收集到的对象信息以列表的形式返回。
 
-For each identified structure, the method calls `get_obj_code_info`, which further processes each structure to compile detailed information, including the code segment's content and additional metadata like the presence of a return statement and the column position of the code name. This information is compiled into a dictionary for each code segment.
+该函数被generate_overall_structure函数调用，用于生成目标仓库中所有文件的结构信息。generate_overall_structure函数会遍历所有未被忽略的文件，并对每个文件调用generate_file_structure，以获取其结构信息并存储在repo_structure字典中。
 
-The method returns a list of dictionaries, with each dictionary representing the detailed information of a code segment within the file. This list serves as a comprehensive representation of the file's structure, aiding in documentation and analysis tasks.
+**Note**: 使用此函数时，请确保传入的文件路径是有效的，并且文件内容是有效的Python代码，以便能够正确解析并提取信息。
 
-**Note**:
-- The function assumes that the file exists at the given path relative to the repository's root directory. If the file does not exist, an error will occur.
-- The function relies on accurate parsing of the file's content. Therefore, the file content should be valid Python code for the parsing to be successful.
-- The detailed information generated by this function is crucial for documentation purposes and for understanding the structure and components of the file.
-
-**Output Example**:
-An example output of this function could be a list of dictionaries, each representing a function or class within the file:
-```python
+**Output Example**: 假设传入的文件路径对应的文件内容包含以下函数和类定义，函数的返回值可能如下所示：
 [
     {
-        "type": "function",
-        "name": "example_function",
-        "start_line": 10,
-        "end_line": 20,
-        "params": ["param1", "param2"],
-        "code_content": "def example_function(param1, param2):\n    return param1 + param2",
-        "parent": "class_name"
-    },
-    {
-        "type": "class",
-        "name": "ExampleClass",
-        "start_line": 5,
-        "end_line": 25,
-        "params": [],
-        "code_content": "class ExampleClass:\n    def example_method(self):\n        pass",
-        "parent": None
+        "function_name": {
+            "type": "function",
+            "start_line": 10,
+            "end_line": 20,
+            "parent": "class_name"
+        },
+        "class_name": {
+            "type": "class",
+            "start_line": 5,
+            "end_line": 25,
+            "parent": None
+        }
     }
 ]
-```
-This output indicates that the file contains a function named `example_function` with parameters `param1` and `param2`, and a class named `ExampleClass`. Each dictionary includes the type, name, start and end lines, parameters, and the actual code content of the code segment.
 ***
 ### FunctionDef generate_overall_structure(self, file_path_reflections, jump_files)
-**generate_overall_structure**: The function of `generate_overall_structure` is to obtain the file structure of a target repository by walking through its Abstract Syntax Tree (AST) and identifying all objects, while excluding files specified in `jump_files`.
+**generate_overall_structure**: The function of generate_overall_structure is to retrieve the file structure of a target repository by analyzing its contents while excluding certain files based on specified criteria.
 
-**Parameters**:
-- `file_path_reflections` (dict): A mapping of file paths that may include "fake" file paths used for reflection in the repository's structure.
-- `jump_files` (list): A list of file paths that should not be parsed and are to be treated as non-existent.
+**parameters**: The parameters of this Function.
+· parameter1: file_path_reflections (dict) - A dictionary mapping original file paths to their reflections, used to identify files that may have been renamed or moved.
+· parameter2: jump_files (list) - A list of file names that should be ignored during the processing, as they are not to be parsed.
 
-**Code Description**:
-The `generate_overall_structure` function is a method within the `FileHandler` class designed to analyze a repository's file structure, excluding files specified in `jump_files`. It initializes a `GitignoreChecker` instance with the repository path and its `.gitignore` file to filter out files that should be ignored according to the `.gitignore` rules.
+**Code Description**: The generate_overall_structure method is designed to construct a comprehensive representation of the file structure within a specified repository. It begins by initializing an empty dictionary called repo_structure, which will ultimately hold the file paths and their corresponding structures.
 
-The function iterates over the files in the repository that are not ignored by `.gitignore`, as determined by the `GitignoreChecker`. During the iteration, it checks if a file is in `jump_files` or ends with a specific substring indicating it is the latest version and should be skipped. If a file meets these conditions, it is ignored, and a message is printed to indicate this action.
+The method instantiates a GitignoreChecker object, which is responsible for checking the repository directory against patterns defined in a .gitignore file. This checker is crucial for filtering out files and folders that should be ignored based on the project's version control settings.
 
-For each file that is not ignored, the function attempts to generate its file structure using the `generate_file_structure` method of the `FileHandler` class. This method analyzes the file's content to extract its structural components, such as functions and classes. If an error occurs during this process, an alert message is printed, and the file is skipped.
+The method then utilizes the tqdm library to create a progress bar that reflects the ongoing process of checking files and folders. It iterates over the list of non-ignored files provided by the GitignoreChecker's check_files_and_folders method. For each file, the following checks are performed:
 
-The function accumulates the structures of all processed files in a dictionary, `repo_structure`, mapping file names to their respective structures. This dictionary represents the overall structure of the repository, excluding ignored files and those specified in `jump_files`.
+1. If the file is present in the jump_files list, it is skipped, and a message is printed to indicate that the file will not be processed.
+2. If the file name ends with a specific substring indicating a "latest version," it is also skipped, with a corresponding message printed to the console.
 
-**Note**:
-- The function assumes that the `.gitignore` file is located at the root of the repository and that the repository path is correctly set in the `FileHandler` instance.
-- Files in `jump_files` are completely excluded from the analysis, as if they do not exist in the repository.
-- The function prints messages to the console to indicate files that are being ignored or skipped, providing feedback on the processing status.
+If the file passes these checks, the method attempts to generate its structure by calling the generate_file_structure method, passing the file name as an argument. If an error occurs during this process, it is logged, and the method continues to the next file.
 
-**Output Example**:
-An example return value of the `generate_overall_structure` function could be a dictionary where each key is a file name (not ignored and not in `jump_files`) and each value is the file's structure as generated by `generate_file_structure`:
-```python
+The progress bar is updated to reflect the current file being processed, and once all files have been evaluated, the method returns the repo_structure dictionary, which contains the paths of the files and their respective structures.
+
+This method is integral to the FileHandler class, as it consolidates the information about the repository's file structure while adhering to the rules defined in the .gitignore file and respecting the files specified in the jump_files list.
+
+**Note**: It is essential to ensure that the .gitignore file is correctly formatted and accessible to avoid unintended exclusions of files. Additionally, the jump_files list should be accurately populated to ensure that the intended files are ignored during processing.
+
+**Output Example**: An example output of the generate_overall_structure method might look like this:
+```
 {
-    "src/main.py": [
-        {
-            "type": "function",
-            "name": "main",
-            "start_line": 1,
-            "end_line": 10,
-            "params": ["args"],
-            "code_content": "def main(args):\n    print(args)",
-            "parent": None
-        }
-    ],
-    "src/utils.py": [
-        {
-            "type": "class",
-            "name": "Helper",
-            "start_line": 1,
-            "end_line": 20,
-            "params": [],
-            "code_content": "class Helper:\n    def assist(self):\n        pass",
-            "parent": None
-        }
-    ]
+    "src/module1.py": { ... },  # Structure of module1.py
+    "src/module2.py": { ... },  # Structure of module2.py
+    "tests/test_module1.py": { ... }  # Structure of test_module1.py
 }
 ```
-This output indicates that the repository contains two files, `src/main.py` and `src/utils.py`, not ignored by `.gitignore` or listed in `jump_files`, and provides a detailed structure of their contents.
+This output indicates that the method has successfully generated the structures for the specified files, with each file path mapped to its corresponding structure representation.
 ***
 ### FunctionDef convert_to_markdown_file(self, file_path)
-**convert_to_markdown_file**: The function of `convert_to_markdown_file` is to convert the content of a specified file into markdown format based on the project's hierarchical structure stored in a JSON file.
+**convert_to_markdown_file**: The function of convert_to_markdown_file is to convert the content of a specified file into markdown format.
 
-**Parameters**:
-- `file_path` (str, optional): The relative path of the file to be converted. If not provided, a default file path set within the object will be used.
+**parameters**: The parameters of this Function.
+· file_path: (str, optional) The relative path of the file to be converted. If not provided, the default file path will be used.
 
-**Code Description**:
-The `convert_to_markdown_file` function begins by reading the project hierarchy from a JSON file specified by the `project_hierarchy` attribute of the `FileHandler` object. It then checks if a `file_path` is provided; if not, it uses a default path stored in the `FileHandler` object.
+**Code Description**: The convert_to_markdown_file function is designed to read a file's metadata from a JSON structure and convert it into a markdown representation. The function begins by opening a JSON file that contains the project hierarchy, which is expected to be structured in a way that associates file paths with their corresponding metadata. If the file_path parameter is not provided, the function defaults to using an internal file path attribute.
 
-The function searches the JSON data for the specified `file_path`. If the file path does not exist in the JSON data, it raises a `ValueError`, indicating the absence of the file object in `project_hierarchy.json`.
+The function retrieves the relevant file object from the loaded JSON data using the specified or default file path. If no matching file object is found, it raises a ValueError, indicating that the specified file path does not exist in the project hierarchy.
 
-For the found file object, the function iterates through its contents, which are expected to be structured data representing different code objects (like functions, classes, etc.) within the file. It sorts these objects by their starting line number to maintain their order as in the source file.
+Once the file object is successfully located, the function initializes an empty string to accumulate the markdown content. It sorts the objects associated with the file based on their starting line numbers in the code. The function then constructs a parent-child relationship mapping for the objects, which is crucial for determining the hierarchy levels in the markdown output.
 
-The function then generates markdown content by iterating over each object. It determines the nesting level of each object based on its parent-child relationships, represented in the JSON data, to format the markdown correctly with appropriate heading levels. Special markdown separators are added between top-level objects for better readability.
+For each object, the function calculates its level in the hierarchy by traversing the parent dictionary. It constructs the markdown string by appending the object's type, name, and parameters, formatted according to its level. The markdown content includes the last piece of markdown content associated with the object, if available. Finally, the function appends a closing separator to the markdown string and returns the complete markdown representation.
 
-The markdown content for each object includes its type (e.g., function, class), name, and parameters if applicable, followed by custom markdown content stored in the `md_content` field of each object.
+**Note**: It is important to ensure that the project_hierarchy.json file is correctly formatted and accessible, as the function relies on this data to perform its operations. Additionally, the function expects the objects within the JSON to have specific attributes such as "type", "name", "params", and "md_content" for proper markdown generation.
 
-This function is integral to the project's documentation process, as seen in its usage within the `Runner` class methods `add_new_item` and `process_file_changes`. In both cases, after updating the project's JSON structure to reflect changes or additions, `convert_to_markdown_file` is called to generate updated markdown documentation for the affected file. This documentation is then written to a markdown file, ensuring that the project's documentation stays in sync with its codebase.
-
-**Note**:
-- The function assumes that the JSON data structure correctly represents the project's file hierarchy and that each code object within the file has been accurately captured in this structure.
-- The function's ability to generate accurate markdown documentation depends on the completeness and correctness of the `md_content` field for each code object in the JSON data.
-
-**Output Example**:
-Assuming the JSON data contains information about a Python file with two functions, `func_a` and `func_b`, where `func_a` is the parent of `func_b`, the output might look like this:
-
+**Output Example**: 
+A possible appearance of the code's return value could be:
 ```
-# Function func_a():
-This function does something.
+# FunctionDef my_function(param1, param2):
+This function does something important.
+
+# AsyncFunctionDef my_async_function():
+This async function handles asynchronous operations.
 
 ***
-## Function func_b():
-This function does something else.
-***
 ```
-
-This example demonstrates the markdown content with headings indicating the object types and names, followed by their descriptions, and separated by markdown separators for readability.
 ***

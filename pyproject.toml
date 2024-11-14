@@ -9,20 +9,16 @@ license = {text = "Apache-2.0"}
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "loguru>=0.7.2",
-    "openai>=1.10.0",
-    "gradio>=4.16.0",
     "markdown>=3.5.2",
-    "pyyaml>=6.0.1",
     "jedi>=0.19.1",
     "GitPython>=3.1.41",
-    "chromadb>=0.4.22",
     "prettytable>=3.9.0",
-    "python-iso639>=2024.2.7",
     "pydantic-settings>=2.2.1",
-    "tomli>=2.0.1",
-    "tomli-w>=1.0.0",
     "colorama>=0.4.6",
-    "llama-index-llms-openai>=0.2.12",
+    "click>=8.1.7",
+    "python-iso639>=2024.10.22",
+    "llama-index-llms-openai>=0.2.16",
+    "llama-index-llms-openai-like>=0.2.0",
 ]
 name = "repoagent"
 version = "0.1.4"
@@ -64,3 +60,9 @@ build-backend = "pdm.backend"
 
 [tool.pyright]
 reportCallIssue="none"
+
+[tool.ruff]
+# General ruff settings can stay here.
+
+[tool.ruff.lint]
+select = ["I001"] 
