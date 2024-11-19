@@ -6,6 +6,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from pathlib import Path
 
 from colorama import Fore, Style
 from tqdm import tqdm
@@ -19,7 +20,6 @@ from repo_agent.multi_task_dispatch import worker
 from repo_agent.project_manager import ProjectManager
 from repo_agent.settings import SettingsManager
 from repo_agent.utils.meta_info_utils import delete_fake_files, make_fake_files
-from pathlib import Path
 
 
 class Runner:

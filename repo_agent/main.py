@@ -125,5 +125,18 @@ def diff():
         click.echo("No docs will be generated/updated, check your source-code update")
 
 
+@cli.command()
+def chat_with_repo():
+    try:
+        # 调用 SettingsManager.get_setting() 来获取配置
+        setting = SettingsManager.get_setting()
+    except ValidationError as e:
+        handle_setting_error(e)
+        return
+    from repo_agent.chat_with_repo import main
+
+    main()
+
+
 if __name__ == "__main__":
     cli()

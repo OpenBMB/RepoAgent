@@ -29,8 +29,6 @@ class ProjectSettings(BaseSettings):
     ignore_list: list[str] = []
     language: str = "English"
     max_thread_count: PositiveInt = 4
-    # NOTE: Temporarily disabling the limit on prompt tokens as the model context window is sufficiently large
-    # max_document_tokens: PositiveInt = 16384
     log_level: LogLevel = LogLevel.INFO
 
     @field_validator("language")

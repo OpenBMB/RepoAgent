@@ -181,3 +181,6 @@ log.txt
 config.yml
 config.toml
 .pre-commit-config.yaml
+
+# Gradio
+.gradio
