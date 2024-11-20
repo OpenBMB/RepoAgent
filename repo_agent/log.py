@@ -29,16 +29,13 @@ RepoAgent 日志记录器对象。
         logger.exception("ZeroDivisionError occurred")
 
     # 记录调试信息
-    logger.debug("Debugging info: {}", some_debug_variable)
+    logger.debug(f"Debugging info: {some_debug_variable}")
 
     # 记录警告信息
     logger.warning("This is a warning message")
 
     # 记录错误信息
     logger.error("An error occurred")
-
-    # 使用原生 print 函数（被重定向至 logger）
-    print("This will be logged as an INFO level message")
     ```
 
 """

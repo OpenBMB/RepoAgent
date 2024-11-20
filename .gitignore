@@ -180,7 +180,7 @@ log.txt
 .chroma_db
 config.yml
 config.toml
-.pre-commit-config.yaml
+.project_doc_record
 
 # Gradio
 .gradio

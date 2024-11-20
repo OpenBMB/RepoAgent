@@ -12,6 +12,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import BaseSettings
+from pathlib import Path
 
 
 class LogLevel(StrEnum):
@@ -79,9 +80,46 @@ class SettingsManager:
 
     @classmethod
     def get_setting(cls):
-        if cls._setting_instance is None:  # Check if it has been initialized
-            cls._setting_instance = Setting()  # Initialize the setting object
-        return cls._setting_instance  # Return the setting object
+        if cls._setting_instance is None:
+            cls._setting_instance = Setting()
+        return cls._setting_instance
+
+    @classmethod
+    def initialize_with_params(
+        cls,
+        target_repo: Path,
+        markdown_docs_name: str,
+        hierarchy_name: str,
+        ignore_list: list[str],
+        language: str,
+        max_thread_count: int,
+        log_level: str,
+        model: str,
+        temperature: float,
+        request_timeout: int,
+        openai_base_url: str,
+    ):
+        project_settings = ProjectSettings(
+            target_repo=target_repo,
+            hierarchy_name=hierarchy_name,
+            markdown_docs_name=markdown_docs_name,
+            ignore_list=ignore_list,
+            language=language,
+            max_thread_count=max_thread_count,
+            log_level=LogLevel(log_level),
+        )
+
+        chat_completion_settings = ChatCompletionSettings(
+            model=model,
+            temperature=temperature,
+            request_timeout=request_timeout,
+            openai_base_url=openai_base_url,
+        )
+
+        cls._setting_instance = Setting(
+            project=project_settings,
+            chat_completion=chat_completion_settings,
+        )
 
 
 if __name__ == "__main__":

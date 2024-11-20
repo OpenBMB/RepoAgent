@@ -117,14 +117,26 @@ $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
 repoagent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+repoagent run --print-hierarchy # Print how repo-agent parse the target repo
 ```
 
+The run command supports the following optional flags (if set, will override config defaults):
+
+- `-m`, `--model` TEXT: Specifies the model to use for completion. Default: `gpt-3.5-turbo`
+- `-t`, `--temperature` FLOAT: Sets the generation temperature for the model. Lower values make the model more deterministic. Default: `0.2`
+- `-r`, `--request-timeout` INTEGER: Defines the timeout in seconds for the API request. Default: `60`
+- `-b`, `--base-url` TEXT: The base URL for the API calls. Default: `https://api.openai.com/v1`
+- `-tp`, `--target-repo-path` PATH: The file system path to the target repository. Used as the root for documentation generation. Default: `path/to/your/target/repository`
+- `-hp`, `--hierarchy-path` TEXT: The name or path for the project hierarchy file, used to organize documentation structure. Default: `.project_doc_record`
+- `-mdp`, `--markdown-docs-path` TEXT: The folder path where Markdown documentation will be stored or generated. Default: `markdown_docs`
+- `-i`, `--ignore-list` TEXT: A list of files or directories to ignore during documentation generation, separated by commas.
+- `-l`, `--language` TEXT: The ISO 639 code or language name for the documentation. Default: `Chinese`
+- `-ll`, `--log-level` [DEBUG|INFO|WARNING|ERROR|CRITICAL]: Sets the logging level for the application. Default: `INFO`
 
 You can also try the following feature
 
 ```sh
 repoagent clean # Remove repoagent-related cache
-repoagent print-hierarchy # Print how repo-agent parse the target repo
 repoagent diff # Check what docs will be updated/generated based on current code change
 ```
 
@@ -183,6 +195,17 @@ The generated document will be stored in the specified folder in the root direct
 We utilized the default model **gpt-3.5-turbo** to generate documentation for the [**XAgent**](https://github.com/OpenBMB/XAgent) project, which comprises approximately **270,000 lines** of code. You can view the results of this generation in the Markdown_Docs directory of the XAgent project on GitHub. For enhanced documentation quality, we suggest considering more advanced models like **gpt-4-1106** or **gpt-4-0125-preview**.
 
 **In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.** 
+
+### Exploring chat with repo
+
+We conceptualize **Chat With Repo** as a unified gateway for these downstream applications, acting as a connector that links RepoAgent to human users and other AI agents. Our future research will focus on adapting the interface to various downstream applications and customizing it to meet their unique characteristics and implementation requirements.
+
+Here we demonstrate a preliminary prototype of one of our downstream tasks: Automatic Q&A for Issues and Code Explanation. You can start the server by running the following code.
+
+```sh
+pip install repoagent[chat-with-repo]
+repoagent chat-with-repo
+```
 
 ## ✅ Future Work
 
