@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 
+
 def build_path_tree(who_reference_me, reference_who, doc_item_path):
     def tree():
         return defaultdict(tree)

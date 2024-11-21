@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Optional
 
 from iso639 import Language, LanguageNotFoundError
 from pydantic import (
@@ -8,13 +9,10 @@ from pydantic import (
     PositiveFloat,
     PositiveInt,
     SecretStr,
-    field_serializer,
     field_validator,
-    FieldSerializationInfo
 )
 from pydantic_settings import BaseSettings
-
-from repo_agent.config_manager import read_config, write_config
+from pathlib import Path
 
 
 class LogLevel(StrEnum):
@@ -30,18 +28,10 @@ class ProjectSettings(BaseSettings):
     hierarchy_name: str = ".project_doc_record"
     markdown_docs_name: str = "markdown_docs"
     ignore_list: list[str] = []
-    language: str = "Chinese"
+    language: str = "English"
     max_thread_count: PositiveInt = 4
-    max_document_tokens: PositiveInt = 1024
     log_level: LogLevel = LogLevel.INFO
 
-    @field_serializer("ignore_list")
-    def serialize_ignore_list(self, ignore_list: list[str], info: FieldSerializationInfo):
-        if ignore_list == [""]:
-            self.ignore_list = []  # If the ignore_list is empty, set it to an empty list
-            return [] 
-        return ignore_list
-    
     @field_validator("language")
     @classmethod
     def validate_language_code(cls, v: str) -> str:
@@ -57,26 +47,25 @@ class ProjectSettings(BaseSettings):
     @classmethod
     def set_log_level(cls, v: str) -> LogLevel:
         if isinstance(v, str):
-            v = v.upper()  # 将输入转换为大写
-        if v in LogLevel._value2member_map_:  # 检查转换后的值是否在枚举成员中
+            v = v.upper()  # Convert input to uppercase
+        if (
+            v in LogLevel._value2member_map_
+        ):  # Check if the converted value is in enum members
             return LogLevel(v)
         raise ValueError(f"Invalid log level: {v}")
 
-    @field_serializer("target_repo")
-    def serialize_target_repo(self, target_repo: DirectoryPath, info: FieldSerializationInfo):
-        return str(target_repo)
-
 
 class ChatCompletionSettings(BaseSettings):
-    model: str = "gpt-3.5-turbo"
+    model: str = "gpt-4o-mini"  # NOTE: No model restrictions for user flexibility, but it's recommended to use models with a larger context window.
     temperature: PositiveFloat = 0.2
-    request_timeout: PositiveFloat = 60.0
-    base_url: HttpUrl = "https://api.openai.com/v1"  # type: ignore
+    request_timeout: PositiveInt = 60
+    openai_base_url: str = "https://api.openai.com/v1"
     openai_api_key: SecretStr = Field(..., exclude=True)
 
-    @field_serializer("base_url")
-    def serialize_base_url(self, base_url: HttpUrl):
-        return str(base_url)
+    @field_validator("openai_base_url", mode="before")
+    @classmethod
+    def convert_base_url_to_str(cls, openai_base_url: HttpUrl) -> str:
+        return str(openai_base_url)
 
 
 class Setting(BaseSettings):
@@ -84,23 +73,55 @@ class Setting(BaseSettings):
     chat_completion: ChatCompletionSettings = {}  # type: ignore
 
 
-_config_data = read_config()
-setting = Setting.model_validate(_config_data)
+class SettingsManager:
+    _setting_instance: Optional[Setting] = (
+        None  # Private class attribute, initially None
+    )
 
-if _config_data == {}:
-    write_config(setting.model_dump())
+    @classmethod
+    def get_setting(cls):
+        if cls._setting_instance is None:
+            cls._setting_instance = Setting()
+        return cls._setting_instance
 
-# NOTE Each model's token limit has been reduced by 1024 tokens to account for the output space and 1 for boundary conditions.
-max_input_tokens_map = {
-    "gpt-3.5-turbo": 4096,  # NOTE OPENAI said that The gpt-3.5-turbo model alias will be automatically upgraded from gpt-3.5-turbo-0613 to gpt-3.5-turbo-0125 on February 16th. But in 2/20, then still maintain 4,096 tokens for context window.
-    "gpt-3.5-turbo-0613": 4096,  # NOTE Will be deprecated on June 13, 2024.
-    "gpt-3.5-turbo-16k": 16384,  # NOTE Will be deprecated on June 13, 2024.
-    "gpt-3.5-turbo-16k-0613": 16384,  # NOTE Will be deprecated on June 13, 2024.
-    "gpt-3.5-turbo-0125": 16384,
-    "gpt-4": 8192,
-    "gpt-4-0613": 8192,
-    "gpt-4-32k": 32768,  # NOTE This model was never rolled out widely in favor of GPT-4 Turbo.
-    "gpt-4-1106": 131072,
-    "gpt-4-0125-preview": 131072,
-    "gpt-4-turbo-preview": 131072,
-}
+    @classmethod
+    def initialize_with_params(
+        cls,
+        target_repo: Path,
+        markdown_docs_name: str,
+        hierarchy_name: str,
+        ignore_list: list[str],
+        language: str,
+        max_thread_count: int,
+        log_level: str,
+        model: str,
+        temperature: float,
+        request_timeout: int,
+        openai_base_url: str,
+    ):
+        project_settings = ProjectSettings(
+            target_repo=target_repo,
+            hierarchy_name=hierarchy_name,
+            markdown_docs_name=markdown_docs_name,
+            ignore_list=ignore_list,
+            language=language,
+            max_thread_count=max_thread_count,
+            log_level=LogLevel(log_level),
+        )
+
+        chat_completion_settings = ChatCompletionSettings(
+            model=model,
+            temperature=temperature,
+            request_timeout=request_timeout,
+            openai_base_url=openai_base_url,
+        )
+
+        cls._setting_instance = Setting(
+            project=project_settings,
+            chat_completion=chat_completion_settings,
+        )
+
+
+if __name__ == "__main__":
+    setting = SettingsManager.get_setting()
+    print(setting.model_dump())

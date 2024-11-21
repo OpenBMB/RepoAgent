@@ -9,23 +9,18 @@ license = {text = "Apache-2.0"}
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "loguru>=0.7.2",
-    "openai>=1.10.0",
-    "gradio>=4.16.0",
-    "markdown>=3.5.2",
-    "pyyaml>=6.0.1",
     "jedi>=0.19.1",
     "GitPython>=3.1.41",
-    "chromadb>=0.4.22",
     "prettytable>=3.9.0",
     "python-iso639>=2024.2.7",
     "pydantic-settings>=2.2.1",
-    "tomli>=2.0.1",
-    "tomli-w>=1.0.0",
     "colorama>=0.4.6",
-    "llama-index-llms-openai>=0.2.12",
+    "click>=8.1.7",
+    "python-iso639>=2024.10.22",
+    "llama-index-llms-openai>=0.2.16",
 ]
 name = "repoagent"
-version = "0.1.4"
+version = "0.1.5"
 description = "An LLM-Powered Framework for Repository-level Code Documentation Generation."
 readme = "README.md"
 classifiers = [
@@ -41,26 +36,38 @@ repository = "https://github.com/LOGIC-10/RepoAgent"
 [project.scripts]
 repoagent = "repo_agent.main:cli"
 
+[project.optional-dependencies]
+chat_with_repo = [
+    "markdown>=3.7",
+    "llama-index-embeddings-openai>=0.2.5",
+    "llama-index-vector-stores-chroma>=0.3.0",
+    "gradio>=5.6.0",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pyright]
+reportCallIssue="none"
+
+[tool.ruff]
+# General ruff settings can stay here.
+
+[tool.ruff.lint]
+select = ["I001"] 
+
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = [
-    "ruff>=0.1.14",
-]
 test = [
     "pytest<8.0.0,>=7.4.4",
     "pytest-mock<4.0.0,>=3.12.0",
+]
+lint = [
+    "ruff>=0.7.4",
 ]
 
 [tool.pdm.build]
 includes = [
     "repo_agent",
 ]
-
-
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
-
-[tool.pyright]
-reportCallIssue="none"

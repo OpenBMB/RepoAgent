@@ -8,7 +8,8 @@ import git
 from colorama import Fore, Style
 from tqdm import tqdm
 
-from repo_agent.settings import setting
+from repo_agent.log import logger
+from repo_agent.settings import SettingsManager
 from repo_agent.utils.gitignore_checker import GitignoreChecker
 from repo_agent.utils.meta_info_utils import latest_verison_substring
 
@@ -17,10 +18,16 @@ class FileHandler:
     """
     历变更后的文件的循环中，为每个变更后文件（也就是当前文件）创建一个实例
     """
+
     def __init__(self, repo_path, file_path):
         self.file_path = file_path  # 这里的file_path是相对于仓库根目录的路径
         self.repo_path = repo_path
-        self.project_hierarchy = setting.project.target_repo / setting.project.hierarchy_name
+
+        setting = SettingsManager.get_setting()
+
+        self.project_hierarchy = (
+            setting.project.target_repo / setting.project.hierarchy_name
+        )
 
     def read_file(self):
         """
@@ -35,7 +42,9 @@ class FileHandler:
             content = file.read()
         return content
 
-    def get_obj_code_info(self, code_type, code_name, start_line, end_line, params, file_path = None):
+    def get_obj_code_info(
+        self, code_type, code_name, start_line, end_line, params, file_path=None
+    ):
         """
         Get the code information for a given object.
 
@@ -52,12 +61,12 @@ class FileHandler:
         """
 
         code_info = {}
-        code_info['type'] = code_type
-        code_info['name'] = code_name
-        code_info['md_content'] = []
-        code_info['code_start_line'] = start_line
-        code_info['code_end_line'] = end_line
-        code_info['params'] = params
+        code_info["type"] = code_type
+        code_info["name"] = code_name
+        code_info["md_content"] = []
+        code_info["code_start_line"] = start_line
+        code_info["code_end_line"] = end_line
+        code_info["params"] = params
 
         with open(
             os.path.join(
@@ -195,9 +204,11 @@ class FileHandler:
                 #         now = now.parent
                 #     return None
                 # parent_name = get_recursive_parent_name(node)
-                parameters = [arg.arg for arg in node.args.args] if 'args' in dir(node) else []
+                parameters = (
+                    [arg.arg for arg in node.args.args] if "args" in dir(node) else []
+                )
                 all_names = [item[1] for item in functions_and_classes]
-                # (parent_name == None or parent_name in all_names) and 
+                # (parent_name == None or parent_name in all_names) and
                 functions_and_classes.append(
                     (type(node).__name__, node.name, start_line, end_line, parameters)
                 )
@@ -234,10 +245,12 @@ class FileHandler:
         with open(os.path.join(self.repo_path, file_path), "r", encoding="utf-8") as f:
             content = f.read()
             structures = self.get_functions_and_classes(content)
-            file_objects = [] #以列表的形式存储
+            file_objects = []  # 以列表的形式存储
             for struct in structures:
                 structure_type, name, start_line, end_line, params = struct
-                code_info = self.get_obj_code_info(structure_type, name, start_line, end_line, params, file_path)
+                code_info = self.get_obj_code_info(
+                    structure_type, name, start_line, end_line, params, file_path
+                )
                 file_objects.append(code_info)
 
         return file_objects
@@ -252,15 +265,18 @@ class FileHandler:
             gitignore_path=os.path.join(self.repo_path, ".gitignore"),
         )
 
-
         bar = tqdm(gitignore_checker.check_files_and_folders())
         for not_ignored_files in bar:
             normal_file_names = not_ignored_files
             if not_ignored_files in jump_files:
-                print(f"{Fore.LIGHTYELLOW_EX}[File-Handler] Unstaged AddFile, ignore this file: {Style.RESET_ALL}{normal_file_names}")
+                print(
+                    f"{Fore.LIGHTYELLOW_EX}[File-Handler] Unstaged AddFile, ignore this file: {Style.RESET_ALL}{normal_file_names}"
+                )
                 continue
             elif not_ignored_files.endswith(latest_verison_substring):
-                print(f"{Fore.LIGHTYELLOW_EX}[File-Handler] Skip Latest Version, Using Git-Status Version]: {Style.RESET_ALL}{normal_file_names}")
+                print(
+                    f"{Fore.LIGHTYELLOW_EX}[File-Handler] Skip Latest Version, Using Git-Status Version]: {Style.RESET_ALL}{normal_file_names}"
+                )
                 continue
             # elif not_ignored_files.endswith(latest_version):
             #     """如果某文件被删除但没有暂存，文件系统有fake_file但没有对应的原始文件"""
@@ -281,7 +297,7 @@ class FileHandler:
                     not_ignored_files
                 )
             except Exception as e:
-                print(
+                logger.error(
                     f"Alert: An error occurred while generating file structure for {not_ignored_files}: {e}"
                 )
                 continue
@@ -308,7 +324,7 @@ class FileHandler:
             file_path = self.file_path
 
         # Find the file object in json_data that matches file_path
-            
+
         file_dict = json_data.get(file_path)
 
         if file_dict is None:
@@ -344,15 +360,3 @@ class FileHandler:
         markdown += "***\n"
 
         return markdown
-
-
-if __name__ == "__main__":
-    # 打开py文件读取源代码
-    # file_handler = FileHandler('/path/to/repo', '/path/to/file.py')
-
-    file_handler = FileHandler(setting.project.target_repo, "XAgent/engines/pipeline_old.py")
-    # file_handler.generate_markdown_from_json()
-    file_handler.convert_all_to_markdown_files_from_json()
-    # code_content = file_handler.read_file()
-    # functions_and_classes = file_handler.get_functions_and_classes(code_content)
-    # print(functions_and_classes)

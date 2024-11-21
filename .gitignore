@@ -10,7 +10,6 @@ __pycache__/
 *$py.class
 chroma_db/
 .vscode
-.project_doc_record
 # C extensions
 *.so
 
@@ -177,9 +176,11 @@ prompt_output/
 .vscode/
 
 # RepoAgent
-.project_doc_record
 log.txt
 .chroma_db
 config.yml
 config.toml
-.pre-commit-config.yaml
+.project_doc_record
+
+# Gradio
+.gradio

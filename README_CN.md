@@ -102,28 +102,12 @@ set OPENAI_API_KEY=YOUR_API_KEY # on Windows
 $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ```
 
-如果需要修改运行参数，使用 `repoagent configure` 
-
-```sh
-Enter the path to target repository: 
-Enter the project hierarchy file name [.project_doc_record]: 
-Enter the Markdown documents folder name [markdown_docs]: 
-Enter files or directories to ignore, separated by commas []: 
-Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English') [Chinese]: 
-Enter the maximum number of threads [4]: 
-Enter the maximum number of document tokens [1024]: 
-Enter the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) [INFO]: 
-Enter the model [gpt-3.5-turbo]: 
-Enter the temperature [0.2]: 
-Enter the request timeout (seconds) [60.0]: 
-Enter the base URL [https://api.openai.com/v1]: 
-```
-
 ## 运行RepoAgent
 
 进入RepoAgent根目录并在终端尝试以下命令：
 ```sh
 repoagent run # 这条命令会生成文档或自动更新文档 (pre-commit-hook 会自动调用它)
+repoagent --print-hierarchy # 此命令将打印repoagent解析出的目标仓库
 ```
 
 run 命令支持以下可选标志（如果设置，将覆盖配置默认值）：
@@ -143,7 +127,6 @@ run 命令支持以下可选标志（如果设置，将覆盖配置默认值）�
 
 ```sh
 repoagent clean # 此命令将删除与repoagent相关的缓存
-repoagent print-hierarchy # 此命令将打印repoagent解析出的目标仓库
 repoagent diff # 此命令将检查基于当前代码更改将更新/生成哪些文档
 ```
 
@@ -206,7 +189,8 @@ RepoAgent hook会在git commit时自动触发，检测前一步您git add的文�
 在这里，我们展示了我们的下游任务之一的初步原型：自动issue问题解答和代码解释。您可以通过在终端运行以下代码启动服务。
 
 ```sh
-repoagent chat_with_repo
+pip install repoagent[chat-with-repo]
+repoagent chat-with-repo
 ```
 
 # ✅ 未来工作
@@ -237,4 +221,3 @@ repoagent chat_with_repo
       primaryClass={cs.CL}
 }
 ```
-

@@ -55,6 +55,10 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 ### Installation Method
 
+#### Using GitHub Actions
+
+This repository supports GitHub Actions for automating workflows such as building, testing, and deploying. For detailed instructions on setting up and using GitHub Actions with this repository, please refer to the [actions/run-repoagent](https://github.com/Umpire2018/setup-repoagent/actions).
+
 #### Using pip (Recommended for Users)
 
 Install the `repoagent` package directly using pip:
@@ -108,28 +112,12 @@ set OPENAI_API_KEY=YOUR_API_KEY # on Windows
 $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ```
 
-Use `repoagent configure` if you need to modify the running parameters.
-
-```sh
-Enter the path to target repository: 
-Enter the project hierarchy file name [.project_doc_record]: 
-Enter the Markdown documents folder name [markdown_docs]: 
-Enter files or directories to ignore, separated by commas []: 
-Enter the language (ISO 639 code or language name, e.g., 'en', 'eng', 'English') [Chinese]: 
-Enter the maximum number of threads [4]: 
-Enter the maximum number of document tokens [1024]: 
-Enter the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) [INFO]: 
-Enter the model [gpt-3.5-turbo]: 
-Enter the temperature [0.2]: 
-Enter the request timeout (seconds) [60.0]: 
-Enter the base URL [https://api.openai.com/v1]: 
-```
-
 ## Run RepoAgent
 
 Enter the root directory of RepoAgent and try the following command in the terminal:
 ```sh
 repoagent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
+repoagent run --print-hierarchy # Print how repo-agent parse the target repo
 ```
 
 The run command supports the following optional flags (if set, will override config defaults):
@@ -145,12 +133,10 @@ The run command supports the following optional flags (if set, will override con
 - `-l`, `--language` TEXT: The ISO 639 code or language name for the documentation. Default: `Chinese`
 - `-ll`, `--log-level` [DEBUG|INFO|WARNING|ERROR|CRITICAL]: Sets the logging level for the application. Default: `INFO`
 
-
 You can also try the following feature
 
 ```sh
 repoagent clean # Remove repoagent-related cache
-repoagent print-hierarchy # Print how repo-agent parse the target repo
 repoagent diff # Check what docs will be updated/generated based on current code change
 ```
 
@@ -217,6 +203,7 @@ We conceptualize **Chat With Repo** as a unified gateway for these downstream ap
 Here we demonstrate a preliminary prototype of one of our downstream tasks: Automatic Q&A for Issues and Code Explanation. You can start the server by running the following code.
 
 ```sh
+pip install repoagent[chat-with-repo]
 repoagent chat-with-repo
 ```
 
@@ -224,7 +211,7 @@ repoagent chat-with-repo
 
 - [ ] Generate README.md automatically combining with the global documentation
 - [ ] **Multi-programming-language support** Support more programming languages like Java, C or C++, etc.
-- [ ] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
+- [x] Local model support like Llama, chatGLM, Qwen, GLM4, etc.
 
 ## 🥰 Featured Cases
 
