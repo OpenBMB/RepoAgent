@@ -57,7 +57,7 @@ Traditionally, creating and maintaining software documentation demanded signific
 
 #### Using GitHub Actions
 
-This repository supports GitHub Actions for automating workflows such as building, testing, and deploying. For detailed instructions on setting up and using GitHub Actions with this repository, please refer to the [actions/run-repoagent](https://github.com/Umpire2018/setup-repoagent/actions).
+This repository supports GitHub Actions for automating workflows such as building, testing, and deploying. For detailed instructions on setting up and using GitHub Actions with this repository, please refer to the [actions/run-repoagent](https://github.com/marketplace/actions/run-repoagent).
 
 #### Using pip (Recommended for Users)
 
