@@ -3,16 +3,24 @@
 import ast
 import json
 import os
+from importlib import resources
 
 import git
 from colorama import Fore, Style
 from tqdm import tqdm
+from tree_sitter_languages import get_parser
 
 from repo_agent.log import logger
 from repo_agent.settings import SettingsManager
 from repo_agent.utils.gitignore_checker import GitignoreChecker
 from repo_agent.utils.meta_info_utils import latest_verison_substring
 
+
+def get_scm_fname(lang):
+    try:
+        return resources.files(__package__).joinpath("queries", f"ts-{lang}-tags.scm")
+    except KeyError:
+        return
 
 class FileHandler:
     """
@@ -29,6 +37,9 @@ class FileHandler:
             setting.project.target_repo / setting.project.hierarchy_name
         )
 
+        self.language = "python"
+        self.ts_parser = None
+
     def read_file(self):
         """
         Read the file content
@@ -41,6 +52,7 @@ class FileHandler:
         with open(abs_file_path, "r", encoding="utf-8") as file:
             content = file.read()
         return content
+    
 
     def get_obj_code_info(
         self, code_type, code_name, start_line, end_line, params, file_path=None
@@ -174,45 +186,71 @@ class FileHandler:
             self.add_parent_references(child, node)
 
     def get_functions_and_classes(self, code_content):
+        ts_parser = get_parser(self.language)
+        ts_tree = ts_parser.parse(bytes(code_content, "utf-8"))
+        return self._extract_class_info_recursive(ts_tree.root_node)
+    
+    def _extract_class_info_recursive(self, node):
         """
-        Retrieves all functions, classes, their parameters (if any), and their hierarchical relationships.
-        Output Examples: [('FunctionDef', 'AI_give_params', 86, 95, None, ['param1', 'param2']), ('ClassDef', 'PipelineEngine', 97, 104, None, []), ('FunctionDef', 'get_all_pys', 99, 104, 'PipelineEngine', ['param1'])]
-        On the example above, PipelineEngine is the Father structure for get_all_pys.
+        Recursively extracts class and function information from a tree-sitter node.
 
         Args:
-            code_content: The code content of the whole file to be parsed.
+            node (tree_sitter.Node): The tree-sitter AST node to analyze
 
         Returns:
-            A list of tuples containing the type of the node (FunctionDef, ClassDef, AsyncFunctionDef),
-            the name of the node, the starting line number, the ending line number, the name of the parent node, and a list of parameters (if any).
+            list[tuple]: A list of tuples containing:
+                - str: Type of definition ('ClassDef' or 'FunctionDef')
+                - str: Name of the class or function
+                - int: Start line number
+                - int: End line number 
+                - list[str]: List of parameter names for functions, empty list for classes
         """
-        tree = ast.parse(code_content)
-        self.add_parent_references(tree)
-        functions_and_classes = []
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
-                # if node.name == "recursive_check":
-                #     import pdb; pdb.set_trace()
-                start_line = node.lineno
-                end_line = self.get_end_lineno(node)
-                # def get_recursive_parent_name(node):
-                #     now = node
-                #     while "parent" in dir(now):
-                #         if isinstance(now.parent, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
-                #             assert 'name' in dir(now.parent)
-                #             return now.parent.name
-                #         now = now.parent
-                #     return None
-                # parent_name = get_recursive_parent_name(node)
-                parameters = (
-                    [arg.arg for arg in node.args.args] if "args" in dir(node) else []
-                )
-                all_names = [item[1] for item in functions_and_classes]
-                # (parent_name == None or parent_name in all_names) and
-                functions_and_classes.append(
-                    (type(node).__name__, node.name, start_line, end_line, parameters)
-                )
-        return functions_and_classes
+        results = []
+        
+        # Check current node
+        if node.type == "class_definition":
+            class_name = None
+            for child in node.named_children:
+                if child.type == "identifier":
+                    class_name = str(child.text, encoding="utf-8")
+                    break
+                    
+            if class_name:
+                results.append((
+                    "ClassDef",
+                    class_name,
+                    node.start_point[0] + 1,
+                    node.end_point[0] + 1,
+                    []
+                )) 
+        elif node.type == "function_definition":
+            func_name = None
+            parameters = []
+            
+            for child in node.named_children:
+                if child.type == "identifier":
+                    func_name = str(child.text, encoding="utf-8")
+                elif child.type == "parameters":
+                    # Extract parameter names from the parameters node
+                    for param in child.named_children:
+                        if param.type == "identifier":
+                            parameters.append(str(param.text, encoding="utf-8"))
+                            
+            if func_name:
+                results.append((
+                    "FunctionDef", 
+                    func_name,
+                    node.start_point[0] + 1,
+                    node.end_point[0] + 1, 
+                    parameters
+                ))
+        
+        # Recursively check all children
+        for child in node.named_children:
+            child_results = self._extract_class_info_recursive(child)
+            results.extend(child_results)
+            
+        return results
 
     def generate_file_structure(self, file_path):
         """
