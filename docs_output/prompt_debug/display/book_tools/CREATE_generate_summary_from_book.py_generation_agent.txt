@@ -1,0 +1,142 @@
+The content of the file (source code) is as follows:
+```python
+import os
+import re
+import sys
+
+def create_readme_if_not_exist(dire):
+    readme_path = os.path.join(dire, 'README.md')
+
+    if not os.path.exists(readme_path):
+        with open(readme_path, 'w') as readme_file:
+            dirname = os.path.basename(dire)
+            readme_file.write('# {}\\n'.format(dirname))
+
+
+def output_markdown(dire, base_dir, output_file, iter_depth=0):
+    for filename in os.listdir(dire):
+        print('add readme ', filename)
+        file_or_path = os.path.join(dire, filename)
+        if os.path.isdir(file_or_path):
+            create_readme_if_not_exist(file_or_path)
+
+    for filename in os.listdir(dire):
+        print('deal with ', filename)
+        file_or_path = os.path.join(dire, filename)
+        if os.path.isdir(file_or_path):
+            # Check if README.md exists in the directory
+            readme_path = os.path.join(file_or_path, 'README.md')
+            if os.path.exists(readme_path):
+                # If README.md exists, create a markdown link to it
+                relative_path = os.path.join(os.path.relpath(file_or_path, base_dir), 'README.md')
+                output_file.write('  ' * iter_depth + '- [{}]({})\\n'.format(filename, relative_path))
+            # Recursively call output_markdown for nested directories
+            output_markdown(file_or_path, base_dir, output_file, iter_depth + 1)
+        else:
+            if is_markdown_file(filename):
+                if filename not in ['SUMMARY.md', 'README.md'] or iter_depth != 0 and filename not in ['README.md']:
+                    relative_path = os.path.join(os.path.relpath(dire, base_dir), filename)
+                    output_file.write('  ' * iter_depth + '- [{}]({})\\n'.format(is_markdown_file(filename), relative_path))
+
+
+def markdown_file_in_dir(dire):
+    for root, dirs, files in os.walk(dire):
+        for filename in files:
+            if re.search('.md$|.markdown$', filename):
+                return True
+    return False
+
+
+def is_markdown_file(filename):
+    match = re.search('.md$|.markdown$', filename)
+    if not match:
+        return False
+    elif len(match.group()) is len('.md'):
+        return filename[:-3]
+    elif len(match.group()) is len('.markdown'):
+        return filename[:-9]
+
+
+def main():
+    book_name = sys.argv[1]
+
+    # mkdir the book folder
+    dir_input = os.path.join('./books', book_name, 'src')
+
+    # check the dst_dir
+    if not os.path.exists(dir_input):
+        print(dir_input)
+        os.makedirs(dir_input)
+    # Ensure the directory exists or create it
+    if not os.path.exists(dir_input):
+        os.makedirs(dir_input)
+
+    # Then proceed to create the file
+    output_path = os.path.join(dir_input, 'SUMMARY.md')
+    output = open(output_path, 'w')
+    output.write('# Summary\\n\\n')
+    output_markdown(dir_input, dir_input, output)
+
+    print('GitBook auto summary finished:) ')
+    return 0
+
+
+if __name__ == '__main__':
+    main()
+```
+
+Explanation of Every Class and Function:
+1. **Function `create_readme_if_not_exist(dire)`**:
+   - **Purpose**: Creates a README.md file in the specified directory if it does not already exist.
+   - **Functionality**: Checks for the existence of the README.md file and writes a header with the directory name if the file is absent.
+
+2. **Function `output_markdown(dire, base_dir, output_file, iter_depth=0)`**:
+   - **Purpose**: Generates a markdown summary of the directory structure, including links to README files and markdown files.
+   - **Functionality**:
+     - Iterates through the contents of the specified directory.
+     - Calls `create_readme_if_not_exist` for each subdirectory.
+     - Writes markdown links for each markdown file found, excluding certain files like SUMMARY.md and README.md.
+
+3. **Function `markdown_file_in_dir(dire)`**:
+   - **Purpose**: Checks if there are any markdown files in the specified directory.
+   - **Functionality**: Walks through the directory and returns `True` if any markdown files are found.
+
+4. **Function `is_markdown_file(filename)`**:
+   - **Purpose**: Determines if a given filename corresponds to a markdown file.
+   - **Functionality**: Uses regex to check the file extension and returns the base name without the extension if it is a markdown file.
+
+5. **Function `main()`**:
+   - **Purpose**: The main entry point of the script that orchestrates the creation of the book's directory and summary.
+   - **Functionality**:
+     - Retrieves the book name from command-line arguments.
+     - Creates the necessary directory structure for the book.
+     - Calls `output_markdown` to generate the SUMMARY.md file.
+
+Input/Output Examples:
+- **Function `create_readme_if_not_exist`**:
+  - **Input**: A directory path (e.g., `./books/my_book/src`).
+  - **Output**: Creates a README.md file with the content `# my_book`.
+
+- **Function `output_markdown`**:
+  - **Input**: Directory path, base directory, output file object, and iteration depth.
+  - **Output**: Writes markdown links to the output file, e.g., `- [README](./README.md)`.
+
+- **Function `markdown_file_in_dir`**:
+  - **Input**: A directory path.
+  - **Output**: Returns `True` if markdown files are found, otherwise `False`.
+
+- **Function `is_markdown_file`**:
+  - **Input**: A filename (e.g., `example.md`).
+  - **Output**: Returns the base name without the extension if it is a markdown file, otherwise `False`.
+
+Called functions information:
+- **Function `main`** calls:
+  - `os.path.join(...)`: Constructs file paths for the book directory and output file.
+  - `os.makedirs(...)`: Creates the directory structure if it does not exist.
+  - `output_markdown(...)`: Generates the markdown summary for the book.
+
+- **Function `output_markdown`** calls:
+  - `create_readme_if_not_exist(...)`: Ensures that a README.md file exists in each directory.
+  - `is_markdown_file(...)`: Checks if a file is a markdown file before adding it to the summary.
+
+Overall, the `generate_summary_from_book.py` file is designed to facilitate the creation of a structured markdown summary for a book project, ensuring that all necessary files are included and that README files are generated where needed.
