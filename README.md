@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://github.com/OpenBMB/RepoAgent/assets/138990495/06bc2449-c82d-4b9e-8c83-27640e541451" width="50" alt="RepoAgent logo"/> <em>RepoAgent: An LLM-Powered Framework for Repository-level Code Documentation Generation.</em>
+  <img src="https://github.com/OpenBMB/RepoAgent/assets/138990495/06bc2449-c82d-4b9e-8c83-27640e541451" width="50" alt="RepoAgent logo"/> <em>RepoAgent: An LLM-Powered Framework For Repository-level Code Documentation Generation.</em>
 </h1>
 
 <p align="center">
@@ -50,7 +50,6 @@ Traditionally, creating and maintaining software documentation demanded signific
 - **👭 Offer a sustainable, automated documentation update method for team collaboration.**
 - **😍 Display Code Documentation in an amazing way. (with document book per project powered by Gitbook)**
 
-
 ## 🚀 Getting Started
 
 ### Installation Method
@@ -74,33 +73,33 @@ If you're looking to contribute or set up a development environment:
 - **Install PDM**: If you haven't already, [install PDM](https://pdm-project.org/latest/#installation).
 - **Use CodeSpace, or Clone the Repository**:
 
-    - **Use CodeSpace**
+  - **Use CodeSpace**
     The easiest way to get RepoAgent enviornment. Click below to use the GitHub Codespace, then go to the next step.
-  
-    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
-  
-    - **Clone the Repository**
-  
-    ```bash
-    git clone https://github.com/LOGIC-10/RepoAgent.git
-    cd RepoAgent
-    ```
+
+  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LOGIC-10/RepoAgent?quickstart=1)
+
+  - **Clone the Repository**
+
+  ```bash
+  git clone https://github.com/LOGIC-10/RepoAgent.git
+  cd RepoAgent
+  ```
 
 - **Setup with PDM**
 
-    - Initialize the Python virtual environment. Make sure to run the below cmd in `/RepoAgent` directory:
-    
-      ```bash
-      pdm venv create --name repoagent
-      ```
-    
-    - [Activate virtual environment](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
-    
-    - Install dependencies using PDM
-    
-      ```bash
-       pdm install
-      ```
+  - Initialize the Python virtual environment. Make sure to run the below cmd in `/RepoAgent` directory:
+
+    ```bash
+    pdm venv create --name repoagent
+    ```
+
+  - [Activate virtual environment](https://pdm-project.org/latest/usage/venv/#activate-a-virtualenv)
+
+  - Install dependencies using PDM
+
+    ```bash
+     pdm install
+    ```
 
 ### Configuring RepoAgent
 
@@ -115,6 +114,7 @@ $Env:OPENAI_API_KEY = "YOUR_API_KEY" # on Windows (PowerShell)
 ## Run RepoAgent
 
 Enter the root directory of RepoAgent and try the following command in the terminal:
+
 ```sh
 repoagent run #this command will generate doc, or update docs(pre-commit-hook will automatically call this)
 repoagent run --print-hierarchy # Print how repo-agent parse the target repo
@@ -142,9 +142,9 @@ repoagent diff # Check what docs will be updated/generated based on current code
 
 If it's your first time generating documentation for the target repository, RepoAgent will automatically create a JSON file maintaining the global structure information and a folder named Markdown_Docs in the root directory of the target repository for storing documents.
 
-Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository! 
+Once you have initially generated the global documentation for the target repository, or if the project you cloned already contains global documentation information, you can then seamlessly and automatically maintain internal project documentation with your team by configuring the **pre-commit hook** in the target repository!
 
-### Use `pre-commit` 
+### Use `pre-commit`
 
 RepoAgent currently supports generating documentation for projects, which requires some configuration in the target repository.
 
@@ -153,24 +153,26 @@ First, ensure that the target repository is a git repository and has been initia
 ```sh
 git init
 ```
+
 Install pre-commit in the target repository to detect changes in the git repository.
 
 ```sh
 pip install pre-commit
 ```
+
 Create a file named `.pre-commit-config.yaml` in the root directory of the target repository. An example is as follows:
 
 ```yml
 repos:
   - repo: local
     hooks:
-    - id: repo-agent
-      name: RepoAgent
-      entry: repoagent
-      language: system
-      pass_filenames: false # prevent from passing filenames to the hook
-      # You can specify the file types that trigger the hook, but currently only python is supported.
-      types: [python]
+      - id: repo-agent
+        name: RepoAgent
+        entry: repoagent
+        language: system
+        pass_filenames: false # prevent from passing filenames to the hook
+        # You can specify the file types that trigger the hook, but currently only python is supported.
+        types: [python]
 ```
 
 For specific configuration methods of hooks, please refer to [pre-commit](https://pre-commit.com/#plugins).
@@ -194,7 +196,7 @@ The generated document will be stored in the specified folder in the root direct
 
 We utilized the default model **gpt-3.5-turbo** to generate documentation for the [**XAgent**](https://github.com/OpenBMB/XAgent) project, which comprises approximately **270,000 lines** of code. You can view the results of this generation in the Markdown_Docs directory of the XAgent project on GitHub. For enhanced documentation quality, we suggest considering more advanced models like **gpt-4-1106** or **gpt-4-0125-preview**.
 
-**In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.** 
+**In the end, you can flexibly adjust the output format, template, and other aspects of the document by customizing the prompt. We are excited about your exploration of a more scientific approach to Automated Technical Writing and your contributions to the community.**
 
 ### Exploring chat with repo
 
@@ -226,7 +228,7 @@ Here are featured cases that have adopted RepoAgent.
 
 ```bibtex
 @misc{luo2024repoagent,
-      title={RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation}, 
+      title={RepoAgent: An LLM-Powered Open-Source Framework for Repository-level Code Documentation Generation},
       author={Qinyu Luo and Yining Ye and Shihao Liang and Zhong Zhang and Yujia Qin and Yaxi Lu and Yesai Wu and Xin Cong and Yankai Lin and Yingli Zhang and Xiaoyin Che and Zhiyuan Liu and Maosong Sun},
       year={2024},
       eprint={2402.16667},
