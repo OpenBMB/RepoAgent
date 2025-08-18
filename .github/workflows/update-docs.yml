@@ -1,0 +1,86 @@
+
+name: Start Actions on Commit for Updating Documentation
+on:
+  pull_request:
+    branches:
+      - '**'
+  
+jobs:          
+  documentation:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: GPT
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with: 
+         python-version: '3.10'
+
+      - name: Set up .env file
+        run: |
+          echo "GLOBAL_LLM_SERVICE=${GLOBAL_LLM_SERVICE}" >> .env
+          echo "CHAT_DEPLOYMENT_NAME=${CHAT_DEPLOYMENT_NAME}" >> .env
+          echo "AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}" >> .env
+          echo "AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}" >> .env
+          echo "AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}" >> .env
+          echo "AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}" >> .env
+          echo "AZURE_AI_SEARCH_KEY=${AZURE_AI_SEARCH_KEY}" >> .env
+          echo "API_TYPE=${API_TYPE}" >> .env
+          echo "BASE_URL=${BASE_URL}" >> .env
+          echo "SEARCH_ENDPOINT=${SEARCH_ENDPOINT}" >> .env
+          echo "GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}" >> .env
+        shell: bash
+        env:
+          GLOBAL_LLM_SERVICE: ${{ secrets.GLOBAL_LLM_SERVICE }}
+          CHAT_DEPLOYMENT_NAME: ${{ secrets.CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_AI_SEARCH_KEY: ${{ secrets.AZURE_AI_SEARCH_KEY }}
+          API_TYPE: ${{ secrets.API_TYPE }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          SEARCH_ENDPOINT: ${{ secrets.SEARCH_ENDPOINT }}
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
+
+      - name: Get local branches
+        run: |
+          git fetch origin main
+          git checkout main
+          git fetch origin ${{ github.head_ref }}
+          git checkout ${{ github.head_ref }}
+
+      - name: Get changed files
+        id: get_changed_files
+        run: |
+          changed_files=$(git diff --name-only main...${{ github.head_ref }} | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//')
+          echo "changed_files=$changed_files" >> $GITHUB_ENV
+
+      - name: Run Docker Compose
+        run: docker-compose up --build --detach
+        
+      - name: Set safe.directory in docAider container
+        run: docker exec docAider git config --global --add safe.directory /workspace
+
+      - name: Run update documentation script
+        run: |
+          docker exec docAider python3 /docAider/repo_documentation/update_app.py --branch "${{ github.head_ref }}"
+
+      - name: Commit and push if changes in repository
+        run: |
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "github-actions"
+          git add .
+          if [ -n "$changed_files" ]; then
+            git commit -m "Documentation Updated for $changed_files"
+            git pull --rebase
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          changed_files: ${{ env.changed_files }}

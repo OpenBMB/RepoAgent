@@ -1,0 +1,260 @@
+
+The file content (source code):
+from llama_index.llms.openai_like import OpenAILike
+
+from repo_agent.doc_meta_info import DocItem
+from repo_agent.log import logger
+from repo_agent.prompt import chat_template
+from repo_agent.settings import SettingsManager
+
+
+class ChatEngine:
+    """
+    ChatEngine is used to generate the doc of functions or classes.
+    """
+
+    def __init__(self, project_manager):
+        setting = SettingsManager.get_setting()
+
+        self.llm = OpenAILike(
+            api_key=setting.chat_completion.openai_api_key.get_secret_value(),
+            api_base=setting.chat_completion.openai_base_url,
+            timeout=setting.chat_completion.request_timeout,
+            model=setting.chat_completion.model,
+            temperature=setting.chat_completion.temperature,
+            max_retries=1,
+            is_chat_model=True,
+        )
+
+    def build_prompt(self, doc_item: DocItem):
+        """Builds and returns the system and user prompts based on the DocItem."""
+        setting = SettingsManager.get_setting()
+
+        code_info = doc_item.content
+        referenced = len(doc_item.who_reference_me) > 0
+
+        code_type = code_info["type"]
+        code_name = code_info["name"]
+        code_content = code_info["code_content"]
+        have_return = code_info["have_return"]
+        file_path = doc_item.get_full_name()
+
+        def get_referenced_prompt(doc_item: DocItem) -> str:
+            if len(doc_item.reference_who) == 0:
+                return ""
+            prompt = [
+                """As you can see, the code calls the following objects, their code and docs are as following:"""
+            ]
+            for reference_item in doc_item.reference_who:
+                instance_prompt = (
+                    f"""obj: {reference_item.get_full_name()}\nDocument: \n{reference_item.md_content[-1] if len(reference_item.md_content) > 0 else 'None'}\nRaw code:```\n{reference_item.content['code_content'] if 'code_content' in reference_item.content.keys() else ''}\n```"""
+                    + "=" * 10
+                )
+                prompt.append(instance_prompt)
+            return "\n".join(prompt)
+
+        def get_referencer_prompt(doc_item: DocItem) -> str:
+            if len(doc_item.who_reference_me) == 0:
+                return ""
+            prompt = [
+                """Also, the code has been called by the following objects, their code and docs are as following:"""
+            ]
+            for referencer_item in doc_item.who_reference_me:
+                instance_prompt = (
+                    f"""obj: {referencer_item.get_full_name()}\nDocument: \n{referencer_item.md_content[-1] if len(referencer_item.md_content) > 0 else 'None'}\nRaw code:```\n{referencer_item.content['code_content'] if 'code_content' in referencer_item.content.keys() else 'None'}\n```"""
+                    + "=" * 10
+                )
+                prompt.append(instance_prompt)
+            return "\n".join(prompt)
+
+        def get_relationship_description(referencer_content, reference_letter):
+            if referencer_content and reference_letter:
+                return "And please include the reference relationship with its callers and callees in the project from a functional perspective"
+            elif referencer_content:
+                return "And please include the relationship with its callers in the project from a functional perspective."
+            elif reference_letter:
+                return "And please include the relationship with its callees in the project from a functional perspective."
+            else:
+                return ""
+
+        code_type_tell = "Class" if code_type == "ClassDef" else "Function"
+        parameters_or_attribute = (
+            "attributes" if code_type == "ClassDef" else "parameters"
+        )
+        have_return_tell = (
+            "**Output Example**: Mock up a possible appearance of the code's return value."
+            if have_return
+            else ""
+        )
+        combine_ref_situation = (
+            "and combine it with its calling situation in the project,"
+            if referenced
+            else ""
+        )
+
+        referencer_content = get_referencer_prompt(doc_item)
+        reference_letter = get_referenced_prompt(doc_item)
+        has_relationship = get_relationship_description(
+            referencer_content, reference_letter
+        )
+
+        project_structure_prefix = ", and the related hierarchical structure of this project is as follows (The current object is marked with an *):"
+
+        return chat_template.format_messages(
+            combine_ref_situation=combine_ref_situation,
+            file_path=file_path,
+            project_structure_prefix=project_structure_prefix,
+            code_type_tell=code_type_tell,
+            code_name=code_name,
+            code_content=code_content,
+            have_return_tell=have_return_tell,
+            has_relationship=has_relationship,
+            reference_letter=reference_letter,
+            referencer_content=referencer_content,
+            parameters_or_attribute=parameters_or_attribute,
+            language=setting.project.language,
+        )
+
+    def generate_doc(self, doc_item: DocItem):
+        """Generates documentation for a given DocItem."""
+        messages = self.build_prompt(doc_item)
+
+        try:
+            response = self.llm.chat(messages)
+            logger.debug(f"LLM Prompt Tokens: {response.raw.usage.prompt_tokens}")  # type: ignore
+            logger.debug(
+                f"LLM Completion Tokens: {response.raw.usage.completion_tokens}"  # type: ignore
+            )
+            logger.debug(
+                f"Total LLM Token Count: {response.raw.usage.total_tokens}"  # type: ignore
+            )
+            return response.message.content
+        except Exception as e:
+            logger.error(f"Error in llamaindex chat call: {e}")
+            raise
+
+(-Source code ends-)
+
+This is the code-level documentation for the source code and Reviewer agent's comments. Please IMPROVE the documentation according to the SUGGESTIONS, which involves adding missing function descriptions, input/output examples, or improving the clarity of the documentation. 
+DO NOT DELETE/REMOVE any part of the existing documentation.
+Your output should be the SAME FORMAT as the existing documentation, with the necessary improvements. 
+
+Context: 
+# chat_engine.py
+
+## Overview:
+The `chat_engine.py` file contains the implementation of the `ChatEngine` class, which is designed to generate documentation for functions or classes in a codebase. It leverages a language model (specifically, an OpenAI-like model) to create detailed and context-aware documentation based on the metadata of code items. The key components of this file include the `ChatEngine` class, which encapsulates methods for building prompts and generating documentation, as well as interactions with external modules for settings management, logging, and template handling.
+
+The `ChatEngine` class interacts with the `DocItem` class to gather necessary information about the code being documented, including its references and relationships with other code elements. The generated documentation aims to provide developers and beginners with a clear understanding of the functionality and usage of the code.
+
+## ClassDef ChatEngine
+
+The `ChatEngine` class is responsible for generating documentation for code elements using a language model. It initializes with a project manager and sets up the language model based on project settings.
+
+### Method __init__(self, project_manager)
+The constructor method initializes the `ChatEngine` instance. It retrieves settings from the `SettingsManager` and initializes the language model (`OpenAILike`) with the appropriate configuration.
+
+**Parameters**:
+- `project_manager`: An instance of the project manager that may be used for managing project-related tasks.
+
+**Returns**: None
+
+**Note**: Ensure that the `SettingsManager` is properly configured to provide valid API keys and model settings. Any issues with the settings may lead to failures in initializing the language model.
+
+#### Examples:
+**Input Examples**: 
+```python
+project_manager = ProjectManager()  # Assuming ProjectManager is defined elsewhere
+chat_engine = ChatEngine(project_manager)
+```
+
+**Output Example**:
+```python
+# No output, but the chat_engine instance is initialized with the language model ready for use.
+```
+
+### Method build_prompt(self, doc_item: DocItem)
+This method constructs and returns the system and user prompts based on the provided `DocItem`. It gathers information about the code, its references, and relationships to build a comprehensive prompt for the language model.
+
+**Parameters**:
+- `doc_item`: An instance of `DocItem` containing metadata about the code element (function or class).
+
+**Returns**: A formatted string that serves as a prompt for the language model.
+
+**Note**: The method handles various scenarios, such as whether the code has references or is referenced by other code elements. It is crucial to ensure that the `DocItem` is populated with accurate information for effective documentation generation.
+
+#### Examples:
+**Input Examples**: 
+```python
+doc_item = DocItem(...)  # Assuming DocItem is defined and populated with relevant data
+prompt = chat_engine.build_prompt(doc_item)
+```
+
+**Output Example**:
+```python
+# A string formatted as a prompt for the language model, e.g.:
+"As you can see, the code calls the following objects, their code and docs are as follows: ..."
+```
+
+### Method generate_doc(self, doc_item: DocItem)
+This method generates documentation for a given `DocItem` by building the prompt and calling the language model. It handles exceptions and logs relevant information.
+
+**Parameters**:
+- `doc_item`: An instance of `DocItem` for which documentation is to be generated.
+
+**Returns**: The generated documentation content as a string.
+
+**Note**: The method includes error handling to log any issues encountered during the documentation generation process. It is important to monitor the logs for debugging purposes.
+
+#### Examples:
+**Input Examples**: 
+```python
+doc_item = DocItem(...)  # Assuming DocItem is defined and populated with relevant data
+documentation = chat_engine.generate_doc(doc_item)
+```
+
+**Output Example**:
+```python
+# A string containing the generated documentation, e.g.:
+"This function does XYZ..."
+```
+
+## Called_functions:
+- **Function `__init__`** calls:
+  - `SettingsManager.get_setting()`: Retrieves settings for the project, including API keys and model configurations.
+  - `OpenAILike(...)`: Initializes the language model with the retrieved settings.
+
+- **Function `build_prompt`** calls:
+  - `doc_item.get_full_name()`: Retrieves the full name of the `DocItem`.
+  - `get_referenced_prompt(doc_item)`: Constructs a prompt for referenced objects.
+  - `get_referencer_prompt(doc_item)`: Constructs a prompt for objects that reference the current item.
+  - `get_relationship_description(...)`: Describes the relationships between the current item and its references.
+
+- **Function `generate_doc`** calls:
+  - `self.build_prompt(doc_item)`: Builds the prompt for the language model.
+  - `self.llm.chat(messages)`: Sends the prompt to the language model and retrieves the response.
+
+Overall, the `ChatEngine` class serves as a bridge between the code documentation process and a language model, facilitating the generation of meaningful documentation based on the structure and relationships of code elements. 
+
+### Suggestions:
+- Consider adding more detailed error handling in the `generate_doc` method to provide specific feedback on what went wrong during the documentation generation process.
+- It may be beneficial to include unit tests for the `ChatEngine` class to ensure that the methods behave as expected under various scenarios.
+Generated documentation
+(-Documentation ends-)
+
+Reviewer agent suggestions:
+1. **Add Function Description for Missing Functions**: The documentation currently lacks descriptions for the functions `get_full_name`, `get_referenced_prompt`, `get_referencer_prompt`, and `get_relationship_description`. Consider adding a brief description for each of these functions, including their purpose and how they contribute to the overall functionality of the `ChatEngine` class.
+
+2. **Expand Input/Output Examples**: The examples provided for the `build_prompt` and `generate_doc` methods could be enhanced by including more specific input data for the `DocItem` instances. For instance, provide a sample of what the `DocItem` might look like when populated, including attributes that are relevant to the documentation generation process.
+
+3. **Clarify the Purpose of the Class**: In the Overview section, consider adding a sentence that explicitly states the primary goal of the `ChatEngine` class, such as "The primary goal of the `ChatEngine` class is to automate the generation of comprehensive documentation for code elements, thereby improving developer productivity and code understanding."
+
+4. **Detail Error Handling in `generate_doc`**: While the note mentions that error handling is included, it would be beneficial to specify what types of exceptions are caught and how they are logged. This will provide users with a clearer understanding of what to expect if something goes wrong during documentation generation.
+
+5. **Include a Summary of Dependencies**: In the Overview section, consider adding a brief summary of the external modules or classes that the `ChatEngine` class depends on, such as `SettingsManager`, `OpenAILike`, and `DocItem`. This will help users understand the context in which the `ChatEngine` operates.
+
+6. **Add a Section on Usage Scenarios**: It may be helpful to include a section that outlines common usage scenarios for the `ChatEngine` class. This could include examples of when a developer might want to use this class and the benefits it provides in those situations.
+
+7. **Provide Context for `ProjectManager`**: In the `__init__` method's examples, consider providing a brief description of what the `ProjectManager` class does or its role in the project. This will help users understand the context in which the `ChatEngine` is being initialized.
+
+8. **Enhance the Note Sections**: The notes in each method could be expanded to include potential pitfalls or common mistakes that users might encounter when using the methods. This would provide additional guidance and improve the overall usability of the documentation.

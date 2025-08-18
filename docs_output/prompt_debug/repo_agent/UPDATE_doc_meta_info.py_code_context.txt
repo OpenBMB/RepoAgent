@@ -1,0 +1,20 @@
+
+First you need to get the content of this file (source code): /workspace/repo_agent/doc_meta_info.py.
+Next, gather information on all callee functions within the same file path. 
+Understanding these callee functions will help you comprehend the context of the WHOLE file content.
+Your task is to generate a concise yet thorough explanation for the Python file.
+
+Please use the following output template:
+
+The content of the file (source code) is as follows:
+`Put the file content here.`
+
+Explanation of Every Class and Function:
+`Provide a detailed and thorough description of every class and function, including their purpose, functionality, and any important implementation details.`
+
+Input/Ouput Examples:
+Provide input and output examples for each class and function in the file, with detailed explanations.
+
+Called functions information:
+`Provide detailed information about called functions, including how each function interacts with other parts of the code, any relationships or dependencies, and the context in which these functions are used.`
+
