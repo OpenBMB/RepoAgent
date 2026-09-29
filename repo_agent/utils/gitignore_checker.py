@@ -116,9 +116,12 @@ class GitignoreChecker:
             for file in files:
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, self.directory)
-                if not self._is_ignored(
-                    file, self.file_patterns
-                ) and file_path.endswith(".py"):
+                relative_posix = relative_path.replace(os.sep, "/")
+                if (
+                    not self._is_ignored(file, self.file_patterns)
+                    and not self._is_ignored(relative_posix, self.file_patterns)
+                    and file_path.endswith(".py")
+                ):
                     not_ignored_files.append(relative_path)
 
         return not_ignored_files
